@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
-package main
+package srv6
 
 import (
 	"fmt"
@@ -44,12 +44,12 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			err := sid.ParseConf(config)
+			err := sr.ParseConf(config)
 			if err != nil {
 				fmt.Println("Error loading config, exiting…")
 				os.Exit(1)
 			}
-			err = sid.Run()
+			err = sr.Run()
 			if err != nil {
 				fmt.Println("Error while running, exiting…")
 				log.Fatal(err)
