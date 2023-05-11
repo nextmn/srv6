@@ -17,12 +17,26 @@ func ParseConf(file string) error {
 	if err != nil {
 		return err
 	}
-	err = yaml.Unmarshal(yamlFile, &Sid)
+	err = yaml.Unmarshal(yamlFile, &SRv6)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-type SidConfig struct {
+type IPRoute2 struct {
+	RTTableNumber int32   `yaml:"rttable-number"`           // for example 100
+	RTProtoNumber int8    `yaml:"rtproto-number"`           // for example 100, max value is 255
+	PostInitHook  *string `yaml:"post-init-hook,omitempty"` // script to execute after interfaces are configured
+}
+
+type Endpoint struct {
+	Sid      string `yaml:"sid"`      // example of sid: fd00:51D5:0000:1:1:11/80
+	Behavior string `yaml:"behavior"` // example of behavior: End.DX4
+}
+
+type SRv6Config struct {
+	IPRoute2  *IPRoute2   `yaml:"iproute2"`
+	Locator   string      `yaml:"locator` // example of locator: fd00:51D5:0000:1::/64
+	Endpoints []*Endpoint `yaml:"endpoints"`
 }

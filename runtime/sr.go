@@ -4,12 +4,21 @@
 // SPDX-License-Identifier: MIT
 package srv6
 
-var Sid *SidConfig
+var SRv6 *SRv6Config
 
 func Run() error {
+	ipRoute2Init()
+	linuxSRInit()
+	goSRInit()
+	for {
+		select {}
+	}
 	return nil
 }
 
 func Exit() error {
+	goSRExit()
+	linuxSRExit()
+	ipRoute2Exit()
 	return nil
 }

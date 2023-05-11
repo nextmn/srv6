@@ -1,0 +1,10 @@
+iproute2:
+  rttable-number: 100
+  rtproto-number: 100
+locator: "fd00:51D5:0000:1::/64"
+endpoints:
+  - sid: "fd00:51D5:0000:1:11::/80"
+    behavior: "End.DX4"
+  - sid: "fd00:51D5:0000:1:1::/80"
+    behavior: "End"
+
