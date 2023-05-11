@@ -7,9 +7,21 @@ package srv6
 var SRv6 *SRv6Config
 
 func Run() error {
-	ipRoute2Init()
-	linuxSRInit()
-	goSRInit()
+	if err := runHook(SRv6.IPRoute2.PreInitHook); err != nil {
+		return err
+	}
+	if err := ipRoute2Init(); err != nil {
+		return err
+	}
+	if err := linuxSRInit(); err != nil {
+		return err
+	}
+	if err := goSRInit(); err != nil {
+		return err
+	}
+	if err := runHook(SRv6.IPRoute2.PostInitHook); err != nil {
+		return err
+	}
 	for {
 		select {}
 	}

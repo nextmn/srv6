@@ -11,9 +11,6 @@ import (
 )
 
 func ipRoute2Init() error {
-	if err := runHook(SRv6.IPRoute2.PreInitHook); err != nil {
-		return err
-	}
 	if err := createRtTable(); err != nil {
 		return err
 	}
@@ -24,9 +21,6 @@ func ipRoute2Init() error {
 		return err
 	}
 	if err := addDefaultRoute(); err != nil {
-		return err
-	}
-	if err := runHook(SRv6.IPRoute2.PostInitHook); err != nil {
 		return err
 	}
 	return nil
