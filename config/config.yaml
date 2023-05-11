@@ -8,3 +8,7 @@ endpoints:
   - sid: "fd00:51D5:0000:1:1::/80"
     behavior: "End"
 
+policy:
+  segments-list:
+    - "fd00:51D5:0000:2::"
+    - "fd00:51D5:0000:3::"

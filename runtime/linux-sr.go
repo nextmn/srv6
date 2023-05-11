@@ -4,13 +4,8 @@
 // SPDX-License-Identifier: MIT
 package srv6
 
-import "strings"
-
 func linuxSRInit() error {
 	if err := linuxSRCreateIface(); err != nil {
-		return err
-	}
-	if err := linuxSRConfigTunSrc(); err != nil {
 		return err
 	}
 	if err := linuxSRCreateEndpoints(); err != nil {
@@ -38,16 +33,6 @@ func linuxSRCreateEndpoints() error {
 			}
 		default:
 		}
-	}
-	return nil
-}
-
-func linuxSRConfigTunSrc() error {
-	// Locator is in CIDR notation, we need to remove the mask
-	src := strings.Split(SRv6.Locator, "/")[0]
-	err := runIP("sr", "tunsrc", "set", src)
-	if err != nil {
-		return err
 	}
 	return nil
 }

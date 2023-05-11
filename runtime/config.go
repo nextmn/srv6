@@ -31,13 +31,23 @@ type IPRoute2 struct {
 	PostInitHook  *string `yaml:"post-init-hook,omitempty"` // script to execute after interfaces are configured
 }
 
+type BehaviorOptions struct {
+	SourceAddress *string `yaml:"set-source-address,omitempty"` // mandatory for End.M.GTP6.(E|D)
+}
+
 type Endpoint struct {
-	Sid      string `yaml:"sid"`      // example of sid: fd00:51D5:0000:1:1:11/80
-	Behavior string `yaml:"behavior"` // example of behavior: End.DX4
+	Sid      string           `yaml:"sid"`      // example of sid: fd00:51D5:0000:1:1:11/80
+	Behavior string           `yaml:"behavior"` // example of behavior: End.DX4
+	Options  *BehaviorOptions `yaml:"options,omitempty"`
 }
 
 type SRv6Config struct {
 	IPRoute2  *IPRoute2   `yaml:"iproute2"`
 	Locator   string      `yaml:"locator` // example of locator: fd00:51D5:0000:1::/64
 	Endpoints []*Endpoint `yaml:"endpoints"`
+	Policy    *Policy     `yaml:"policy"` // temporary field
+}
+
+type Policy struct { // temporary field
+	SegmentsList []string `yaml:"segments-list"` // temporary field
 }

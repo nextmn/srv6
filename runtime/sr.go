@@ -4,9 +4,12 @@
 // SPDX-License-Identifier: MIT
 package srv6
 
+import "log"
+
 var SRv6 *SRv6Config
 
 func Run() error {
+	log.Println("Starting…")
 	if err := runHook(SRv6.IPRoute2.PreInitHook); err != nil {
 		return err
 	}

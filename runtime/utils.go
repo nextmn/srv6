@@ -20,7 +20,7 @@ func runIP(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args[0], err)
+		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
 		log.Println(errLog)
 		return err
 	}
@@ -52,5 +52,21 @@ func getMTU(iface string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return strconv.ParseInt(string(content), 10, 64)
+	return strconv.ParseInt(strings.TrimRight(string(content), "\n"), 10, 64)
+}
+
+func getipv6hoplimit(iface string) (uint8, error) {
+	if strings.Contains(iface, "/") || strings.Contains(iface, ".") {
+		return 0, fmt.Errorf("interface name contains illegal character")
+	}
+	filename := fmt.Sprintf("/proc/sys/net/ipv6/conf/%s/hop_limit", iface)
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return 0, err
+	}
+	ret, err := strconv.ParseUint(strings.TrimRight(string(content), "\n"), 10, 8)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(ret), nil
 }
