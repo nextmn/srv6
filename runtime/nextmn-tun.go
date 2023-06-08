@@ -63,13 +63,25 @@ func goSRExit() error {
 	return nil
 }
 
-func createGTPUEntity(ipAddress string) (*gtpv1.UPlaneConn, error) {
-	// add SID as ip address (padded with zeros) to iface LinuxSRLinkName
-	if !strings.HasSuffix(ipAddress, "/128") {
-		return nil, fmt.Errorf("IP Address for GTP Entity must be an IPv6 address with a /128 mask")
-	}
-	if err := runIP("address", "replace", ipAddress, "dev", LinuxSRLinkName); err != nil {
-		return nil, err
+func createGTPUEntity(ipAddress string, ipversion int) (*gtpv1.UPlaneConn, error) {
+	// TODO: replace the GTP entity with a creation of GTP packet by gopacket (don't forget response to GTP Echo (option))
+	switch ipversion {
+	case 4:
+		if !strings.HasSuffix(ipAddress, "/32") {
+			return nil, fmt.Errorf("IP Address for this GTP Entity must be an IPv4 address with a /32 mask")
+		}
+		// we don't add ip address in ipv4 case because the address is expected to already exist
+	case 6:
+		if !strings.HasSuffix(ipAddress, "/128") {
+			return nil, fmt.Errorf("IP Address for this GTP Entity must be an IPv6 address with a /128 mask")
+		}
+		// add ip address (padded with zeros) to iface LinuxSRLinkName
+		// (we expect to have no address set in the ip range of the SID)
+		if err := runIP("address", "replace", ipAddress, "dev", LinuxSRLinkName); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("IP version should be 4 or 6")
 	}
 
 	ipAddressNoMask := strings.SplitN(ipAddress, "/", 2)[0]
@@ -193,18 +205,24 @@ func createEndpoints(iface *water.Interface) error {
 	gtpNodes = make(map[string](*gtpv1.UPlaneConn))
 	for _, e := range SRv6.Endpoints {
 		switch e.Behavior {
-		case "End.M.GTP6.D": // we receive GTP packet and send SRv6 packets
+		case "End.MAP":
+			return fmt.Errorf("Not implemented")
+		case "End.M.GTP6.D": // we receive GTP packet and send SRv6 packets with ArgsMobSession stored in arguments of SRH[0]
+			return fmt.Errorf("Not implemented")
+		case "End.M.GTP6.D.Di": // we receive GTP packet and send SRv6 packets, no ArgsMobSession is stored
 			if e.Options == nil || e.Options.SourceAddress == nil {
 				return fmt.Errorf("Options field must contain a set-source-address parameter")
+				// TODO: after replacement of GTPU-Entity creation by gopacket, this parameter should become optional (default: dst addr of the received packet)
 			}
 			if !strings.HasSuffix(e.Sid, "/128") {
-				return fmt.Errorf("SID of End.M.GTP6.D must be a /128")
+				return fmt.Errorf("SID of End.M.GTP6.Di must be a /128")
 			}
+			// FIXME: canonize gtpentityAddr
 			gtpentityAddr := e.Sid                                                     // we receive GTP packets having this destination address
 			srAddr := net.ParseIP(strings.SplitN(*e.Options.SourceAddress, "/", 2)[0]) // we send SR packets using this source address
 			// add a GTP Node to be able to receive GTP packets
 			if gtpNodes[gtpentityAddr] == nil {
-				entity, err := createGTPUEntity(gtpentityAddr)
+				entity, err := createGTPUEntity(gtpentityAddr, 6)
 				if err != nil {
 					return err
 				}
@@ -220,8 +238,9 @@ func createEndpoints(iface *water.Interface) error {
 			gtpNodes[gtpentityAddr].AddHandler(message.MsgTypeTPDU, func(c gtpv1.Conn, senderAddr net.Addr, msg message.Message) error {
 				return tpduHandler(iface, srAddr, c, senderAddr, msg, hoplimit)
 			})
-		case "End.M.GTP6.E": // we receive SRv6 packets and send GTP packets
+		case "End.M.GTP6.E": // we receive SRv6 packets and send GTP6 packets
 			if e.Options == nil || e.Options.SourceAddress == nil {
+				// TODO: after replacement of GTPU-Entity creation by gopacket, this parameter should become optional (default: dst addr of the received packet)
 				return fmt.Errorf("Options field must contain a set-source-address parameter")
 			}
 			if !strings.HasSuffix(*e.Options.SourceAddress, "/128") {
@@ -236,25 +255,102 @@ func createEndpoints(iface *water.Interface) error {
 			if err != nil {
 				return err
 			}
-			if netSize > (128 - 8 - 8*4) {
+			if netSize > maxNetSize {
 				return fmt.Errorf("Maximum network size for SID is /%d", maxNetSize)
 			}
 			if netSize%8 != 0 {
-				return fmt.Errorf("Network size for SID must be multiple of 8") // FIXME
+				return fmt.Errorf("Network size for SID must be multiple of 8") // FIXME: handle bit shifts
 			}
+			// FIXME: canonize srAddr
 			srAddr := e.Sid                           // we receive SR packets having this destination address
 			gtpentityAddr := *e.Options.SourceAddress // we send GTP packets using this source address
 			// add a GTP Node to be able to respond to GTP Echo Requests
 			if gtpNodes[gtpentityAddr] == nil {
-				entity, err := createGTPUEntity(gtpentityAddr)
+				entity, err := createGTPUEntity(gtpentityAddr, 6)
 				if err != nil {
 					return err
 				}
 				gtpNodes[gtpentityAddr] = entity
 			}
 			// create SRToGTPNode
-			srNodes[srAddr] = NewSRToGTPNode(srAddr, gtpentityAddr)
+			n, err := NewSRToGTPNode(srAddr, gtpentityAddr, 6)
+			if err != nil {
+				return err
+			} else {
+				srNodes[srAddr] = n
+			}
+		case "End.M.GTP4.E": // we receive SRv6 packets and send GTP4 packets
+			if e.Options == nil || e.Options.SourceAddress == nil {
+				// TODO: after replacement of GTPU-Entity creation by gopacket, check the IPv4 source address from IPv6 dest addr argument space
+				return fmt.Errorf("Options field must contain a set-source-address parameter")
+			}
+			if !strings.HasSuffix(*e.Options.SourceAddress, "/32") {
+				return fmt.Errorf("set-source-address parameter of End.M.GTP4.E must be explicitly a /32 address")
+			}
+			if err := runIP("-6", "route", "add", e.Sid, "dev", NextmnSRTunName, "table", RTTableName, "proto", RTProtoName); err != nil {
+				return err
+			}
+			maxNetSize := 128 - (32 + 8 + 8*4) // [ SID + IPv4 DA + QFI + R + U + TEID ]
+			netSize, err := strconv.Atoi(strings.SplitN(e.Sid, "/", 2)[1])
+
+			if err != nil {
+				return err
+			}
+			if netSize > maxNetSize {
+				return fmt.Errorf("Maximum network size for SID is /%d", maxNetSize)
+			}
+			if netSize%8 != 0 {
+				return fmt.Errorf("Network size for SID must be multiple of 8") // FIXME: handle bit shifts
+			}
+			srAddr := e.Sid                           // we receive SR packets having this destination address
+			gtpentityAddr := *e.Options.SourceAddress // we send GTP packets using this source address
+			// add a GTP Node to be able to respond to GTP Echo Requests
+			if gtpNodes[gtpentityAddr] == nil {
+				entity, err := createGTPUEntity(gtpentityAddr, 4)
+				if err != nil {
+					return err
+				}
+				gtpNodes[gtpentityAddr] = entity
+			}
+			// create SRToGTPNode
+			n, err := NewSRToGTPNode(srAddr, gtpentityAddr, 4)
+			if err != nil {
+				return err
+			} else {
+				srNodes[srAddr] = n
+			}
+		case "H.M.GTP4.D":
+			if e.Options == nil || e.Options.SourceAddress == nil {
+				// TODO: this parameter should be optional (default: sid + dst addr of the received packet)
+				return fmt.Errorf("Options field must contain a set-source-address parameter")
+			}
+			if !strings.HasSuffix(e.Sid, "/32") {
+				return fmt.Errorf("SID of H.GTP4.d must be a /32")
+			}
+			gtpentityAddr := e.Sid                                                     // we receive GTP packets having this destination address
+			srAddr := net.ParseIP(strings.SplitN(*e.Options.SourceAddress, "/", 2)[0]) // we send SR packets using this source address
+			// add a GTP Node to be able to receive GTP packets
+			if gtpNodes[gtpentityAddr] == nil {
+				entity, err := createGTPUEntity(gtpentityAddr, 4)
+				if err != nil {
+					return err
+				}
+				gtpNodes[gtpentityAddr] = entity
+			}
+			// hop limit is set at start of the server, to avoid reading it at each packet reception
+			hoplimit, err := getipv6hoplimit(NextmnSRTunName)
+			if err != nil {
+				return err
+			}
+
+			// add handler that will allow GTP decap & SR encap
+			gtpNodes[gtpentityAddr].AddHandler(message.MsgTypeTPDU, func(c gtpv1.Conn, senderAddr net.Addr, msg message.Message) error {
+				return tpduHandler(iface, srAddr, c, senderAddr, msg, hoplimit)
+			})
+		case "End.Limit":
+			return fmt.Errorf("Not implemented")
 		default:
+			// pass: other Behaviors can be implemented on linux side (see linux-sr.go)
 		}
 	}
 	return nil

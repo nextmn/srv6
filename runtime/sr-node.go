@@ -6,7 +6,6 @@ package srv6
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
 	"log"
 	"net"
@@ -17,6 +16,7 @@ import (
 	gopacket "github.com/google/gopacket"
 	layers "github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
+	"github.com/louisroyer/nextmn-srv6/mup"
 	"github.com/wmnsk/go-gtp/gtpv1"
 )
 
@@ -27,13 +27,16 @@ type SRToGTPNode struct {
 	done          chan bool
 	netsize       int
 	gtpEntityAddr string // CIDR
+	gtpIPVersion  int
 }
 
-func NewSRToGTPNode(sid string, gtpentityaddr string) *SRToGTPNode {
+func NewSRToGTPNode(sid string, gtpentityaddr string, gtpIPVersion int) (*SRToGTPNode, error) {
+	if (gtpIPVersion != 4) && (gtpIPVersion != 6) {
+		return nil, fmt.Errorf("gtpIPVersion should be 6 or 4")
+	}
 	netSize, _ := strconv.Atoi(strings.SplitN(sid, "/", 2)[1])
 	if netSize%8 != 0 {
-		log.Println("Error: SID networks must be multiple of 8") // FIXME
-		return nil
+		return nil, fmt.Errorf("SID networks must be multiple of 8") // FIXME
 	}
 	return &SRToGTPNode{
 		queue:         make(chan []byte),
@@ -42,7 +45,8 @@ func NewSRToGTPNode(sid string, gtpentityaddr string) *SRToGTPNode {
 		done:          make(chan bool),
 		netsize:       netSize,
 		gtpEntityAddr: gtpentityaddr,
-	}
+		gtpIPVersion:  gtpIPVersion,
+	}, nil
 }
 
 func (s *SRToGTPNode) ListenAndServe() error {
@@ -53,26 +57,42 @@ func (s *SRToGTPNode) ListenAndServe() error {
 			log.Printf("Received a packet on SID %s\n", s.sid)
 			pqt := gopacket.NewPacket(packet, layers.LayerTypeIPv6, gopacket.Default)
 			// extract TEID from destination address
-			// destination address is formed as follow : [ SID (netsize bits) + QFI (6 bits) + R (1 bit) + U (1 bit) + TEID (32 bits) + spare ]
+			// destination address is formed as follow : [ SID (netsize bits) + IPv4 DA (only if ipv4) + ArgsMobSession ]
 			dst := pqt.NetworkLayer().(*layers.IPv6).DstIP.String()
 			ip, err := netip.ParseAddr(dst)
 			if err != nil {
 				return err
 			}
 			dstarray := ip.As16()
-			teidarray := dstarray[(s.netsize/8)+1 : (s.netsize/8)+1+4]
-			teid := binary.BigEndian.Uint32(teidarray)
+			offset := 0
+			if s.gtpIPVersion == 4 {
+				offset = 32 / 8
+			}
+			// TODO: check segments left = 1, and if not send ICMP Parameter Problem to the Source Address (code 0, pointer to SegemntsLeft field), and drop the packet
+			args, err := mup.ParseArgsMobSession(dstarray[(s.netsize/8)+offset:])
+			if err != nil {
+				return err
+			}
+			teid := args.PDUSessionID()
 			// retrieve nextGTPNode (SHR[0])
 			log.Printf("TEID retreived: %X\n", teid)
 
-			// workaround: enforce use of gopacket_srv6 functions
-			shr := gopacket.NewPacket(pqt.Layers()[1].LayerContents(), gopacket_srv6.LayerTypeIPv6Routing, gopacket.Default).Layers()[0].(*gopacket_srv6.IPv6Routing)
-			log.Println("layer type", pqt.Layers()[1].LayerType())
-			log.Println("RoutingType", shr.RoutingType)
-			log.Println("LastEntry:", shr.LastEntry)
-			log.Println("sourceRoutingIPs len:", len(shr.SourceRoutingIPs))
-			log.Println("sourceRoutingIPs[0]:", shr.SourceRoutingIPs[0])
-			nextGTPNode := fmt.Sprintf("[%s]:%s", shr.SourceRoutingIPs[0].String(), GTPU_PORT)
+			nextGTPNode := ""
+			if s.gtpIPVersion == 6 {
+				// workaround: enforce use of gopacket_srv6 functions
+				shr := gopacket.NewPacket(pqt.Layers()[1].LayerContents(), gopacket_srv6.LayerTypeIPv6Routing, gopacket.Default).Layers()[0].(*gopacket_srv6.IPv6Routing)
+				log.Println("layer type", pqt.Layers()[1].LayerType())
+				log.Println("RoutingType", shr.RoutingType)
+				log.Println("LastEntry:", shr.LastEntry)
+				log.Println("sourceRoutingIPs len:", len(shr.SourceRoutingIPs))
+				log.Println("sourceRoutingIPs[0]:", shr.SourceRoutingIPs[0])
+				nextGTPNode = fmt.Sprintf("[%s]:%s", shr.SourceRoutingIPs[0].String(), GTPU_PORT)
+			} else {
+				// IPv4
+				ip_arr := dstarray[s.netsize/8 : (s.netsize/8)+4]
+				ipv4_address := net.IPv4(ip_arr[0], ip_arr[1], ip_arr[2], ip_arr[3])
+				nextGTPNode = fmt.Sprintf("%s:%s", ipv4_address, GTPU_PORT)
+			}
 			raddr, err := net.ResolveUDPAddr("udp", nextGTPNode)
 			if err != nil {
 				log.Println("Error while resolving ", nextGTPNode, "(remote node)")
