@@ -22,7 +22,7 @@ IPv4v6 | yes
 Ethernet | no
 Unstructured | no
 
-TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/nextmn-srv6-ctrl)
+TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-srv6-ctrl).
 
 ## Getting started
 ### Build dependencies
