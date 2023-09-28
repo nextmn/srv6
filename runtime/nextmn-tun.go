@@ -77,7 +77,7 @@ func createGTPUEntity(ipAddress string, ipversion int) (*gtpv1.UPlaneConn, error
 		}
 		// add ip address (padded with zeros) to iface LinuxSRLinkName
 		// (we expect to have no address set in the ip range of the SID)
-		if err := runIP("address", "replace", ipAddress, "dev", LinuxSRLinkName); err != nil {
+		if err := runIP("-6", "address", "replace", ipAddress, "dev", LinuxSRLinkName); err != nil {
 			return nil, err
 		}
 	default:
@@ -195,7 +195,7 @@ func tpduHandler(iface *water.Interface, srSourceAddr net.IP, c gtpv1.Conn, send
 		return err
 	}
 	srv6packet := buf.Bytes()
-	// send the resulting packet on iface LinuxSRLinkName
+	// send the resulting packet on iface NextmnSRTunName
 	iface.Write(srv6packet)
 	return nil
 }
@@ -325,7 +325,7 @@ func createEndpoints(iface *water.Interface) error {
 				return fmt.Errorf("Options field must contain a set-source-address parameter")
 			}
 			if !strings.HasSuffix(e.Sid, "/32") {
-				return fmt.Errorf("SID of H.GTP4.d must be a /32")
+				return fmt.Errorf("SID of H.GTP4.D must be a /32")
 			}
 			gtpentityAddr := e.Sid                                                     // we receive GTP packets having this destination address
 			srAddr := net.ParseIP(strings.SplitN(*e.Options.SourceAddress, "/", 2)[0]) // we send SR packets using this source address

@@ -25,9 +25,10 @@ func Run() error {
 	if err := runHook(SRv6.IPRoute2.PostInitHook); err != nil {
 		return err
 	}
-	for {
-		select {}
-	}
+
+	// Sleep infinity
+	select {}
+
 	return nil
 }
 
