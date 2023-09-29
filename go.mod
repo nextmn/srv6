@@ -1,4 +1,4 @@
-module github.com/louisroyer/nextmn-srv6
+module github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6
 
 go 1.19
 

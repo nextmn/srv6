@@ -11,10 +11,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	sr "github.com/louisroyer/nextmn-srv6/runtime"
+	sr "github.com/louisroyer/nextmn-srv6/internal/runtime"
 	"github.com/urfave/cli/v2"
 )
 
+// Handler for os signals
+// TODO: move this as a method of SR
 func initSignals() {
 	cancelChan := make(chan os.Signal, 1)
 	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
@@ -23,6 +25,7 @@ func initSignals() {
 	os.Exit(0)
 }
 
+// Entrypoint
 func main() {
 	log.SetPrefix("[nextmn-SRv6] ")
 	var config string
