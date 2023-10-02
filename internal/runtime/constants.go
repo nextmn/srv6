@@ -4,12 +4,19 @@
 // SPDX-License-Identifier: MIT
 package srv6
 
-import "github.com/louisroyer/nextmn-srv6/iproute2"
-
-var RTTableNextMNSRv6 = iproute2.NewConfig("nextmn-srv6", iproute2.RTTable) // FIXME: number
-var RTTableNextMNGTP4 = iproute2.NewConfig("nextmn-gtp4", iproute2.RTTable) // FIXME: number
-var ProtoNextMN = iproute2.NewConfig("nextmn", iproute2.Proto)              // FIXME: number
-
-const NextmnSRTunName = "nextmn-sr"
-const LinuxSRLinkName = "linux-sr"
+// ports
 const GTPU_PORT = "2152"
+
+// iproute2 rt protos
+const RT_PROTO_NEXTMN = "nextmn"
+
+// iproute2 rt tables
+const RT_TABLE_NEXTMN_SRV6 = "nextmn/srv6"
+const RT_TABLE_NEXTMN_GTP4 = "nextmn/gtp4"
+
+// iproute2 ifaces
+const IFACE_LINUX_SRV6 = "linux-srv6"
+
+// golang/water ifaces
+const IFACE_GOLANG_SRV6 = "golang-srv6"
+const IFACE_GOLANG_GTP4 = "golang-gtp4"

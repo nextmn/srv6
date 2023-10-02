@@ -2,9 +2,11 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
-package tasks
+package api
 
-// Task to be run
-type TaskUnit interface {
-	Run() error
+import "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2"
+
+type Registry interface {
+	Iface(name string) iproute2.Iface
+	RegisterIface(name string, iface iproute2.Iface) error
 }

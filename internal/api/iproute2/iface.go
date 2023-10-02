@@ -2,10 +2,10 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
-package tasks
+package api
 
-// Pairs of Task to be run
-type Task interface {
-	RunInit() error
-	RunExit() error
+type Iface interface {
+	CreateAndUp() error
+	Delete() error
+	Name() string
 }

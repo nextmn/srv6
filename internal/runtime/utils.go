@@ -7,25 +7,9 @@ package srv6
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 )
-
-func runIP(args ...string) error {
-	cmd := exec.Command("ip", args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
-		return err
-	}
-	return nil
-}
 
 func getMTU(iface string) (int64, error) {
 	if strings.Contains(iface, "/") || strings.Contains(iface, ".") {

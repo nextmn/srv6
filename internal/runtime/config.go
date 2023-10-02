@@ -25,13 +25,6 @@ func ParseConf(file string) error {
 }
 
 type IPRoute2 struct {
-	// TODO: make 100 and 101 default, but allow to change them
-	GTP4RTTableNumber int32 `yaml:"gtp4-rttable-number"` // for example 100
-	SRV6RTTableNumber int32 `yaml:"srv6-rttable-number"` // for example 101
-
-	// TODO: make 100 default, but allow to change it
-	RTProtoNumber int8 `yaml:"rtproto-number"` // for example 100, max value is 255
-
 	PreInitHook  *string `yaml:"pre-init-hook,omitempty"`  // script to execute before interfaces are configured
 	PostInitHook *string `yaml:"post-init-hook,omitempty"` // script to execute after interfaces are configured
 }

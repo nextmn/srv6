@@ -4,10 +4,13 @@
 // SPDX-License-Identifier: MIT
 package tasks
 
+import api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/api/tasks"
+
 // HookMulti is a Task that runs 2 SingleHook
 type HookMulti struct {
-	init TaskUnit
-	exit TaskUnit
+	init  api.TaskUnit
+	exit  api.TaskUnit
+	state bool
 }
 
 // Creates a new MultiHook
@@ -18,7 +21,11 @@ func NewMultiHook(init *string, exit *string) HookMulti {
 // Init function
 func (h *HookMulti) RunInit() error {
 	if h.exit != nil {
-		return h.init.Run()
+		if err := h.init.Run(); err != nil {
+			return err
+		}
+		h.state = true
+		return nil
 	}
 	return nil
 }
@@ -26,7 +33,16 @@ func (h *HookMulti) RunInit() error {
 // Exit function
 func (h *HookMulti) RunExit() error {
 	if h.exit != nil {
-		return h.exit.Run()
+		if err := h.exit.Run(); err != nil {
+			return err
+		}
+		h.state = false
+		return nil
 	}
 	return nil
+}
+
+// State
+func (h *HookMulti) State() bool {
+	return h.state
 }

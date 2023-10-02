@@ -4,20 +4,6 @@
 // SPDX-License-Identifier: MIT
 package srv6
 
-func linuxSRInit() error {
-	if err := linuxSRCreateIface(); err != nil {
-		return err
-	}
-	if err := linuxSRCreateEndpoints(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func linuxSRExit() error {
-	return linuxSRRemoveIface()
-}
-
 func linuxSRCreateEndpoints() error {
 	for _, endpoint := range SRv6.Endpoints {
 		switch endpoint.Behavior {
@@ -35,18 +21,4 @@ func linuxSRCreateEndpoints() error {
 		}
 	}
 	return nil
-}
-
-func linuxSRCreateIface() error {
-	if err := runIP("link", "add", LinuxSRLinkName, "type", "dummy"); err != nil {
-		return err
-	}
-	if err := runIP("link", "set", LinuxSRLinkName, "up"); err != nil {
-		return err
-	}
-	return nil
-}
-
-func linuxSRRemoveIface() error {
-	return runIP("link", "del", LinuxSRLinkName)
 }
