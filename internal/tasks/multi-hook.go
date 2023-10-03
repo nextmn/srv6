@@ -4,12 +4,12 @@
 // SPDX-License-Identifier: MIT
 package tasks
 
-import api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/api/tasks"
+import tasks_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/tasks/api"
 
 // HookMulti is a Task that runs 2 SingleHook
 type HookMulti struct {
-	init  api.TaskUnit
-	exit  api.TaskUnit
+	init  tasks_api.TaskUnit
+	exit  tasks_api.TaskUnit
 	state bool
 }
 

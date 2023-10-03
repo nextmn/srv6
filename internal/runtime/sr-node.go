@@ -16,7 +16,7 @@ import (
 	gopacket "github.com/google/gopacket"
 	layers "github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
-	"github.com/louisroyer/nextmn-srv6/mup"
+	mup "github.com/louisroyer/nextmn-srv6/internal/mup"
 	"github.com/wmnsk/go-gtp/gtpv1"
 )
 

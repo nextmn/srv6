@@ -11,17 +11,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ParseConf(file string) error {
+func ParseConf(file string) (*SRv6Config, error) {
+	var conf SRv6Config
 	path, err := filepath.Abs(file)
 	yamlFile, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	err = yaml.Unmarshal(yamlFile, &SRv6)
+	err = yaml.Unmarshal(yamlFile, &conf)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return conf, nil
 }
 
 type IPRoute2 struct {

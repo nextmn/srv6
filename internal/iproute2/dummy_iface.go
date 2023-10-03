@@ -43,7 +43,7 @@ func (iface DummyIface) CreateAndUp() error {
 
 // Delete iproute2 dummy interface
 func (iface DummyIface) Delete() error {
-	if err := runIP("link", "del", iface.name); err != nil {
+	if err := runIP("link", "del", iface.Name()); err != nil {
 		return err
 	}
 	return nil

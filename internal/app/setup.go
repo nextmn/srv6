@@ -7,34 +7,43 @@ package app
 import (
 	"fmt"
 
-	app_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/api/app"
-	tasks_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/api/tasks"
+	runtime "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/runtime"
+	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/tasks"
+	tasks_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/tasks/api"
 )
 
 type Setup struct {
-	Config   *SRv6Config
+	config   *runtime.SRv6Config
 	tasks    map[string]tasks_api.Task
 	registry app_api.Registry
+}
+
+func NewSetup(config *runtime.SRv6Config) *Setup {
+	return &Setup{
+		config:   config,
+		tasks:    make(map[string]tasks_api.Task),
+		registry: NewRegistry(),
+	}
 }
 
 // Add tasks to setup
 func (s *Setup) AddTasks() {
 	// 0. user pre-hook
-	s.tasks["hook.pre"] = NewMultiHook(Config.IPRoute2.PreInitHook, Config.IPRoute2.PreExitHook)
+	s.tasks["hook.pre"] = tasks.NewMultiHook(Config.IPRoute2.PreInitHook, Config.IPRoute2.PreExitHook)
 
 	// 1.  ifaces
 	// 1.1 iface linux-srv6 (type dummy)
-	//	s.tasks["iproute2.iface.linux-srv6") //TODO
+	s.tasks["iproute2.iface.linux-srv6"] = tasks.NewTaskDummyIface(IFACE_LINUX_SRV6, s.registry)
 	// 1.2 iface golang-srv6 (tun via water)
-	//	s.tasks["nextmn.tun.golang-srv6") //TODO
+	s.tasks["nextmn.tun.golang-srv6"] = tasks.NewTaskTunIface(IFACE_GOLANG_SRV6, s.registry)
 	// 1.3 iface golang-gtp4 (tun via water)
-	//	s.tasks["nextmn.tun.golang-gtp4") //TODO
+	s.tasks["nextmn.tun.golang-gtp4"] = tasks.NewTaskTunIface(IFACE_GOLANG_GTP4, s.registry)
 
 	// 2.  ip routes
 	// 2.1 blackhole route (srv6)
-	//	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = NewIPRoute2TaskBlackHole(s.registry)) //TODO
+	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = NewTaskBlackhole(IFACE_GOLANG_SRV6, s.registry)
 	// 2.2 blackhole route (gtp4)
-	//	s.tasks["iproute2.route.nextmn-gtp4.blackhole") //TODO
+	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = NewTaskBlackhole(IFACE_GOLANG_GTP4, s.registry)
 	// 2.3 routes to linux-srv6 endpoints (= endpoints themself)
 	//	s.tasks["iproute2.routes.linux-srv6") //TODO
 	// 2.4 routes to nextmn-gtp4 endpoints + endpoints
@@ -208,4 +217,10 @@ func (s *Setup) Exit() {
 	}
 
 	return nil
+}
+
+// Run
+func (s *Setup) Run() error {
+	s.Init()
+	select {}
 }

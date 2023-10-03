@@ -5,35 +5,17 @@
 package iproute2
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"os/exec"
-
-	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/api"
+	iproute2_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2/api"
 )
-
-func runIP(args ...string) error {
-	cmd := exec.Command("ip", args...)
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stdin = os.Stdin
-	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
-		return err
-	}
-	return nil
-}
 
 // IPRoute2 Table
 type Table struct {
-	iface api.Iface // table name
-	proto string    // proto name
+	iface iproute2_api.Iface // interface
+	proto string             // proto name
 }
 
 // Create a new Table
-func NewTable(iface api.Iface, proto string) Table {
+func NewTable(iface iproute2_api.Iface, proto string) Table {
 	return Table{iface: iface, proto: proto}
 }
 
