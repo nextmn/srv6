@@ -41,23 +41,29 @@ func (s *Setup) AddTasks() {
 
 	// 2.  ip routes
 	// 2.1 blackhole route (srv6)
-	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = NewTaskBlackhole(IFACE_GOLANG_SRV6, s.registry)
+	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = NewTaskBlackhole(runtime.RT_TABLE_NEXTMN_SRV6)
 	// 2.2 blackhole route (gtp4)
-	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = NewTaskBlackhole(IFACE_GOLANG_GTP4, s.registry)
-	// 2.3 routes to linux-srv6 endpoints (= endpoints themself)
-	//	s.tasks["iproute2.routes.linux-srv6") //TODO
-	// 2.4 routes to nextmn-gtp4 endpoints + endpoints
-	//	s.tasks["nextmn.endpoints.gtp4") //TODO
-	// 2.5 routes to nextmn-srv6 endpoints + endpoints
-	//	s.tasks["nextmn.endpoints.srv6") //TODO
+	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = NewTaskBlackhole(runtime.RT_TABLE_NEXTMN_GTP4)
 
-	// 3.  ip rules
-	// 3.1 rule to rttable nextmn-srv6
-	//	s.tasks["iproute2.rule.nextmn-srv6") //TODO
-	// 3.2 rule to rttable nextmn-gtp4
-	//	s.tasks["iproute2.rule.nextmn-gtp4") //TODO
+	// 3.  endpoints
+	// 3.1 routes to linux-srv6 endpoints (= endpoints themself)
+	s.tasks["iproute2.endpoints.linux-srv6"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderLinux), runtime.IFACE_LINUX_SRV6)
+	// 3.2 routes to nextmn-srv6 endpoints + endpoints
+	s.tasks["nextmn.endpoints.srv6"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderNextMNSRv6), runtime.IFACE_GOLANG_SRV6)
+	// 3.3 routes to nextmn-gtp4 endpoints + endpoints
+	s.tasks["nextmn.endpoints.gtp4"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderNextMNGTP4), runtime.IFACE_GOLANG_GTP4)
 
-	// 4. user post-hook
+	// 4.  ip rules
+	// 4.1 rule to rttable nextmn-srv6
+	if Config.Locator != nil {
+		s.tasks["iproute2.rule.nextmn-srv6"] = NewTaskIPRule(Config.Locator, runtime.RT_TABLE_NEXTMN_SRV6)
+	}
+	// 4.2 rule to rttable nextmn-gtp4
+	if Config.IPv4HeadendPrefix != nil {
+		s.tasks["iproute2.rule.nextmn-gtp4"] = NewTaskIPRule(Config.IPv4HeadendPrefix, runtime.RT_TABLE_NEXTMN_GTP4)
+	}
+
+	// 5. user post-hook
 	s.tasks["hook.post"] = NewMultiHook(Config.IPRoute2.PostInitHook, Config.IPRoute2.PostExitHook)
 
 }
@@ -124,30 +130,32 @@ func (s *Setup) Init() error {
 	if err := s.RunInitTask("iproute2.route.nextmn-gtp4.blackhole"); err != nil {
 		return err
 	}
-	// 2.3 routes to linux-srv6 endpoints (= endpoints themself)
-	if err := s.RunInitTask("iproute2.routes.linux-srv6"); err != nil {
+
+	// 3.  endpoints
+	// 3.1 routes to linux-srv6 endpoints (= endpoints themself)
+	if err := s.RunInitTask("iproute2.endpoints.linux-srv6"); err != nil {
 		return err
 	}
-	// 2.4 routes to nextmn-gtp4 endpoints + endpoints
-	if err := s.RunInitTask("nextmn.endpoints.gtp4"); err != nil {
-		return err
-	}
-	// 2.5 routes to nextmn-srv6 endpoints + endpoints
+	// 3.2 routes to nextmn-srv6 endpoints + endpoints
 	if err := s.RunInitTask("nextmn.endpoints.srv6"); err != nil {
 		return err
 	}
+	// 3.3 routes to nextmn-gtp4 endpoints + endpoints
+	if err := s.RunInitTask("nextmn.endpoints.gtp4"); err != nil {
+		return err
+	}
 
-	// 3.  ip rules
-	// 3.1 rule to rttable nextmn-srv6
+	// 4.  ip rules
+	// 4.1 rule to rttable nextmn-srv6
 	if err := s.RunInitTask("iproute2.rule.nextmn-srv6"); err != nil {
 		return err
 	}
-	// 3.2 rule to rttable nextmn-gtp4
+	// 4.2 rule to rttable nextmn-gtp4
 	if err := s.RunInitTask("iproute2.rule.nextmn-gtp4"); err != nil {
 		return err
 	}
 
-	// 4. user post-hook
+	// 5. user post-hook
 	if err := s.RunInitTask("hook-post"); err != nil {
 		return err
 	}
@@ -175,7 +183,7 @@ func (s *Setup) Exit() {
 		fmt.Println(err)
 	}
 
-	// 2.  ip routes
+	// 2  endpoints
 	// 2. routes to golang-gtp4 endpoints + endpoints
 	if err := s.RunExitTask("nextmn.endpoints.gtp4"); err != nil {
 		fmt.Println(err)
@@ -185,33 +193,35 @@ func (s *Setup) Exit() {
 		fmt.Println(err)
 	}
 	// 2.3 routes to linux-srv6 endpoints (= endpoints themself)
-	if err := s.RunExitTask("iproute2.routes.linux-srv6"); err != nil {
+	if err := s.RunExitTask("iproute2.endpoints.linux-srv6"); err != nil {
 		fmt.Println(err)
 	}
-	// 2.4 blackhole route (gtp4)
+
+	// 3.  ip routes
+	// 3.1 blackhole route (gtp4)
 	if err := s.RunExitTask("iproute2.route.nextmn-gtp4.blackhole"); err != nil {
 		fmt.Println(err)
 	}
-	// 2.5 blackhole route (srv6)
+	// 3.2 blackhole route (srv6)
 	if err := s.RunExitTask("iproute2.route.nextmn-srv6.blackhole"); err != nil {
 		fmt.Println(err)
 	}
 
-	// 3.  ifaces
-	// 3.1 iface golang-gtp4 (tun via water)
+	// 4.  ifaces
+	// 4.1 iface golang-gtp4 (tun via water)
 	if err := s.RunExitTask("nextmn.tun.golang-gtp4"); err != nil {
 		fmt.Println(err)
 	}
-	// 3.2 iface golang-srv6 (tun via water)
+	// 4.2 iface golang-srv6 (tun via water)
 	if err := s.RunExitTask("nextmn.tun.golang-srv6"); err != nil {
 		fmt.Println(err)
 	}
-	// 3.3 iface linux-srv6 (type dummy)
+	// 4.3 iface linux-srv6 (type dummy)
 	if err := s.RunExitTask("iproute2.iface.linux-srv6"); err != nil {
 		fmt.Println(err)
 	}
 
-	// 4. user post-hook
+	// 5. user post-hook
 	if err := s.RunExitTask("hook-post"); err != nil {
 		fmt.Println(err)
 	}

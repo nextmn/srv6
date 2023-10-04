@@ -4,19 +4,18 @@
 // SPDX-License-Identifier: MIT
 package iproute2
 
-import (
-	iproute2_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2/api"
-)
-
 // IPRoute2 Table
 type Table struct {
-	iface iproute2_api.Iface // interface
-	proto string             // proto name
+	table string // table name
+	proto string // proto name
 }
 
 // Create a new Table
-func NewTable(iface iproute2_api.Iface, proto string) Table {
-	return Table{iface: iface, proto: proto}
+func NewTable(table string, proto string) Table {
+	return Table{
+		table: table,
+		proto: proto,
+	}
 }
 
 // Run an IProute2 command using defined proto
@@ -71,28 +70,28 @@ func (t Table) delRule6(args ...string) error {
 
 // Add a new rule to lookup the table, for IPv4
 func (t Table) AddRule4(to string, table string) error {
-	return t.addRule4("to", to, "lookup", t.iface.Name())
+	return t.addRule4("to", to, "lookup", t.table)
 }
 
 // Delete a rule to lookup the table, for IPv4
 func (t Table) DelRule4(to string, table string) error {
-	return t.delRule4("to", to, "lookup", t.iface.Name())
+	return t.delRule4("to", to, "lookup", t.table)
 }
 
 // Add a new rule to lookup the table, for IPv6
 func (t Table) AddRule6(to string, table string) error {
-	return t.addRule6("to", to, "lookup", t.iface.Name())
+	return t.addRule6("to", to, "lookup", t.table)
 }
 
 // Delete a rule to lookup the table, for IPv6
 func (t Table) DelRule6(to string, table string) error {
-	return t.delRule6("to", to, "lookup", t.iface.Name())
+	return t.delRule6("to", to, "lookup", t.table)
 }
 
 // Add a route on this table, for IPv4
 func (t Table) AddRoute4(args ...string) error {
 	a := []string{"route", "add"}
-	table := []string{"table", t.iface.Name()}
+	table := []string{"table", t.table}
 	a = append(a, args...)
 	a = append(a, table...)
 	return t.runIP4(a...)
@@ -101,7 +100,7 @@ func (t Table) AddRoute4(args ...string) error {
 // Delete a route on this table, for IPv4
 func (t Table) DelRoute4(args ...string) error {
 	a := []string{"route", "del"}
-	table := []string{"table", t.iface.Name()}
+	table := []string{"table", t.table}
 	a = append(a, args...)
 	a = append(a, table...)
 	return t.runIP4(a...)
@@ -110,7 +109,7 @@ func (t Table) DelRoute4(args ...string) error {
 // Add a route on this table, for IPv6
 func (t Table) AddRoute6(args ...string) error {
 	a := []string{"route", "add"}
-	table := []string{"table", t.iface.Name()}
+	table := []string{"table", t.table}
 	a = append(a, args...)
 	a = append(a, table...)
 	return t.runIP6(a...)
@@ -119,7 +118,7 @@ func (t Table) AddRoute6(args ...string) error {
 // Delete a route on this table, for IPv6
 func (t Table) DelRoute6(args ...string) error {
 	a := []string{"route", "del"}
-	table := []string{"table", t.iface.Name()}
+	table := []string{"table", t.table}
 	a = append(a, args...)
 	a = append(a, table...)
 	return t.runIP6(a...)
