@@ -5,8 +5,8 @@
 package tasks
 
 import (
-	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2"
-	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/runtime"
+	"github.com/nextmn/srv6/internal/iproute2"
+	"github.com/nextmn/srv6/internal/runtime"
 )
 
 // TaskBlackhole

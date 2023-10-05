@@ -5,8 +5,8 @@
 package app_api
 
 import (
-	iproute2_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2/api"
-	netfunc_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/netfunc/api"
+	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
+	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 type Registry interface {

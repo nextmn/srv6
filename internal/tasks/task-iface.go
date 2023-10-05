@@ -5,9 +5,9 @@
 package tasks
 
 import (
-	app_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/app/api"
-	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2"
-	iproute2_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/iproute2/api"
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	iproute2 "github.com/nextmn/srv6/internal/iproute2"
+	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
 )
 
 // TaskIface

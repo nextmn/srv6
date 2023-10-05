@@ -7,9 +7,9 @@ package app
 import (
 	"fmt"
 
-	runtime "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/runtime"
-	"github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/tasks"
-	tasks_api "github.com/louisroyer/nextmn-srv6/cmd/nextmn-srv6/internal/tasks/api"
+	runtime "github.com/nextmn/srv6/internal/runtime"
+	tasks "github.com/nextmn/srv6/internal/tasks"
+	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 )
 
 type Setup struct {
@@ -45,13 +45,15 @@ func (s *Setup) AddTasks() {
 	// 2.2 blackhole route (gtp4)
 	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = NewTaskBlackhole(runtime.RT_TABLE_NEXTMN_GTP4)
 
-	// 3.  endpoints
-	// 3.1 routes to linux-srv6 endpoints (= endpoints themself)
+	// 3.  endpoints + headends
+	// 3.1 linux-srv6 headends
+	s.tasks["iproute2.headends.linux-srv6"] = NewTaskLinuxHeadends(Config.Headends.Filter(runtime.ProviderLinux), runtime.IFACE_LINUX_SRV6)
+	// 3.1 linux-srv6 endpoints
 	s.tasks["iproute2.endpoints.linux-srv6"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderLinux), runtime.IFACE_LINUX_SRV6)
-	// 3.2 routes to nextmn-srv6 endpoints + endpoints
-	s.tasks["nextmn.endpoints.srv6"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderNextMNSRv6), runtime.IFACE_GOLANG_SRV6)
-	// 3.3 routes to nextmn-gtp4 endpoints + endpoints
-	s.tasks["nextmn.endpoints.gtp4"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderNextMNGTP4), runtime.IFACE_GOLANG_GTP4)
+	// 3.2 nextmn-srv6 endpoints
+	s.tasks["nextmn.endpoints.srv6"] = NewTaskGolangSRv6Endpoints(Config.Endpoints.Filter(runtime.ProviderNextMNSRv6), runtime.IFACE_GOLANG_SRV6)
+	// 3.3 nextmn-gtp4 headends
+	s.tasks["nextmn.headends.gtp4"] = NewTaskGolangGTP4Headends(Config.Headends.Filter(runtime.ProviderNextMNGTP4), runtime.IFACE_GOLANG_GTP4)
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
@@ -131,17 +133,21 @@ func (s *Setup) Init() error {
 		return err
 	}
 
-	// 3.  endpoints
-	// 3.1 routes to linux-srv6 endpoints (= endpoints themself)
+	// 3.  endpoints + headends
+	// 3.1 linux-srv6 headends
+	if err := s.RunInitTask("iproute2.headends.linux-srv6"); err != nil {
+		return err
+	}
+	// 3.2 linux-srv6 endpoints
 	if err := s.RunInitTask("iproute2.endpoints.linux-srv6"); err != nil {
 		return err
 	}
-	// 3.2 routes to nextmn-srv6 endpoints + endpoints
+	// 3.3 nextmn-srv6 endpoints
 	if err := s.RunInitTask("nextmn.endpoints.srv6"); err != nil {
 		return err
 	}
-	// 3.3 routes to nextmn-gtp4 endpoints + endpoints
-	if err := s.RunInitTask("nextmn.endpoints.gtp4"); err != nil {
+	// 3.4 nextmn-gtp4 headends
+	if err := s.RunInitTask("nextmn.headends.gtp4"); err != nil {
 		return err
 	}
 
@@ -183,17 +189,21 @@ func (s *Setup) Exit() {
 		fmt.Println(err)
 	}
 
-	// 2  endpoints
-	// 2. routes to golang-gtp4 endpoints + endpoints
-	if err := s.RunExitTask("nextmn.endpoints.gtp4"); err != nil {
+	// 2  endpoints + headends
+	// 2. golang-gtp4 headends
+	if err := s.RunExitTask("nextmn.headends.gtp4"); err != nil {
 		fmt.Println(err)
 	}
-	// 2.2 routes to golang-srv6 endpoints + endpoints
+	// 2.2 golang-srv6 endpoints
 	if err := s.RunExitTask("nextmn.endpoints.srv6"); err != nil {
 		fmt.Println(err)
 	}
-	// 2.3 routes to linux-srv6 endpoints (= endpoints themself)
+	// 2.3 linux-srv6 endpoints
 	if err := s.RunExitTask("iproute2.endpoints.linux-srv6"); err != nil {
+		fmt.Println(err)
+	}
+	// 2.3 linux-srv6 headends
+	if err := s.RunExitTask("iproute2.headends.linux-srv6"); err != nil {
 		fmt.Println(err)
 	}
 
