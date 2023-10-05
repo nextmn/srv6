@@ -6,12 +6,14 @@ package tasks
 
 // FakeTask is a dummy task that do nothing
 type FakeTask struct {
-	state bool
+	WithState
 }
 
-// Create a new DummyTask
+// Create a new FakeTask
 func NewFakeTask() *FakeTask {
-	return &FakeTask{}
+	return &FakeTask{
+		WithState: NewState(),
+	}
 }
 
 // Init
@@ -24,9 +26,4 @@ func (t *FakeTask) RunInit() error {
 func (t *FakeTask) RunExit() error {
 	t.state = false
 	return nil
-}
-
-// Returns state of the task
-func (t *FakeTask) State() bool {
-	return t.state
 }

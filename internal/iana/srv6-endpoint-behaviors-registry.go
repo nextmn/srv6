@@ -51,6 +51,17 @@ func ToEndpointBehavior(s string) (EndpointBehavior, error) {
 	}
 }
 
+func (e *EndpointBehavior) ToIPRoute2Action() (string, error) {
+	switch *e {
+	case End:
+		return "End", nil
+	case End_DX4:
+		return "End.DX4", nil
+	default:
+		return "", fmt.Errorf("Not implemented")
+	}
+}
+
 // Unmarshal YAML to EndpointBehavior
 func (e *EndpointBehavior) UnmarshalYAML(n *yaml.Node) error {
 	eb, err := ToEndpointBehavior(n.Value)

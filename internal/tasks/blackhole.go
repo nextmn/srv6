@@ -11,15 +11,15 @@ import (
 
 // TaskBlackhole
 type TaskBlackhole struct {
+	WithState
 	table iproute2.Table
-	state bool
 }
 
 // Create a new TaskBlackhole
 func NewTaskBlackhole(table_name string) *TaskBlackhole {
 	return &TaskBlackhole{
-		table: iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
-		state: false,
+		WithState: NewState(),
+		table:     iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 	}
 }
 
@@ -39,9 +39,4 @@ func (t *TaskBlackhole) RunExit() error {
 	}
 	t.state = false
 	return nil
-}
-
-// Returns state of the task
-func (t *TaskBlackhole) State() bool {
-	return t.state
 }

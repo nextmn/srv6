@@ -6,7 +6,6 @@ package app_api
 
 import (
 	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
-	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 type Registry interface {
@@ -14,14 +13,4 @@ type Registry interface {
 	Iface(name string) (iproute2_api.Iface, bool)
 	RegisterIface(iface iproute2_api.Iface) error
 	DeleteIface(name string)
-
-	// endpoints
-	Endpoint(name string) (netfunc_api.Endpoint, bool)
-	RegisterEndpoint(endpoint netfunc_api.Endpoint) error
-	DeleteEndpoint(name string)
-
-	// headends
-	Headend(name string) (netfunc_api.Headend, bool)
-	RegisterHeadend(endpoint netfunc_api.Headend) error
-	DeleteHeadend(name string)
 }

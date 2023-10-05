@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: MIT
 package config
 
-type Policy struct { // temporary field
-	SegmentsList []string `yaml:"segments-list"` // temporary field
+type Policy struct {
+	MatchingRule *string   `yaml:"route-to,omitempty"`
+	SegmentsList *[]string `yaml:"segments-list,omitempty"`
 }

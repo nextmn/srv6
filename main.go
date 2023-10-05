@@ -57,6 +57,7 @@ func main() {
 			}
 
 			setup = srv6_app.NewSetup(conf)
+			setup.AddTasks()
 			if err := setup.Run(); err != nil {
 				fmt.Println("Error while running, exiting…")
 				log.Fatal(err)

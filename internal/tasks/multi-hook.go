@@ -8,14 +8,18 @@ import tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 
 // HookMulti is a Task that runs 2 SingleHook
 type HookMulti struct {
-	init  tasks_api.TaskUnit
-	exit  tasks_api.TaskUnit
-	state bool
+	WithState
+	init tasks_api.TaskUnit
+	exit tasks_api.TaskUnit
 }
 
 // Creates a new MultiHook
 func NewMultiHook(init *string, exit *string) *HookMulti {
-	return &HookMulti{init: NewSingleHook(init), exit: NewSingleHook(exit)}
+	return &HookMulti{
+		WithState: NewState(),
+		init:      NewSingleHook(init),
+		exit:      NewSingleHook(exit),
+	}
 }
 
 // Init function
@@ -40,9 +44,4 @@ func (h *HookMulti) RunExit() error {
 		return nil
 	}
 	return nil
-}
-
-// State
-func (h *HookMulti) State() bool {
-	return h.state
 }

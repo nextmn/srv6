@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 package iproute2
 
+import "github.com/nextmn/srv6/internal/iana"
+
 // IPRoute2 Table
 type Table struct {
 	table string // table name
@@ -141,6 +143,30 @@ func (t Table) DelDefaultRoutesBlackhole() error {
 		return err
 	}
 	if err := t.DelRoute6("blackhole", "default"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Add Linux SRv6 Endpoint
+func (t Table) AddSeg6Local(sid string, behavior iana.EndpointBehavior, dev string) error {
+	linux_behavior, err := behavior.ToIPRoute2Action()
+	if err != nil {
+		return err
+	}
+	if err := t.AddRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete Linux SRv6 Endpoint
+func (t Table) DelSeg6Local(sid string, behavior iana.EndpointBehavior, dev string) error {
+	linux_behavior, err := behavior.ToIPRoute2Action()
+	if err != nil {
+		return err
+	}
+	if err := t.DelRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
 		return err
 	}
 	return nil

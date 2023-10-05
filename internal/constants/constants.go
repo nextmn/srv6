@@ -13,6 +13,7 @@ const RT_PROTO_NEXTMN = "nextmn"
 // iproute2 rt tables
 const RT_TABLE_NEXTMN_SRV6 = "nextmn/srv6"
 const RT_TABLE_NEXTMN_GTP4 = "nextmn/gtp4"
+const RT_TABLE_MAIN = "main"
 
 // iproute2 ifaces
 const IFACE_LINUX_SRV6 = "linux-srv6"

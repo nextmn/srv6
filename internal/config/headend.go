@@ -5,10 +5,11 @@
 package config
 
 type Headend struct {
+	Name          string
 	Provider      Provider
-	Type          HeadendType
-	Policy        *Policy // temporary field
-	SourceAddress string  `yaml:"set-source-address"`
+	Behavior      HeadendBehavior
+	Policy        *Policy
+	SourceAddress string `yaml:"set-source-address"`
 }
 
 type Headends []*Headend

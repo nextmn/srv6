@@ -38,7 +38,7 @@ func (s *Setup) AddTasks() {
 
 	// 1.  ifaces
 	// 1.1 iface linux-srv6 (type dummy)
-	s.tasks["iproute2.iface.linux-srv6"] = tasks.NewTaskDummyIface(constants.IFACE_LINUX_SRV6, s.registry)
+	s.tasks["iproute2.iface.linux-srv6"] = tasks.NewTaskDummyIface(constants.IFACE_LINUX_SRV6)
 	// 1.2 iface golang-srv6 (tun via water)
 	s.tasks["nextmn.tun.golang-srv6"] = tasks.NewTaskTunIface(constants.IFACE_GOLANG_SRV6, s.registry)
 	// 1.3 iface golang-gtp4 (tun via water)
@@ -52,18 +52,28 @@ func (s *Setup) AddTasks() {
 
 	// 3.  endpoints + headends
 	// 3.1 linux-srv6 headends
-
-	s.tasks["iproute2.headends.linux-srv6"] = tasks.NewFakeTask() // FIXME
-	//s.tasks["iproute2.headends.linux-srv6"] = tasks.NewTaskLinuxHeadends(s.config.Headends.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
+	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.headend.linux-srv6/%s", h.Name)
+		s.tasks[t_name] = tasks.NewFakeTask() // FIXME
+		//s.tasks[t_name] = tasks.NewTaskLinuxHeadend(e, constants.RT_TABLE_MAIN, constants.IFACE_LINUX_SRV6)
+	}
 	// 3.1 linux-srv6 endpoints
-	s.tasks["iproute2.endpoints.linux-srv6"] = tasks.NewFakeTask() // FIXME
-	//s.tasks["iproute2.endpoints.linux-srv6"] = tasks.NewTaskLinuxEndpoints(s.config.Endpoints.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
+	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.endpoint.linux-srv6/%s", e.Sid)
+		s.tasks[t_name] = tasks.NewTaskLinuxEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, constants.IFACE_LINUX_SRV6)
+	}
 	// 3.2 nextmn-srv6 endpoints
-	s.tasks["nextmn.endpoints.srv6"] = tasks.NewFakeTask() // FIXME
-	//s.tasks["nextmn.endpoints.srv6"] = tasks.NewTaskGolangSRv6Endpoints(s.config.Endpoints.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_SRV6)
+	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.endpoint.srv6/%s", e.Sid)
+		s.tasks[t_name] = tasks.NewFakeTask() //FIXME
+		//s.tasks[t_name] = tasks.NewTaskGolangSRv6Endpoints(e, constants.RT_TABLE_NEXTMN_SRV6, contants.IFACE_GOLANGE_SRV6, s.registry)
+	}
 	// 3.3 nextmn-gtp4 headends
-	s.tasks["nextmn.headends.gtp4"] = tasks.NewFakeTask() // FIXME
-	//s.tasks["nextmn.headends.gtp4"] = tasks.NewTaskGolangGTP4Headends(s.config.Headends.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_GTP4)
+	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
+		s.tasks[t_name] = tasks.NewFakeTask() // FIXME
+		//s.tasks[t_name] = tasks.NewTaskGolangHeadend(e, constants.RT_TABLE_GTP4, constants.IFACE_GOLANG_GTP4, s.registry)
+	}
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
@@ -141,20 +151,32 @@ func (s *Setup) Init() error {
 
 	// 3.  endpoints + headends
 	// 3.1 linux-srv6 headends
-	if err := s.RunInitTask("iproute2.headends.linux-srv6"); err != nil {
-		return err
+	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.headend.linux-srv6/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
 	}
 	// 3.2 linux-srv6 endpoints
-	if err := s.RunInitTask("iproute2.endpoints.linux-srv6"); err != nil {
-		return err
+	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.endpoint.linux-srv6/%s", e.Sid)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
 	}
 	// 3.3 nextmn-srv6 endpoints
-	if err := s.RunInitTask("nextmn.endpoints.srv6"); err != nil {
-		return err
+	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.endpoint.srv6/%s", e.Sid)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
 	}
 	// 3.4 nextmn-gtp4 headends
-	if err := s.RunInitTask("nextmn.headends.gtp4"); err != nil {
-		return err
+	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
 	}
 
 	// 4.  ip rules
@@ -197,20 +219,32 @@ func (s *Setup) Exit() {
 
 	// 2  endpoints + headends
 	// 2. golang-gtp4 headends
-	if err := s.RunExitTask("nextmn.headends.gtp4"); err != nil {
-		fmt.Println(err)
+	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
 	}
 	// 2.2 golang-srv6 endpoints
-	if err := s.RunExitTask("nextmn.endpoints.srv6"); err != nil {
-		fmt.Println(err)
+	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
+		t_name := fmt.Sprintf("nextmn.endpoint.srv6/%s", e.Sid)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
 	}
 	// 2.3 linux-srv6 endpoints
-	if err := s.RunExitTask("iproute2.endpoints.linux-srv6"); err != nil {
-		fmt.Println(err)
+	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.endpoint.linux-srv6/%s", e.Sid)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
 	}
 	// 2.3 linux-srv6 headends
-	if err := s.RunExitTask("iproute2.headends.linux-srv6"); err != nil {
-		fmt.Println(err)
+	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
+		t_name := fmt.Sprintf("iproute2.headend.linux-srv6/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	// 3.  ip routes

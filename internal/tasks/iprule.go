@@ -11,7 +11,7 @@ import (
 
 // TaskIPRule
 type TaskIPRule struct {
-	state   bool
+	WithState
 	prefix  string
 	family4 bool
 	table   iproute2.Table
@@ -20,20 +20,20 @@ type TaskIPRule struct {
 // Create a new Task for IPRule
 func NewTaskIP6Rule(tablename string, prefix string) *TaskIPRule {
 	return &TaskIPRule{
-		family4: false,
-		state:   false,
-		prefix:  prefix,
-		table:   iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
+		WithState: NewState(),
+		family4:   false,
+		prefix:    prefix,
+		table:     iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
 	}
 }
 
 // Create a new Task for IPRule
 func NewTaskIP4Rule(tablename string, prefix string) *TaskIPRule {
 	return &TaskIPRule{
-		family4: true,
-		state:   false,
-		prefix:  prefix,
-		table:   iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
+		WithState: NewState(),
+		family4:   true,
+		prefix:    prefix,
+		table:     iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
 	}
 }
 
@@ -65,9 +65,4 @@ func (t *TaskIPRule) RunExit() error {
 	}
 	t.state = false
 	return nil
-}
-
-// Returns state of the task
-func (t *TaskIPRule) State() bool {
-	return t.state
 }

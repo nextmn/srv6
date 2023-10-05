@@ -2,11 +2,18 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
-package netfunc_api
+package tasks
 
-import "github.com/nextmn/srv6/internal/iana"
+type WithState struct {
+	state bool
+}
 
-type Endpoint interface {
-	Name() string
-	Behavior() iana.EndpointBehavior
+func NewState() WithState {
+	return WithState{
+		state: false,
+	}
+}
+
+func (ws *WithState) State() bool {
+	return ws.state
 }
