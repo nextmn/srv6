@@ -52,12 +52,17 @@ func (s *Setup) AddTasks() {
 
 	// 3.  endpoints + headends
 	// 3.1 linux-srv6 headends
+
+	s.tasks["iproute2.headends.linux-srv6"] = tasks.NewFakeTask() // FIXME
 	//s.tasks["iproute2.headends.linux-srv6"] = tasks.NewTaskLinuxHeadends(s.config.Headends.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
 	// 3.1 linux-srv6 endpoints
+	s.tasks["iproute2.endpoints.linux-srv6"] = tasks.NewFakeTask() // FIXME
 	//s.tasks["iproute2.endpoints.linux-srv6"] = tasks.NewTaskLinuxEndpoints(s.config.Endpoints.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
 	// 3.2 nextmn-srv6 endpoints
+	s.tasks["nextmn.endpoints.srv6"] = tasks.NewFakeTask() // FIXME
 	//s.tasks["nextmn.endpoints.srv6"] = tasks.NewTaskGolangSRv6Endpoints(s.config.Endpoints.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_SRV6)
 	// 3.3 nextmn-gtp4 headends
+	s.tasks["nextmn.headends.gtp4"] = tasks.NewFakeTask() // FIXME
 	//s.tasks["nextmn.headends.gtp4"] = tasks.NewTaskGolangGTP4Headends(s.config.Headends.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_GTP4)
 
 	// 4.  ip rules
