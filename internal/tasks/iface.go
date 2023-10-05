@@ -44,9 +44,7 @@ func (t *TaskIface) RunExit() error {
 	if err := t.iface.Delete(); err != nil {
 		return err
 	}
-	if err := t.registry.DeleteIface(t.iface.Name()); err != nil {
-		return err
-	}
+	t.registry.DeleteIface(t.iface.Name())
 	t.state = false
 	return nil
 }

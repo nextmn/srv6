@@ -6,6 +6,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -19,7 +20,7 @@ const (
 
 // Unmarshal YAML to Provider
 func (p *Provider) UnmarshalYAML(n *yaml.Node) error {
-	switch string.ToLower(n.Value) {
+	switch strings.ToLower(n.Value) {
 	case "linux":
 		*p = ProviderLinux
 	case "nextmn":

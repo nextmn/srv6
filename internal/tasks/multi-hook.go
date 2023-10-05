@@ -14,8 +14,8 @@ type HookMulti struct {
 }
 
 // Creates a new MultiHook
-func NewMultiHook(init *string, exit *string) HookMulti {
-	return HookMulti{init: NewSingleHook(init), exit: NewSingleHook(exit)}
+func NewMultiHook(init *string, exit *string) *HookMulti {
+	return &HookMulti{init: NewSingleHook(init), exit: NewSingleHook(exit)}
 }
 
 // Init function

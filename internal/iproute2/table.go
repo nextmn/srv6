@@ -69,22 +69,22 @@ func (t Table) delRule6(args ...string) error {
 // public methods
 
 // Add a new rule to lookup the table, for IPv4
-func (t Table) AddRule4(to string, table string) error {
+func (t Table) AddRule4(to string) error {
 	return t.addRule4("to", to, "lookup", t.table)
 }
 
 // Delete a rule to lookup the table, for IPv4
-func (t Table) DelRule4(to string, table string) error {
+func (t Table) DelRule4(to string) error {
 	return t.delRule4("to", to, "lookup", t.table)
 }
 
 // Add a new rule to lookup the table, for IPv6
-func (t Table) AddRule6(to string, table string) error {
+func (t Table) AddRule6(to string) error {
 	return t.addRule6("to", to, "lookup", t.table)
 }
 
 // Delete a rule to lookup the table, for IPv6
-func (t Table) DelRule6(to string, table string) error {
+func (t Table) DelRule6(to string) error {
 	return t.delRule6("to", to, "lookup", t.table)
 }
 

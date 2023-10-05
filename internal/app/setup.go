@@ -7,18 +7,20 @@ package app
 import (
 	"fmt"
 
-	runtime "github.com/nextmn/srv6/internal/runtime"
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	"github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/constants"
 	tasks "github.com/nextmn/srv6/internal/tasks"
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 )
 
 type Setup struct {
-	config   *runtime.SRv6Config
+	config   *config.SRv6Config
 	tasks    map[string]tasks_api.Task
 	registry app_api.Registry
 }
 
-func NewSetup(config *runtime.SRv6Config) *Setup {
+func NewSetup(config *config.SRv6Config) *Setup {
 	return &Setup{
 		config:   config,
 		tasks:    make(map[string]tasks_api.Task),
@@ -28,52 +30,51 @@ func NewSetup(config *runtime.SRv6Config) *Setup {
 
 // Add tasks to setup
 func (s *Setup) AddTasks() {
-	// 0. user pre-hook
-	s.tasks["hook.pre"] = tasks.NewMultiHook(Config.IPRoute2.PreInitHook, Config.IPRoute2.PreExitHook)
+	// 0.  user hooks
+	// 0.1 pre-hooks
+	s.tasks["hook.pre"] = tasks.NewMultiHook(s.config.IPRoute2.PreInitHook, s.config.IPRoute2.PreExitHook)
+	// 0.2 post-hooks
+	s.tasks["hook.post"] = tasks.NewMultiHook(s.config.IPRoute2.PostInitHook, s.config.IPRoute2.PostExitHook)
 
 	// 1.  ifaces
 	// 1.1 iface linux-srv6 (type dummy)
-	s.tasks["iproute2.iface.linux-srv6"] = tasks.NewTaskDummyIface(IFACE_LINUX_SRV6, s.registry)
+	s.tasks["iproute2.iface.linux-srv6"] = tasks.NewTaskDummyIface(constants.IFACE_LINUX_SRV6, s.registry)
 	// 1.2 iface golang-srv6 (tun via water)
-	s.tasks["nextmn.tun.golang-srv6"] = tasks.NewTaskTunIface(IFACE_GOLANG_SRV6, s.registry)
+	s.tasks["nextmn.tun.golang-srv6"] = tasks.NewTaskTunIface(constants.IFACE_GOLANG_SRV6, s.registry)
 	// 1.3 iface golang-gtp4 (tun via water)
-	s.tasks["nextmn.tun.golang-gtp4"] = tasks.NewTaskTunIface(IFACE_GOLANG_GTP4, s.registry)
+	s.tasks["nextmn.tun.golang-gtp4"] = tasks.NewTaskTunIface(constants.IFACE_GOLANG_GTP4, s.registry)
 
 	// 2.  ip routes
 	// 2.1 blackhole route (srv6)
-	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = NewTaskBlackhole(runtime.RT_TABLE_NEXTMN_SRV6)
+	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_SRV6)
 	// 2.2 blackhole route (gtp4)
-	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = NewTaskBlackhole(runtime.RT_TABLE_NEXTMN_GTP4)
+	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_GTP4)
 
 	// 3.  endpoints + headends
 	// 3.1 linux-srv6 headends
-	s.tasks["iproute2.headends.linux-srv6"] = NewTaskLinuxHeadends(Config.Headends.Filter(runtime.ProviderLinux), runtime.IFACE_LINUX_SRV6)
+	//s.tasks["iproute2.headends.linux-srv6"] = tasks.NewTaskLinuxHeadends(s.config.Headends.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
 	// 3.1 linux-srv6 endpoints
-	s.tasks["iproute2.endpoints.linux-srv6"] = NewTaskLinuxEndpoints(Config.Endpoints.Filter(runtime.ProviderLinux), runtime.IFACE_LINUX_SRV6)
+	//s.tasks["iproute2.endpoints.linux-srv6"] = tasks.NewTaskLinuxEndpoints(s.config.Endpoints.Filter(config.ProviderLinux), constants.IFACE_LINUX_SRV6)
 	// 3.2 nextmn-srv6 endpoints
-	s.tasks["nextmn.endpoints.srv6"] = NewTaskGolangSRv6Endpoints(Config.Endpoints.Filter(runtime.ProviderNextMNSRv6), runtime.IFACE_GOLANG_SRV6)
+	//s.tasks["nextmn.endpoints.srv6"] = tasks.NewTaskGolangSRv6Endpoints(s.config.Endpoints.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_SRV6)
 	// 3.3 nextmn-gtp4 headends
-	s.tasks["nextmn.headends.gtp4"] = NewTaskGolangGTP4Headends(Config.Headends.Filter(runtime.ProviderNextMNGTP4), runtime.IFACE_GOLANG_GTP4)
+	//s.tasks["nextmn.headends.gtp4"] = tasks.NewTaskGolangGTP4Headends(s.config.Headends.Filter(config.ProviderNextMN), constants.IFACE_GOLANG_GTP4)
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
-	if Config.Locator != nil {
-		s.tasks["iproute2.rule.nextmn-srv6"] = NewTaskIPRule(Config.Locator, runtime.RT_TABLE_NEXTMN_SRV6)
+	if s.config.Locator != nil {
+		s.tasks["iproute2.rule.nextmn-srv6"] = tasks.NewTaskIP6Rule(*s.config.Locator, constants.RT_TABLE_NEXTMN_SRV6)
 	}
 	// 4.2 rule to rttable nextmn-gtp4
-	if Config.IPv4HeadendPrefix != nil {
-		s.tasks["iproute2.rule.nextmn-gtp4"] = NewTaskIPRule(Config.IPv4HeadendPrefix, runtime.RT_TABLE_NEXTMN_GTP4)
+	if s.config.GTP4HeadendPrefix != nil {
+		s.tasks["iproute2.rule.nextmn-gtp4"] = tasks.NewTaskIP4Rule(*s.config.GTP4HeadendPrefix, constants.RT_TABLE_NEXTMN_GTP4)
 	}
-
-	// 5. user post-hook
-	s.tasks["hook.post"] = NewMultiHook(Config.IPRoute2.PostInitHook, Config.IPRoute2.PostExitHook)
-
 }
 
 // Runs init task by name
 func (s *Setup) RunInitTask(name string) error {
 	if s.tasks[name] != nil {
-		if s.task[name].State() {
+		if s.tasks[name].State() {
 			// nothing to do
 			return nil
 		}
@@ -89,7 +90,7 @@ func (s *Setup) RunInitTask(name string) error {
 // Runs exist task by name
 func (s *Setup) RunExitTask(name string) error {
 	if s.tasks[name] != nil {
-		if !s.task[name].State() {
+		if !s.tasks[name].State() {
 			// nothing to do
 			return nil
 		}
@@ -235,8 +236,6 @@ func (s *Setup) Exit() {
 	if err := s.RunExitTask("hook-post"); err != nil {
 		fmt.Println(err)
 	}
-
-	return nil
 }
 
 // Run

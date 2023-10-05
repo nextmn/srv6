@@ -5,20 +5,20 @@
 package tasks
 
 import (
+	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/iproute2"
-	"github.com/nextmn/srv6/internal/runtime"
 )
 
 // TaskBlackhole
 type TaskBlackhole struct {
-	table *iproute2.Table
+	table iproute2.Table
 	state bool
 }
 
 // Create a new TaskBlackhole
 func NewTaskBlackhole(table_name string) *TaskBlackhole {
 	return &TaskBlackhole{
-		table: iproute2.Newtable(table_name, runtime.RT_PROTO_NEXTMN),
+		table: iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		state: false,
 	}
 }
@@ -42,6 +42,6 @@ func (t *TaskBlackhole) RunExit() error {
 }
 
 // Returns state of the task
-func (t *TaskTable) State() bool {
+func (t *TaskBlackhole) State() bool {
 	return t.state
 }

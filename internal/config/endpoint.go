@@ -12,13 +12,14 @@ type Endpoint struct {
 	Behavior iana.EndpointBehavior `yaml:"behavior"` // example of behavior: End.DX4
 	Options  *BehaviorOptions      `yaml:"options,omitempty"`
 }
+type Endpoints []*Endpoint
 
-func (el []*Endpoint) Filter(provider Provider) []*Endpoints {
-	newList := make([]*Endpoints, 0)
-	for _, e := range conf.Endpoints {
+func (el Endpoints) Filter(provider Provider) Endpoints {
+	newList := make(Endpoints, 0)
+	for _, e := range el {
 		if e.Provider == provider {
-			newList := append(newList, e)
+			newList = append(newList, e)
 		}
 	}
-	return &newList
+	return newList
 }

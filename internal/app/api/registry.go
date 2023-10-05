@@ -13,10 +13,15 @@ type Registry interface {
 	// ifaces
 	Iface(name string) (iproute2_api.Iface, bool)
 	RegisterIface(iface iproute2_api.Iface) error
-	DeleteIface(name string) error
+	DeleteIface(name string)
 
 	// endpoints
 	Endpoint(name string) (netfunc_api.Endpoint, bool)
 	RegisterEndpoint(endpoint netfunc_api.Endpoint) error
-	DeleteEndpoint(name string) error
+	DeleteEndpoint(name string)
+
+	// headends
+	Headend(name string) (netfunc_api.Headend, bool)
+	RegisterHeadend(endpoint netfunc_api.Headend) error
+	DeleteHeadend(name string)
 }

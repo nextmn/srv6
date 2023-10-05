@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	srv6_app "github.com/nextmn/srv6/internal/app"
+	srv6_config "github.com/nextmn/srv6/internal/config"
 	"github.com/urfave/cli/v2"
 )
 
@@ -49,7 +50,7 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			conf, err := runtime.ParseConf(config_file, config)
+			conf, err := srv6_config.ParseConf(config_file)
 			if err != nil {
 				fmt.Println("Error loading config, exiting…")
 				os.Exit(1)

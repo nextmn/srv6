@@ -5,8 +5,8 @@
 package tasks
 
 import (
+	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/iproute2"
-	"github.com/nextmn/srv6/internal/runtime"
 )
 
 // TaskIPRule
@@ -14,37 +14,37 @@ type TaskIPRule struct {
 	state   bool
 	prefix  string
 	family4 bool
-	table   *iproute2.Table
+	table   iproute2.Table
 }
 
 // Create a new Task for IPRule
-func NewTaskIP6Rule(tablename string, prefix string) *TaskIface {
+func NewTaskIP6Rule(tablename string, prefix string) *TaskIPRule {
 	return &TaskIPRule{
 		family4: false,
 		state:   false,
 		prefix:  prefix,
-		table:   iproute2.NewTable(tablename, runtime.RT_PROTO_NEXTMN),
+		table:   iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
 	}
 }
 
 // Create a new Task for IPRule
-func NewTaskIP4Rule(tablename string, prefix string) *TaskIface {
+func NewTaskIP4Rule(tablename string, prefix string) *TaskIPRule {
 	return &TaskIPRule{
 		family4: true,
 		state:   false,
 		prefix:  prefix,
-		table:   iproute2.NewTable(tablename, runtime.RT_PROTO_NEXTMN),
+		table:   iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
 	}
 }
 
 // Setup ip rules
 func (t *TaskIPRule) RunInit() error {
 	if t.family4 {
-		if err := t.table.AddIP4Rule(prefix); err != nil {
+		if err := t.table.AddRule4(t.prefix); err != nil {
 			return err
 		}
 	} else {
-		if err := t.table.AddIP6Rule(prefix); err != nil {
+		if err := t.table.AddRule6(t.prefix); err != nil {
 			return err
 		}
 	}
@@ -55,11 +55,11 @@ func (t *TaskIPRule) RunInit() error {
 // Delete ip rules
 func (t *TaskIPRule) RunExit() error {
 	if t.family4 {
-		if err := t.table.DelIP4Rule(prefix); err != nil {
+		if err := t.table.DelRule4(t.prefix); err != nil {
 			return err
 		}
 	} else {
-		if err := t.tableDelIP6Rule(prefix); err != nil {
+		if err := t.table.DelRule6(t.prefix); err != nil {
 			return err
 		}
 	}

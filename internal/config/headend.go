@@ -4,19 +4,21 @@
 // SPDX-License-Identifier: MIT
 package config
 
-type HeadEnd struct {
+type Headend struct {
 	Provider      Provider
-	Type          HeadEndType
+	Type          HeadendType
 	Policy        *Policy // temporary field
 	SourceAddress string  `yaml:"set-source-address"`
 }
 
-func (he []*HeadEnd) Filter(provider Provider) []*HeadEnd {
-	newList := make([]*HeadEnd, 0)
-	for _, e := range conf.HeadEnd {
+type Headends []*Headend
+
+func (he Headends) Filter(provider Provider) Headends {
+	newList := make([]*Headend, 0)
+	for _, e := range he {
 		if e.Provider == provider {
-			newList := append(newList, e)
+			newList = append(newList, e)
 		}
 	}
-	return &newList
+	return newList
 }

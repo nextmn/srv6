@@ -4,9 +4,6 @@
 // SPDX-License-Identifier: MIT
 package netfunc_api
 
-import "github.com/nextmn/srv6/internal/iana"
-
-type Endpoint interface {
+type Headend interface {
 	Name() string
-	Behavior() iana.EndpointBehavior
 }
