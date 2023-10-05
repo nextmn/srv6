@@ -4,13 +4,11 @@
 // SPDX-License-Identifier: MIT
 package app_api
 
-import (
-	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
-)
+import "github.com/nextmn/srv6/internal/iproute2"
 
 type Registry interface {
 	// ifaces
-	Iface(name string) (iproute2_api.Iface, bool)
-	RegisterIface(iface iproute2_api.Iface) error
-	DeleteIface(name string)
+	TunIface(name string) (*iproute2.TunIface, bool)
+	RegisterTunIface(iface *iproute2.TunIface) error
+	DeleteTunIface(name string)
 }

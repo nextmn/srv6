@@ -52,3 +52,9 @@ func (t *TunIface) Delete() error {
 func (t *TunIface) Name() string {
 	return t.name
 }
+
+func (t *TunIface) RegisterEndpoint() {
+}
+
+func (t *TunIface) RegisterHeadEnd() {
+}

@@ -7,25 +7,25 @@ package app
 import (
 	"fmt"
 
-	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
+	"github.com/nextmn/srv6/internal/iproute2"
 )
 
 type Registry struct {
-	ifaces map[string]iproute2_api.Iface
+	ifaces map[string]*iproute2.TunIface
 }
 
 func NewRegistry() *Registry {
 	return &Registry{
-		ifaces: make(map[string]iproute2_api.Iface),
+		ifaces: make(map[string]*iproute2.TunIface),
 	}
 }
 
-func (r *Registry) Iface(name string) (iproute2_api.Iface, bool) {
+func (r *Registry) TunIface(name string) (*iproute2.TunIface, bool) {
 	iface, exists := r.ifaces[name]
 	return iface, exists
 }
 
-func (r *Registry) RegisterIface(iface iproute2_api.Iface) error {
+func (r *Registry) RegisterTunIface(iface *iproute2.TunIface) error {
 	if _, exists := r.ifaces[iface.Name()]; exists {
 		return fmt.Errorf("Iface %s is already registered.", iface.Name())
 	}
@@ -33,6 +33,6 @@ func (r *Registry) RegisterIface(iface iproute2_api.Iface) error {
 	return nil
 }
 
-func (r *Registry) DeleteIface(name string) {
+func (r *Registry) DeleteTunIface(name string) {
 	delete(r.ifaces, name)
 }

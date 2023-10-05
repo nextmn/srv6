@@ -6,40 +6,32 @@ package tasks
 
 import (
 	app_api "github.com/nextmn/srv6/internal/app/api"
-	iproute2 "github.com/nextmn/srv6/internal/iproute2"
-	iproute2_api "github.com/nextmn/srv6/internal/iproute2/api"
+	"github.com/nextmn/srv6/internal/iproute2"
 )
 
-// TaskIface
-type TaskIface struct {
+// TaskTunIface
+type TaskTunIface struct {
 	WithState
-	iface    iproute2_api.Iface
+	iface    *iproute2.TunIface
 	registry app_api.Registry
 }
 
-// Create a new Task for DummyIface
-func NewTaskDummyIface(name string) *TaskIface {
-	return &TaskIface{
-		iface:    iproute2.NewDummyIface(name),
-		registry: nil,
-	}
-}
-
 // Create a new Task for TunIface
-func NewTaskTunIface(name string, registry app_api.Registry) *TaskIface {
-	return &TaskIface{
-		iface:    iproute2.NewTunIface(name),
-		registry: registry,
+func NewTaskTunIface(name string, registry app_api.Registry) *TaskTunIface {
+	return &TaskTunIface{
+		WithState: NewState(),
+		iface:     iproute2.NewTunIface(name),
+		registry:  registry,
 	}
 }
 
 // Create and set up the Iface
-func (t *TaskIface) RunInit() error {
+func (t *TaskTunIface) RunInit() error {
 	if err := t.iface.CreateAndUp(); err != nil {
 		return err
 	}
 	if t.registry != nil {
-		if err := t.registry.RegisterIface(t.iface); err != nil {
+		if err := t.registry.RegisterTunIface(t.iface); err != nil {
 			return err
 		}
 	}
@@ -48,12 +40,12 @@ func (t *TaskIface) RunInit() error {
 }
 
 // Delete the Iface
-func (t *TaskIface) RunExit() error {
+func (t *TaskTunIface) RunExit() error {
 	if err := t.iface.Delete(); err != nil {
 		return err
 	}
 	if t.registry != nil {
-		t.registry.DeleteIface(t.iface.Name())
+		t.registry.DeleteTunIface(t.iface.Name())
 	}
 	t.state = false
 	return nil
