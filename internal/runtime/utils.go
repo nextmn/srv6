@@ -11,18 +11,6 @@ import (
 	"strings"
 )
 
-func getMTU(iface string) (int64, error) {
-	if strings.Contains(iface, "/") || strings.Contains(iface, ".") {
-		return 0, fmt.Errorf("interface name contains illegal character")
-	}
-	filename := fmt.Sprintf("/sys/class/net/%s/mtu", iface)
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return 0, err
-	}
-	return strconv.ParseInt(strings.TrimRight(string(content), "\n"), 10, 64)
-}
-
 func getipv6hoplimit(iface string) (uint8, error) {
 	if strings.Contains(iface, "/") || strings.Contains(iface, ".") {
 		return 0, fmt.Errorf("interface name contains illegal character")

@@ -66,7 +66,7 @@ func (s *Setup) AddTasks() {
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.endpoint.srv6/%s", e.Sid)
 		s.tasks[t_name] = tasks.NewFakeTask() //FIXME
-		//s.tasks[t_name] = tasks.NewTaskGolangSRv6Endpoints(e, constants.RT_TABLE_NEXTMN_SRV6, contants.IFACE_GOLANGE_SRV6, s.registry)
+		//s.tasks[t_name] = tasks.NewTaskGolangSRv6Endpoint(e, constants.RT_TABLE_NEXTMN_SRV6, contants.IFACE_GOLANGE_SRV6, s.registry)
 	}
 	// 3.3 nextmn-gtp4 headends
 	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
