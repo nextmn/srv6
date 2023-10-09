@@ -6,6 +6,7 @@ package config
 
 type Headend struct {
 	Name          string
+	To            string // IP Prefix this Headend will handle (can be the same as GTP4HeadendPrefix if you have a single Headend)
 	Provider      Provider
 	Behavior      HeadendBehavior
 	Policy        *Policy
@@ -18,6 +19,16 @@ func (he Headends) Filter(provider Provider) Headends {
 	newList := make([]*Headend, 0)
 	for _, e := range he {
 		if e.Provider == provider {
+			newList = append(newList, e)
+		}
+	}
+	return newList
+}
+
+func (he Headends) FilterWithBehavior(provider Provider, behavior HeadendBehavior) Headends {
+	newList := make([]*Headend, 0)
+	for _, e := range he {
+		if e.Provider == provider && e.Behavior == behavior {
 			newList = append(newList, e)
 		}
 	}

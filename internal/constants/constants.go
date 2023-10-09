@@ -16,8 +16,8 @@ const RT_TABLE_NEXTMN_GTP4 = "nextmn/gtp4"
 const RT_TABLE_MAIN = "main"
 
 // iproute2 ifaces
-const IFACE_LINUX_SRV6 = "linux-srv6"
+const IFACE_LINUX = "nextmn-linux"
 
 // golang/water ifaces
-const IFACE_GOLANG_SRV6 = "golang-srv6"
-const IFACE_GOLANG_GTP4 = "golang-gtp4"
+const IFACE_GOLANG_SRV6_PREFIX = "nextmn-srv6-"
+const IFACE_GOLANG_GTP4_PREFIX = "nextmn-gtp4-"

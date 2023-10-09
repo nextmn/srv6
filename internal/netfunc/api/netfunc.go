@@ -7,11 +7,14 @@ package netfunc
 import (
 	"net/netip"
 
-	"github.com/google/gopacket"
+	"github.com/nextmn/srv6/internal/iproute2"
 )
 
 type NetFunc interface {
-	Handle(packet gopacket.Packet) error
+	Handle(packet []byte) error
 	Prefix() string
 	NetIPPrefix() *netip.Prefix
+	Loop(tunIface *iproute2.TunIface) error
+	Start(tunIface *iproute2.TunIface)
+	Stop()
 }

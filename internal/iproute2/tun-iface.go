@@ -10,28 +10,20 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nextmn/srv6/internal/config"
-	"github.com/nextmn/srv6/internal/netfunc"
-	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 	"github.com/songgao/water"
 )
 
 // TunIface
 type TunIface struct {
-	dispatcher Dispatcher
-	queue      chan []byte
-	name       string
-	iface      *water.Interface
-	netfuncs   map[string]netfunc_api.NetFunc
+	name  string
+	iface *water.Interface
 }
 
 // Create a new TunIface
 func NewTunIface(name string) *TunIface {
 	return &TunIface{
-		dispatcher: NewDispatcher(),
-		name:       name,
-		iface:      nil,
-		netfuncs:   make(map[string]netfunc_api.NetFunc, 0),
+		name:  name,
+		iface: nil,
 	}
 }
 
@@ -49,11 +41,6 @@ func (t *TunIface) CreateAndUp() error {
 	if err := runIP("link", "set", "dev", t.iface.Name(), "up"); err != nil {
 		return err
 	}
-	mtu, err := t.MTU()
-	if err != nil {
-		return err
-	}
-	t.dispatcher.Start(iface, mtu)
 	return nil
 }
 
@@ -72,7 +59,6 @@ func (t *TunIface) MTU() (int64, error) {
 
 // Stop TunIface related goroutines and delete the interface
 func (t *TunIface) Delete() error {
-	t.dispatcher.Stop()
 	if t.iface == nil {
 		return nil
 	}
@@ -87,50 +73,7 @@ func (t *TunIface) Name() string {
 	return t.name
 }
 
-// Register a new Endpoint on this TunIface
-func (t *TunIface) RegisterEndpoint(ep *config.Endpoint) error {
-	if _, exists := t.netfuncs[ep.Sid]; exists {
-		return fmt.Errorf("An endpoint with SID %s is already registered", ep.Sid)
-	}
-	e, err := netfunc.NewEndpoint(ep)
-	if err != nil {
-		return err
-	}
-	t.netfuncs[ep.Sid] = e
-	t.dispatcher.Reload()
-	return nil
-}
-
-// Delete an endpoint on this TunIface
-func (t *TunIface) DeleteEndpoint(ep *config.Endpoint) error {
-	if _, exists := t.netfuncs[ep.Sid]; !exists {
-		return fmt.Errorf("Endpoint %s cannot be deleted because it is not registered", ep.Sid)
-	}
-	delete(t.netfuncs, ep.Sid)
-	t.dispatcher.Reload()
-	return nil
-}
-
-// Register a new Headend on this TunIface
-func (t *TunIface) RegisterHeadend(he *config.Headend) error {
-	if _, exists := t.netfuncs[he.Name]; exists {
-		return fmt.Errorf("Headend %s is already registered", he.Name)
-	}
-	h, err := netfunc.NewHeadend(he)
-	if err != nil {
-		return err
-	}
-	t.netfuncs[he.Name] = h
-	t.dispatcher.Reload()
-	return nil
-}
-
-// Delete a Headend on this TunIface
-func (t *TunIface) DeleteHeadend(he *config.Headend) error {
-	if _, exists := t.netfuncs[he.SourceAddress]; !exists {
-		return fmt.Errorf("Endpoint %s cannot be deleted because it is not registered", he.Name)
-	}
-	delete(t.netfuncs, he.SourceAddress)
-	t.dispatcher.Reload()
-	return nil
+// Read a packet from the water interface
+func (t *TunIface) Read(packet []byte) (int, error) {
+	return t.iface.Read(packet)
 }

@@ -171,3 +171,35 @@ func (t Table) DelSeg6Local(sid string, behavior iana.EndpointBehavior, dev stri
 	}
 	return nil
 }
+
+// Add IPv6 Route to Tun iface
+func (t Table) AddRoute6Tun(prefix string, dev string) error {
+	if err := t.AddRoute6(prefix, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete IPv6 Route to Tun iface
+func (t Table) DelRoute6Tun(prefix string, dev string) error {
+	if err := t.DelRoute6(prefix, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Add IPv4 Route to Tun iface
+func (t Table) AddRoute4Tun(prefix string, dev string) error {
+	if err := t.AddRoute4(prefix, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete IPv4 Route to Tun iface
+func (t Table) DelRoute4Tun(prefix string, dev string) error {
+	if err := t.DelRoute4(prefix, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}

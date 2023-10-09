@@ -7,13 +7,12 @@ package netfunc
 import (
 	"net/netip"
 
-	"github.com/google/gopacket"
 	"github.com/nextmn/srv6/internal/config"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 type Endpoint struct {
-	prefix netip.Prefix
+	NetFunc
 }
 
 func NewEndpoint(ec *config.Endpoint) (netfunc_api.NetFunc, error) {
@@ -24,18 +23,10 @@ func NewEndpoint(ec *config.Endpoint) (netfunc_api.NetFunc, error) {
 
 	// FIXME: switch on behavior to use a New<Behavior>(prefix)
 	return &Endpoint{
-		prefix: p,
+		NetFunc: NewNetFunc(p),
 	}, nil
 }
 
-func (e *Endpoint) Handle(packet gopacket.Packet) error {
+func (e *Endpoint) Handle(packet []byte) error {
 	return nil
-}
-
-func (e *Endpoint) NetIPPrefix() *netip.Prefix {
-	return &e.prefix
-}
-
-func (e *Endpoint) Prefix() string {
-	return e.prefix.String()
 }
