@@ -62,8 +62,7 @@ func (s *Setup) AddTasks() {
 	// 3.1 linux headends
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
-		s.tasks[t_name] = tasks.NewFakeTask() // FIXME
-		//s.tasks[t_name] = tasks.NewTaskLinuxHeadendip(e, constants.RT_TABLE_MAIN, constants.IFACE_LINUX)
+		s.tasks[t_name] = tasks.NewTaskLinuxHeadend(h, constants.RT_TABLE_MAIN, constants.IFACE_LINUX)
 	}
 	// 3.1 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {

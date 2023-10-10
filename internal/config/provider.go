@@ -18,6 +18,17 @@ const (
 	ProviderNextMN
 )
 
+func (p Provider) String() string {
+	switch p {
+	case ProviderLinux:
+		return "Linux"
+	case ProviderNextMN:
+		return "NextMN"
+	default:
+		return "Unknown provider"
+	}
+}
+
 // Unmarshal YAML to Provider
 func (p *Provider) UnmarshalYAML(n *yaml.Node) error {
 	switch strings.ToLower(n.Value) {

@@ -11,3 +11,16 @@ const (
 	H_Inline                          // add a SRH to an existing IPv6 Header
 	H_M_GTP4_D                        // RFC 9433, section 6.7
 )
+
+func (hb HeadendBehavior) String() string {
+	switch hb {
+	case H_Encaps:
+		return "H.Encaps"
+	case H_Inline:
+		return "H.Inline"
+	case H_M_GTP4_D:
+		return "H.M.GTP4.D"
+	default:
+		return "Unknown"
+	}
+}

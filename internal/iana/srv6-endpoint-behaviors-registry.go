@@ -51,6 +51,29 @@ func ToEndpointBehavior(s string) (EndpointBehavior, error) {
 	}
 }
 
+func (e EndpointBehavior) String() string {
+	switch e {
+	case End:
+		return "End"
+	case End_DX4:
+		return "End.DX4"
+	case End_MAP:
+		return "End.MAP"
+	case End_Limit:
+		return "End.Limit"
+	case End_M_GTP6_D:
+		return "End.M.GTP6.D"
+	case End_M_GTP6_Di:
+		return "End.M.GTP6.Di"
+	case End_M_GTP6_E:
+		return "End.M.GTP6.E"
+	case End_M_GTP4_E:
+		return "End.M.GTP4.E"
+	default:
+		return "Unknown behavior"
+	}
+}
+
 func (e *EndpointBehavior) ToIPRoute2Action() (string, error) {
 	switch *e {
 	case End:

@@ -90,6 +90,24 @@ func (t Table) DelRule6(to string) error {
 	return t.delRule6("to", to, "lookup", t.table)
 }
 
+// Add a route on this table, protocol independent
+func (t Table) AddRoute(args ...string) error {
+	a := []string{"route", "add"}
+	table := []string{"table", t.table}
+	a = append(a, args...)
+	a = append(a, table...)
+	return t.runIP(a...)
+}
+
+// Delete a route on this table, protocol independent
+func (t Table) DelRoute(args ...string) error {
+	a := []string{"route", "del"}
+	table := []string{"table", t.table}
+	a = append(a, args...)
+	a = append(a, table...)
+	return t.runIP(a...)
+}
+
 // Add a route on this table, for IPv4
 func (t Table) AddRoute4(args ...string) error {
 	a := []string{"route", "add"}
@@ -167,6 +185,40 @@ func (t Table) DelSeg6Local(sid string, behavior iana.EndpointBehavior, dev stri
 		return err
 	}
 	if err := t.DelRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Add Linux Headend with encap
+func (t Table) AddSeg6Encap(prefix string, segmentsList string, dev string) error {
+	if err := t.AddRoute(prefix, "encap", "seg6", "mode", "encap", "segs", segmentsList, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete Linux Headend with encap
+func (t Table) DelSeg6Encap(prefix string, segmentsList string, dev string) error {
+	if err := t.DelRoute(prefix, "encap", "seg6", "mode", "encap", "segs", segmentsList, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Add Linux Headend with inline
+// Inline mode is only for incomming packets already having an IPv6 header
+func (t Table) AddSeg6Inline(prefix string, segmentsList string, dev string) error {
+	if err := t.AddRoute6(prefix, "encap", "seg6", "mode", "inline", "segs", segmentsList, "dev", dev); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Delete Linux Headend with inline
+// Inline mode is only for incomming packets already having an IPv6 header
+func (t Table) DelSeg6Inline(prefix string, segmentsList string, dev string) error {
+	if err := t.DelRoute6(prefix, "encap", "seg6", "mode", "inline", "segs", segmentsList, "dev", dev); err != nil {
 		return err
 	}
 	return nil

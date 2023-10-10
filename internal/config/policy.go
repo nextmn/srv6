@@ -4,7 +4,15 @@
 // SPDX-License-Identifier: MIT
 package config
 
+import (
+	"fmt"
+	"strings"
+)
+
 type Policy struct {
-	MatchingRule *string   `yaml:"route-to,omitempty"`
-	SegmentsList *[]string `yaml:"segments-list,omitempty"`
+	SegmentsList []string `yaml:"segments-list"`
+}
+
+func (p *Policy) ToIPRoute2() string {
+	return fmt.Sprintf(strings.Join(p.SegmentsList[:], ","))
 }
