@@ -5,12 +5,12 @@
 package config
 
 type Headend struct {
-	Name          string
-	To            string // IP Prefix this Headend will handle (can be the same as GTP4HeadendPrefix if you have a single Headend)
-	Provider      Provider
-	Behavior      HeadendBehavior
-	Policy        *Policy
-	SourceAddress string `yaml:"set-source-address"`
+	Name                string
+	To                  string // IP Prefix this Headend will handle (can be the same as GTP4HeadendPrefix if you have a single Headend)
+	Provider            Provider
+	Behavior            HeadendBehavior
+	Policy              *Policy
+	SourceAddressPrefix *string `yaml:"set-source-prefix"`
 }
 
 type Headends []*Headend

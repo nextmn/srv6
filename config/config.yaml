@@ -1,14 +1,35 @@
-iproute2:
-  rttable-number: 100
-  rtproto-number: 100
+#hooks:
+#  pre-init-hook:
+#  post-init-hook:
+#  pre-exit-hook:
+#  post-exit-hook:
+
+linux-headend-set-source-address: "fd00:51D5:0000::"
+ipv4-headend-prefix: "10.0.200.3/32" 
+headends:
+  - name: "gtp4 to sr"
+    to: "10.0.200.3/32"
+    provider: "NextMN"
+    behavior: "H.M.GTP4.D"
+    policy:
+      segments-list:
+        - "fd00:51D5:0000:2::"
+        - "fd00:51D5:0000:3::"
+    source-address-prefix: "fd00:51D5:000:1:9999::/80"
+  - name: "linux test"
+    to: "10.0.300.0/24"
+    provider: "Linux"
+    behavior: "H.Encaps"
+    policy:
+      segments-list:
+        - "fd00:51D5:0000:2::"
+        - "fd00:51D5:0000:3::"
+
 locator: "fd00:51D5:0000:1::/64"
 endpoints:
-  - sid: "fd00:51D5:0000:1:11::/80"
+  - prefix: "fd00:51D5:0000:1:11::/80"
     behavior: "End.DX4"
-  - sid: "fd00:51D5:0000:1:1::/80"
+    provider: "Linux"
+  - prefix: "fd00:51D5:0000:1:1::/80"
     behavior: "End"
-
-policy:
-  segments-list:
-    - "fd00:51D5:0000:2::"
-    - "fd00:51D5:0000:3::"
+    provider: "Linux"

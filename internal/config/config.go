@@ -28,11 +28,12 @@ func ParseConf(file string) (*SRv6Config, error) {
 }
 
 type SRv6Config struct {
-	IPRoute2 *IPRoute2 `yaml:"iproute2"`
+	Hooks *Hooks `yaml:"hooks"`
 
 	// headends
-	GTP4HeadendPrefix *string  `yaml:"ipv4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single IPv4 headend) or 10.0.1.0/24 (with more headends)
-	Headends          Headends `yaml:"headends"`
+	LinuxHeadendSetSourceAddress *string  `yaml:"linux-headend-set-source-address,omitempty"`
+	GTP4HeadendPrefix            *string  `yaml:"ipv4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single IPv4 headend) or 10.0.1.0/24 (with more headends)
+	Headends                     Headends `yaml:"headends"`
 
 	// endpoints
 	Locator   *string   `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64

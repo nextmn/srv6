@@ -32,9 +32,9 @@ func NewSetup(config *config.SRv6Config) *Setup {
 func (s *Setup) AddTasks() {
 	// 0.  user hooks
 	// 0.1 pre-hooks
-	s.tasks["hook.pre"] = tasks.NewMultiHook(s.config.IPRoute2.PreInitHook, s.config.IPRoute2.PreExitHook)
+	s.tasks["hook.pre"] = tasks.NewMultiHook(s.config.Hooks.PreInitHook, s.config.Hooks.PreExitHook)
 	// 0.2 post-hooks
-	s.tasks["hook.post"] = tasks.NewMultiHook(s.config.IPRoute2.PostInitHook, s.config.IPRoute2.PostExitHook)
+	s.tasks["hook.post"] = tasks.NewMultiHook(s.config.Hooks.PostInitHook, s.config.Hooks.PostExitHook)
 
 	// 1.  ifaces
 	// 1.1 iface linux (type dummy)
@@ -60,6 +60,9 @@ func (s *Setup) AddTasks() {
 
 	// 3.  endpoints + headends
 	// 3.1 linux headends
+	if s.config.LinuxHeadendSetSourceAddress != nil {
+		s.tasks["linux.headend.set-source-address"] = tasks.NewTaskLinuxHeadendSetSourceAddress(*s.config.LinuxHeadendSetSourceAddress)
+	}
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
 		s.tasks[t_name] = tasks.NewTaskLinuxHeadend(h, constants.RT_TABLE_MAIN, constants.IFACE_LINUX)
@@ -164,6 +167,9 @@ func (s *Setup) Init() error {
 
 	// 3.  endpoints + headends
 	// 3.1 linux headends
+	if err := s.RunInitTask("linux.headend.set-source-address"); err != nil {
+		return err
+	}
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
 		if err := s.RunInitTask(t_name); err != nil {
@@ -258,6 +264,9 @@ func (s *Setup) Exit() {
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
+	}
+	if err := s.RunExitTask("linux.headend.set-source-address"); err != nil {
+		fmt.Println(err)
 	}
 
 	// 3.  ip routes
