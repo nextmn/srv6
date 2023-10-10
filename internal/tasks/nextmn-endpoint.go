@@ -51,7 +51,7 @@ func (t *TaskNextMNEndpoint) RunInit() error {
 	}
 	t.netfunc.Start(tunIface)
 	// Add route to endpoint
-	if err := t.table.AddRoute6Tun(t.endpoint.Sid, t.iface_name); err != nil {
+	if err := t.table.AddRoute6Tun(t.endpoint.Prefix, t.iface_name); err != nil {
 		return err
 	}
 	t.state = true
@@ -61,7 +61,7 @@ func (t *TaskNextMNEndpoint) RunInit() error {
 // Exit
 func (t *TaskNextMNEndpoint) RunExit() error {
 	// Remove route to endpoint
-	if err := t.table.DelRoute6Tun(t.endpoint.Sid, t.iface_name); err != nil {
+	if err := t.table.DelRoute6Tun(t.endpoint.Prefix, t.iface_name); err != nil {
 		return err
 	}
 	// Stop endpoint

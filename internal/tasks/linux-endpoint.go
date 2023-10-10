@@ -30,7 +30,7 @@ func NewTaskLinuxEndpoint(endpoint *config.Endpoint, table_name string, iface_na
 
 // Init
 func (t *TaskLinuxEndpoint) RunInit() error {
-	if err := t.table.AddSeg6Local(t.endpoint.Sid, t.endpoint.Behavior, t.iface_name); err != nil {
+	if err := t.table.AddSeg6Local(t.endpoint.Prefix, t.endpoint.Behavior, t.iface_name); err != nil {
 		return err
 	}
 	t.state = true
@@ -39,7 +39,7 @@ func (t *TaskLinuxEndpoint) RunInit() error {
 
 // Exit
 func (t *TaskLinuxEndpoint) RunExit() error {
-	if err := t.table.DelSeg6Local(t.endpoint.Sid, t.endpoint.Behavior, t.iface_name); err != nil {
+	if err := t.table.DelSeg6Local(t.endpoint.Prefix, t.endpoint.Behavior, t.iface_name); err != nil {
 		return err
 	}
 	t.state = false

@@ -6,13 +6,10 @@ package netfunc
 
 import (
 	"fmt"
-	"log"
-	"net"
 	"net/netip"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/nextmn/srv6/internal/mup"
 )
 
 type EndpointMGTP4E struct {
@@ -47,41 +44,35 @@ func (h *EndpointMGTP4E) Handle(packet []byte) error {
 	}
 	// extract TEID from destination address
 	// destination address is formed as follow : [ SID (netsize bits) + IPv4 DA (only if ipv4) + ArgsMobSession ]
-	dst := pqt.NetworkLayer().(*layers.IPv6).DstIP.String()
-	ip, err := netip.ParseAddr(dst)
-	if err != nil {
-		return err
-	}
-	dstarray := ip.As16()
-	offset := 0
-	if s.gtpIPVersion == 4 {
-		offset = 32 / 8
-	}
+	//	dstarray := dst.As16()
+	//	offset := 0
+	//	if s.gtpIPVersion == 4 {
+	//		offset = 32 / 8
+	//	}
 	// TODO: check segments left = 1, and if not send ICMP Parameter Problem to the Source Address (code 0, pointer to SegemntsLeft field), and drop the packet
-	args, err := mup.ParseArgsMobSession(dstarray[(s.netsize/8)+offset:])
-	if err != nil {
-		return err
-	}
-	teid := args.PDUSessionID()
+	//	args, err := mup.ParseArgsMobSession(dstarray[(s.netsize/8)+offset:])
+	//	if err != nil {
+	//		return err
+	//	}
+	//	teid := args.PDUSessionID()
 	// retrieve nextGTPNode (SHR[0])
-	log.Printf("TEID retreived: %X\n", teid)
 
-	nextGTPNode := ""
-	if s.gtpIPVersion == 6 {
-		// workaround: enforce use of gopacket_srv6 functions
-		shr := gopacket.NewPacket(pqt.Layers()[1].LayerContents(), gopacket_srv6.LayerTypeIPv6Routing, gopacket.Default).Layers()[0].(*gopacket_srv6.IPv6Routing)
-		log.Println("layer type", pqt.Layers()[1].LayerType())
-		log.Println("RoutingType", shr.RoutingType)
-		log.Println("LastEntry:", shr.LastEntry)
-		log.Println("sourceRoutingIPs len:", len(shr.SourceRoutingIPs))
-		log.Println("sourceRoutingIPs[0]:", shr.SourceRoutingIPs[0])
-		nextGTPNode = fmt.Sprintf("[%s]:%s", shr.SourceRoutingIPs[0].String(), GTPU_PORT)
-	} else {
-		// IPv4
-		ip_arr := dstarray[s.netsize/8 : (s.netsize/8)+4]
-		ipv4_address := net.IPv4(ip_arr[0], ip_arr[1], ip_arr[2], ip_arr[3])
-		nextGTPNode = fmt.Sprintf("%s:%s", ipv4_address, GTPU_PORT)
-	}
+	//	nextGTPNode := ""
+	//	if s.gtpIPVersion == 6 {
+	//		// workaround: enforce use of gopacket_srv6 functions
+	//		shr := gopacket.NewPacket(pqt.Layers()[1].LayerContents(), gopacket_srv6.LayerTypeIPv6Routing, gopacket.Default).Layers()[0].(*gopacket_srv6.IPv6Routing)
+	//		log.Println("layer type", pqt.Layers()[1].LayerType())
+	//		log.Println("RoutingType", shr.RoutingType)
+	//		log.Println("LastEntry:", shr.LastEntry)
+	//		log.Println("sourceRoutingIPs len:", len(shr.SourceRoutingIPs))
+	//		log.Println("sourceRoutingIPs[0]:", shr.SourceRoutingIPs[0])
+	//		nextGTPNode = fmt.Sprintf("[%s]:%s", shr.SourceRoutingIPs[0].String(), GTPU_PORT)
+	//	} else {
+	//		// IPv4
+	//		ip_arr := dstarray[s.netsize/8 : (s.netsize/8)+4]
+	//		ipv4_address := net.IPv4(ip_arr[0], ip_arr[1], ip_arr[2], ip_arr[3])
+	//		nextGTPNode = fmt.Sprintf("%s:%s", ipv4_address, GTPU_PORT)
+	//	}
 	//	raddr, err := net.ResolveUDPAddr("udp", nextGTPNode)
 	//	if err != nil {
 	//		log.Println("Error while resolving ", nextGTPNode, "(remote node)")

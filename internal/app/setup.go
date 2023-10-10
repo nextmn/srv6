@@ -41,7 +41,7 @@ func (s *Setup) AddTasks() {
 	s.tasks["iproute2.iface.linux"] = tasks.NewTaskDummyIface(constants.IFACE_LINUX)
 	// 1.2 ifaces golang-srv6-* (tun via water)
 	for i, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Prefix)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
 		s.tasks[t_name] = tasks.NewTaskTunIface(iface_name, s.registry)
 	}
@@ -66,12 +66,12 @@ func (s *Setup) AddTasks() {
 	}
 	// 3.1 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
-		t_name := fmt.Sprintf("linux.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("linux.endpoint/%s", e.Prefix)
 		s.tasks[t_name] = tasks.NewTaskLinuxEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, constants.IFACE_LINUX)
 	}
 	// 3.2 nextmn endpoints
 	for i, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
 		s.tasks[t_name] = tasks.NewTaskNextMNEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, iface_name, s.registry)
 	}
@@ -139,7 +139,7 @@ func (s *Setup) Init() error {
 	}
 	// 1.2 iface golang-srv6 (tun via water)
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Prefix)
 		if err := s.RunInitTask(t_name); err != nil {
 			return err
 		}
@@ -172,14 +172,14 @@ func (s *Setup) Init() error {
 	}
 	// 3.2 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
-		t_name := fmt.Sprintf("linux.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("linux.endpoint/%s", e.Prefix)
 		if err := s.RunInitTask(t_name); err != nil {
 			return err
 		}
 	}
 	// 3.3 nextmn endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		if err := s.RunInitTask(t_name); err != nil {
 			return err
 		}
@@ -240,14 +240,14 @@ func (s *Setup) Exit() {
 	}
 	// 2.2 nextmn endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
 	// 2.3 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
-		t_name := fmt.Sprintf("linux.endpoint/%s", e.Sid)
+		t_name := fmt.Sprintf("linux.endpoint/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
@@ -280,7 +280,7 @@ func (s *Setup) Exit() {
 	}
 	// 4.2 ifaces golang-srv6-* (tun via water)
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
-		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Sid)
+		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}

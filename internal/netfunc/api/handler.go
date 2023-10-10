@@ -4,10 +4,6 @@
 // SPDX-License-Identifier: MIT
 package netfunc
 
-import "net/netip"
-
 type Handler interface {
 	Handle(packet []byte) error
-	Prefix() string
-	NetIPPrefix() *netip.Prefix
 }

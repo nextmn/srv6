@@ -14,7 +14,7 @@ import (
 )
 
 func NewEndpoint(ec *config.Endpoint) (netfunc_api.NetFunc, error) {
-	p, err := netip.ParsePrefix(ec.Sid)
+	p, err := netip.ParsePrefix(ec.Prefix)
 	if err != nil {
 		return nil, err
 	}

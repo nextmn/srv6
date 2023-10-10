@@ -8,7 +8,7 @@ import "github.com/nextmn/srv6/internal/iana"
 
 type Endpoint struct {
 	Provider Provider              `yaml:"provider"` // Linux, NextMN, …
-	Sid      string                `yaml:"sid"`      // example of sid: fd00:51D5:0000:1:1:11/80
+	Prefix   string                `yaml:"prefix"`   // Prefix = LOC+FUNC example of prefix: fd00:51D5:0000:1:1:11/80
 	Behavior iana.EndpointBehavior `yaml:"behavior"` // example of behavior: End.DX4
 	Options  *BehaviorOptions      `yaml:"options,omitempty"`
 }
