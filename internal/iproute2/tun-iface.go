@@ -57,6 +57,23 @@ func (t *TunIface) MTU() (int64, error) {
 	return strconv.ParseInt(strings.TrimRight(string(content), "\n"), 10, 64)
 }
 
+// IPv6 Hop Limit of the TunIface
+func (t *TunIface) IPv6HopLimit() (uint8, error) {
+	if strings.Contains(t.iface.Name(), "/") || strings.Contains(t.iface.Name(), ".") {
+		return 0, fmt.Errorf("interface name contains illegal character")
+	}
+	filename := fmt.Sprintf("/proc/sys/net/ipv6/conf/%s/hop_limit", t.iface.Name())
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return 0, err
+	}
+	ret, err := strconv.ParseUint(strings.TrimRight(string(content), "\n"), 10, 8)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(ret), nil
+}
+
 // Stop TunIface related goroutines and delete the interface
 func (t *TunIface) Delete() error {
 	if t.iface == nil {
