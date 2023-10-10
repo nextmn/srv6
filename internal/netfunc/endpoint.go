@@ -9,15 +9,18 @@ import (
 	"net/netip"
 
 	"github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/iana"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 func NewEndpoint(ec *config.Endpoint) (netfunc_api.NetFunc, error) {
-	_, err := netip.ParsePrefix(ec.Sid)
+	p, err := netip.ParsePrefix(ec.Sid)
 	if err != nil {
 		return nil, err
 	}
 	switch ec.Behavior {
+	case iana.End_M_GTP4_E:
+		return NewNetFunc(NewEndpointMGTP4E(p)), nil
 	default:
 		return nil, fmt.Errorf("Unsupported endpoint behavior (%s) with this provider (%s)", ec.Behavior, ec.Provider)
 	}
