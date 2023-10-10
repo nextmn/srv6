@@ -32,9 +32,6 @@ func NewTaskLinuxHeadend(headend *config.Headend, table_name string, iface_name 
 
 // Init
 func (t *TaskLinuxHeadend) RunInit() error {
-	//if err := t.table.AddSeg6Local(t.endpoint.Sid, t.endpoint.Behavior, t.iface_name); err != nil {
-	//	return err
-	//}
 	if t.headend.Policy == nil {
 		return fmt.Errorf("No policy set for this headend")
 	}
@@ -48,7 +45,7 @@ func (t *TaskLinuxHeadend) RunInit() error {
 			return err
 		}
 	default:
-		return fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s).", t.headend.Behavior, t.headend.Provider)
+		return fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", t.headend.Behavior, t.headend.Provider)
 	}
 	t.state = true
 	return nil
@@ -56,9 +53,9 @@ func (t *TaskLinuxHeadend) RunInit() error {
 
 // Exit
 func (t *TaskLinuxHeadend) RunExit() error {
-	//if err := t.table.DelSeg6Local(t.endpoint.Sid, t.endpoint.Behavior, t.iface_name); err != nil {
-	//	return err
-	//}
+	if t.headend.Policy == nil {
+		return fmt.Errorf("No policy set for this headend")
+	}
 	switch t.headend.Behavior {
 	case config.H_Encaps:
 		if err := t.table.DelSeg6Encap(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name); err != nil {

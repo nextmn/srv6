@@ -5,40 +5,24 @@
 package netfunc
 
 import (
-	"net/netip"
-
 	"github.com/nextmn/srv6/internal/iproute2"
+	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 type NetFunc struct {
-	prefix netip.Prefix
-	stop   chan bool
+	stop    chan bool
+	handler netfunc_api.Handler
 }
 
-func NewNetFunc(prefix netip.Prefix) NetFunc {
-	return NetFunc{
-		prefix: prefix,
-		stop:   make(chan bool),
+func NewNetFunc(handler netfunc_api.Handler) *NetFunc {
+	return &NetFunc{
+		stop:    make(chan bool),
+		handler: handler,
 	}
 }
 
-// Handle a packet
-func (n *NetFunc) Handle(packet []byte) error {
-	return nil
-}
-
-// Return prefix of the NetFunc as a *netip.Prefix
-func (n *NetFunc) NetIPPrefix() *netip.Prefix {
-	return &n.prefix
-}
-
-// Returns prefix of the NetFunc as a String
-func (n *NetFunc) Prefix() string {
-	return n.prefix.String()
-}
-
 // Handle packet continuously
-func (n *NetFunc) Loop(tunIface *iproute2.TunIface) error {
+func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
 	// Get MTU
 	mtu, err := tunIface.MTU()
 	if err != nil {
@@ -53,7 +37,7 @@ func (n *NetFunc) Loop(tunIface *iproute2.TunIface) error {
 		default:
 			packet := make([]byte, mtu)
 			if nb, err := tunIface.Read(packet); err == nil {
-				go n.Handle(packet[:nb])
+				go n.handler.Handle(packet[:nb])
 			}
 		}
 	}
@@ -61,7 +45,7 @@ func (n *NetFunc) Loop(tunIface *iproute2.TunIface) error {
 
 // Start the NetFunc goroutine
 func (n *NetFunc) Start(tunIface *iproute2.TunIface) {
-	go n.Loop(tunIface)
+	go n.loop(tunIface)
 }
 
 // Stop the NetFunc goroutine

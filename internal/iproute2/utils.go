@@ -9,9 +9,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
 )
 
 // Run ip command
@@ -26,18 +23,4 @@ func runIP(args ...string) error {
 		return err
 	}
 	return nil
-}
-
-// (network) LayerType for this packet (LayerTypeIPv4 or LayerTypeIPv6)
-func networkLayerType(packet []byte) (*gopacket.LayerType, error) {
-	version := (packet[0] >> 4) & 0x0F
-	switch version {
-	case 4:
-		return &layers.LayerTypeIPv4, nil
-	case 6:
-		return &layers.LayerTypeIPv6, nil
-	default:
-		return nil, fmt.Errorf("Malformed packet")
-
-	}
 }

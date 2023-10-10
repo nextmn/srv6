@@ -4,11 +4,10 @@
 // SPDX-License-Identifier: MIT
 package netfunc
 
-import (
-	"github.com/nextmn/srv6/internal/iproute2"
-)
+import "net/netip"
 
-type NetFunc interface {
-	Start(tunIface *iproute2.TunIface)
-	Stop()
+type Handler interface {
+	Handle(packet []byte) error
+	Prefix() string
+	NetIPPrefix() *netip.Prefix
 }

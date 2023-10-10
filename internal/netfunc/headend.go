@@ -5,28 +5,22 @@
 package netfunc
 
 import (
+	"fmt"
 	"net/netip"
 
 	"github.com/nextmn/srv6/internal/config"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
-type Headend struct {
-	NetFunc
-}
-
-func NewHeadend(ec *config.Headend) (netfunc_api.NetFunc, error) {
-	p, err := netip.ParsePrefix(ec.To)
+func NewHeadend(he *config.Headend) (netfunc_api.NetFunc, error) {
+	p, err := netip.ParsePrefix(he.To)
 	if err != nil {
 		return nil, err
 	}
-
-	// FIXME: switch on behavior to use a New<Behavior>(prefix)
-	return &Headend{
-		NetFunc: NewNetFunc(p),
-	}, nil
-}
-
-func (e *Headend) Handle(packet []byte) error {
-	return nil
+	switch he.Behavior {
+	case config.H_M_GTP4_D:
+		return NewNetFunc(NewHeadendGTP4(p)), nil
+	default:
+		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
+	}
 }
