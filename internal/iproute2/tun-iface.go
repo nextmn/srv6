@@ -91,6 +91,11 @@ func (t *TunIface) Name() string {
 }
 
 // Read a packet from the water interface
-func (t *TunIface) Read(packet []byte) (int, error) {
-	return t.iface.Read(packet)
+func (t *TunIface) Read(b []byte) (int, error) {
+	return t.iface.Read(b)
+}
+
+// Write a packet to the water interface
+func (t *TunIface) Write(b []byte) (int, error) {
+	return t.iface.Write(b)
 }

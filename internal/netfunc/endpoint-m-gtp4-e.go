@@ -23,13 +23,13 @@ func NewEndpointMGTP4E(prefix netip.Prefix) *EndpointMGTP4E {
 }
 
 // Handle a packet
-func (h *EndpointMGTP4E) Handle(packet []byte) error {
+func (h *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	layerType, err := networkLayerType(packet)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if *layerType != layers.LayerTypeIPv6 {
-		return fmt.Errorf("Endpoints can only handle IPv6 packets")
+		return nil, fmt.Errorf("Endpoints can only handle IPv6 packets")
 	}
 	// create gopacket
 	pqt := gopacket.NewPacket(packet, *layerType, gopacket.Default)
@@ -37,11 +37,37 @@ func (h *EndpointMGTP4E) Handle(packet []byte) error {
 	dstSlice := pqt.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
-		return fmt.Errorf("Malformed address")
+		return nil, fmt.Errorf("Malformed address")
 	}
 	if !h.Prefix().Contains(dst) {
-		return fmt.Errorf("Destination address not in handled range")
+		return nil, fmt.Errorf("Destination address not in handled range")
 	}
+	// RFC 9433 section 6.6. End.M.GTP4.E
+
+	// S01. When an SRH is processed {
+	// S02.   If (Segments Left != 0) {
+	// S03.      Send an ICMP Parameter Problem to the Source Address with
+	//              Code 0 (Erroneous header field encountered) and
+	//              Pointer set to the Segments Left field,
+	//              interrupt packet processing, and discard the packet.
+	// S04.   }
+	// S05.   Proceed to process the next header in the packet
+	// S06. }
+
+	// When processing the Upper-Layer header of a packet matching a FIB
+	// entry locally instantiated as an End.M.GTP4.E SID, N does the
+	// following:
+
+	// S01.    Store the IPv6 DA and SA in buffer memory
+	// S02.    Pop the IPv6 header and all its extension headers
+	// S03.    Push a new IPv4 header with a UDP/GTP-U header
+	// S04.    Set the outer IPv4 SA and DA (from buffer memory)
+	// S05.    Set the outer Total Length, DSCP, Time To Live, and
+	//            Next Header fields
+	// S06.    Set the GTP-U TEID (from buffer memory)
+	// S07.    Submit the packet to the egress IPv4 FIB lookup for
+	//            transmission to the new destination
+
 	// extract TEID from destination address
 	// destination address is formed as follow : [ SID (netsize bits) + IPv4 DA (only if ipv4) + ArgsMobSession ]
 	//	dstarray := dst.As16()
@@ -90,31 +116,5 @@ func (h *EndpointMGTP4E) Handle(packet []byte) error {
 	//			s.uConn[nextGTPNode].WriteToGTP(teid, pdu, raddr)
 
 	// create gopacket
-
-	// RFC 9433 section 6.6. End.M.GTP4.E
-
-	// S01. When an SRH is processed {
-	// S02.   If (Segments Left != 0) {
-	// S03.      Send an ICMP Parameter Problem to the Source Address with
-	//              Code 0 (Erroneous header field encountered) and
-	//              Pointer set to the Segments Left field,
-	//              interrupt packet processing, and discard the packet.
-	// S04.   }
-	// S05.   Proceed to process the next header in the packet
-	// S06. }
-
-	// When processing the Upper-Layer header of a packet matching a FIB
-	// entry locally instantiated as an End.M.GTP4.E SID, N does the
-	// following:
-
-	// S01.    Store the IPv6 DA and SA in buffer memory
-	// S02.    Pop the IPv6 header and all its extension headers
-	// S03.    Push a new IPv4 header with a UDP/GTP-U header
-	// S04.    Set the outer IPv4 SA and DA (from buffer memory)
-	// S05.    Set the outer Total Length, DSCP, Time To Live, and
-	//            Next Header fields
-	// S06.    Set the GTP-U TEID (from buffer memory)
-	// S07.    Submit the packet to the egress IPv4 FIB lookup for
-	//            transmission to the new destination
-	return nil
+	return nil, fmt.Errorf("TODO")
 }

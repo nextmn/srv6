@@ -37,7 +37,11 @@ func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
 		default:
 			packet := make([]byte, mtu)
 			if nb, err := tunIface.Read(packet); err == nil {
-				go n.handler.Handle(packet[:nb])
+				go func(iface *iproute2.TunIface) {
+					if out, err := n.handler.Handle(packet[:nb]); err == nil {
+						iface.Write(out)
+					}
+				}(tunIface)
 			}
 		}
 	}

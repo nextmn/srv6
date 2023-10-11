@@ -5,5 +5,5 @@
 package netfunc
 
 type Handler interface {
-	Handle(packet []byte) error
+	Handle(packet []byte) ([]byte, error)
 }
