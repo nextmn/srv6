@@ -24,3 +24,13 @@ func networkLayerType(packet []byte) (*gopacket.LayerType, error) {
 
 	}
 }
+
+// Removes IPv6 Header and extensions headers from the packet
+func popIPv6Headers(packet gopacket.Packet) (gopacket.Layer, error) {
+	for _, l := range packet.Layers()[1:] {
+		if !layers.LayerClassIPv6Extension.Contains(l.LayerType()) {
+			return l, nil
+		}
+	}
+	return nil, fmt.Errorf("Nothing else than IPv6 Headers in the packet")
+}

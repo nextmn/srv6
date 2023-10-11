@@ -106,7 +106,7 @@ func (s *Setup) RunInitTask(name string) error {
 		if err := s.tasks[name].RunInit(); err != nil {
 			return fmt.Errorf("[Failed] %s.init: %s", name, err)
 		}
-		fmt.Printf("[OK] %s.init%s\n", name)
+		fmt.Printf("[OK] %s.init\n", name)
 		return nil
 	}
 	return fmt.Errorf("Unknown task: %s", name)

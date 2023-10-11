@@ -80,7 +80,7 @@ func (t *TunIface) Delete() error {
 		return nil
 	}
 	if err := runIP("link", "del", t.iface.Name()); err != nil {
-		return fmt.Errorf("Unable to delete interface %s:", t.iface.Name(), err)
+		return fmt.Errorf("Unable to delete interface %s: %s", t.iface.Name(), err)
 	}
 	return nil
 }

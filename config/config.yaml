@@ -12,6 +12,7 @@ headends:
     provider: "NextMN"
     behavior: "H.M.GTP4.D"
     policy:
+      teid: 0x0001
       segments-list:
         - "fd00:51D5:0000:2::"
         - "fd00:51D5:0000:3::"

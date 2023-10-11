@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/louisroyer/gopacket-srv6"
 )
 
 type EndpointMGTP4E struct {
@@ -23,7 +24,7 @@ func NewEndpointMGTP4E(prefix netip.Prefix) *EndpointMGTP4E {
 }
 
 // Handle a packet
-func (h *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
+func (e *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	layerType, err := networkLayerType(packet)
 	if err != nil {
 		return nil, err
@@ -31,19 +32,29 @@ func (h *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	if *layerType != layers.LayerTypeIPv6 {
 		return nil, fmt.Errorf("Endpoints can only handle IPv6 packets")
 	}
+
 	// create gopacket
 	pqt := gopacket.NewPacket(packet, *layerType, gopacket.Default)
-	// check prefix
-	dstSlice := pqt.NetworkLayer().NetworkFlow().Dst().Raw()
-	dst, ok := netip.AddrFromSlice(dstSlice)
-	if !ok {
-		return nil, fmt.Errorf("Malformed address")
-	}
-	if !h.Prefix().Contains(dst) {
-		return nil, fmt.Errorf("Destination address not in handled range")
-	}
-	// RFC 9433 section 6.6. End.M.GTP4.E
 
+	// check prefix
+	layerIPv6 := pqt.Layer(layers.LayerTypeIPv6)
+	if layerIPv6 == nil {
+		return nil, fmt.Errorf("Malformed IPv6 packet")
+	}
+	IPv6 := layerIPv6.(*layers.IPv6)
+	dest, ok := netip.AddrFromSlice(IPv6.DstIP.To16())
+	if !ok {
+		return nil, fmt.Errorf("Malformed IPv6 packet")
+	}
+	if !e.Prefix().Contains(dest) {
+		return nil, fmt.Errorf("Destination address out of this endpoint’s range")
+	}
+	layerSRH := pqt.Layer(gopacket_srv6.LayerTypeIPv6Routing)
+	if layerSRH == nil {
+		return nil, fmt.Errorf("No SRH")
+	}
+	srh := layerSRH.(*gopacket_srv6.IPv6Routing)
+	// RFC 9433 section 6.6. End.M.GTP4.E
 	// S01. When an SRH is processed {
 	// S02.   If (Segments Left != 0) {
 	// S03.      Send an ICMP Parameter Problem to the Source Address with
@@ -51,6 +62,10 @@ func (h *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	//              Pointer set to the Segments Left field,
 	//              interrupt packet processing, and discard the packet.
 	// S04.   }
+	if srh.SegmentsLeft == 0 {
+		// TODO: Send ICMP response
+		return nil, fmt.Errorf("Segments Left is zero")
+	}
 	// S05.   Proceed to process the next header in the packet
 	// S06. }
 
@@ -58,13 +73,53 @@ func (h *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	// entry locally instantiated as an End.M.GTP4.E SID, N does the
 	// following:
 
-	// S01.    Store the IPv6 DA and SA in buffer memory
-	// S02.    Pop the IPv6 header and all its extension headers
-	// S03.    Push a new IPv4 header with a UDP/GTP-U header
-	// S04.    Set the outer IPv4 SA and DA (from buffer memory)
-	// S05.    Set the outer Total Length, DSCP, Time To Live, and
-	//            Next Header fields
+	// S01. Store the IPv6 DA and SA in buffer memory
+	// Note: IPv6 DA is in variable `dest`
+	source, ok := netip.AddrFromSlice(IPv6.SrcIP.To16())
+	if !ok {
+		return nil, fmt.Errorf("Malformed IPv6 packet")
+	}
+	// S02. Pop the IPv6 header and all its extension headers
+	payload, err := popIPv6Headers(pqt)
+	if err != nil {
+		return err
+	}
+	// S03. Push a new IPv4 header with a UDP/GTP-U header
+	ipv4 := layers.IPv4{
+		Version: 4,
+		// Fragmentation is inefficient and should be avoided (TS 129.281 section 4.2.2)
+		// It is recommended to set the default inner MTU size instead.
+		Flags:    layers.IPv4DontFragment,
+		Id:       0, // IPv4 ID field can only be used for fragmentation (RFC 6864), and has no meaning with atomic datagrams
+		Protocol: layers.IPProtocolUDP,
+		Checksum: 0,                            // computed at serialization
+		Options:  make([]layers.IPv4Option, 0), // no option
+
+		// S04. Set the outer IPv4 SA and DA (from buffer memory)
+		//SrcIP:
+		//DstIP:
+
+		// S05. Set the outer Total Length, DSCP, Time To Live, and
+		//      Next Header fields
+		//	TOS: 0, //TODO: from QFI
+		//TTL: // TODO: from tun config
+		//	IHL:    0, // computed at serialization
+		//	Length: 0, // computed at serialization
+
+	}
+
 	// S06.    Set the GTP-U TEID (from buffer memory)
+	//gtpu := layers.GTPv1U
+	// create buffer for the packet
+	//buf := gopacket.NewSerializeBuffer()
+	// initialize buffer with the payload
+	// Initial content of the buffer : [ ]
+	// Updated content of the buffer : [ PDU ]
+	//err = gopacket.Payload(pdu).SerializeTo(buf, gopacket.SerializeOptions{
+	//	FixLengths:       true,
+	//	ComputeChecksums: true,
+	//})
+
 	// S07.    Submit the packet to the egress IPv4 FIB lookup for
 	//            transmission to the new destination
 
