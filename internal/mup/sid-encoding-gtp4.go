@@ -7,14 +7,12 @@ package mup
 import (
 	"fmt"
 	"net/netip"
-
-	"github.com/nextmn/srv6/internal/mup"
 )
 
 type SidGTP4 struct {
 	locFunc        netip.Prefix
 	ipv4           netip.Addr
-	argsMobSession ArgsMobSession
+	argsMobSession *ArgsMobSession
 }
 
 func NewSidGTP4(sid netip.Addr, prefixLength int) (*SidGTP4, error) {
@@ -41,7 +39,7 @@ func NewSidGTP4(sid netip.Addr, prefixLength int) (*SidGTP4, error) {
 
 	// argMobSession extraction
 	argsMobSessionSlice, err := fromSlice(sidSlice, prefixLength+32, 5)
-	argsMobSession, err := mup.ParseArgsMobSession(argsMobSessionSlice)
+	argsMobSession, err := ParseArgsMobSession(argsMobSessionSlice)
 	if err != nil {
 		return nil, err
 	}
@@ -50,4 +48,16 @@ func NewSidGTP4(sid netip.Addr, prefixLength int) (*SidGTP4, error) {
 		ipv4:           ipv4,
 		argsMobSession: argsMobSession,
 	}, nil
+}
+
+func (s *SidGTP4) IPv4() netip.Addr {
+	return s.ipv4
+}
+
+func (s *SidGTP4) ArgsMobSession() *ArgsMobSession {
+	return s.argsMobSession
+}
+
+func (s *SidGTP4) LocFunc() netip.Prefix {
+	return s.locFunc
 }

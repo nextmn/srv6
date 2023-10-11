@@ -6,11 +6,13 @@ package netfunc
 
 import (
 	"fmt"
+	"net"
 	"net/netip"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/louisroyer/gopacket-srv6"
+	"github.com/nextmn/srv6/internal/mup"
 )
 
 type EndpointMGTP4E struct {
@@ -49,40 +51,52 @@ func (e *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	if !e.Prefix().Contains(dest) {
 		return nil, fmt.Errorf("Destination address out of this endpoint’s range")
 	}
-	layerSRH := pqt.Layer(gopacket_srv6.LayerTypeIPv6Routing)
-	if layerSRH == nil {
-		return nil, fmt.Errorf("No SRH")
-	}
-	srh := layerSRH.(*gopacket_srv6.IPv6Routing)
-	// RFC 9433 section 6.6. End.M.GTP4.E
-	// S01. When an SRH is processed {
-	// S02.   If (Segments Left != 0) {
-	// S03.      Send an ICMP Parameter Problem to the Source Address with
-	//              Code 0 (Erroneous header field encountered) and
-	//              Pointer set to the Segments Left field,
-	//              interrupt packet processing, and discard the packet.
-	// S04.   }
-	if srh.SegmentsLeft == 0 {
-		// TODO: Send ICMP response
-		return nil, fmt.Errorf("Segments Left is zero")
-	}
-	// S05.   Proceed to process the next header in the packet
-	// S06. }
+
+	// SRH is optionnal (unless the endpoint is configured to accept only packet with HMAC TLV)
+	if layerSRH := pqt.Layer(gopacket_srv6.LayerTypeIPv6Routing); layerSRH != nil {
+		srh := layerSRH.(*gopacket_srv6.IPv6Routing)
+		// RFC 9433 section 6.6. End.M.GTP4.E
+		// S01. When an SRH is processed {
+		// S02.   If (Segments Left != 0) {
+		// S03.      Send an ICMP Parameter Problem to the Source Address with
+		//              Code 0 (Erroneous header field encountered) and
+		//              Pointer set to the Segments Left field,
+		//              interrupt packet processing, and discard the packet.
+		// S04.   }
+		if srh.SegmentsLeft != 0 {
+			// TODO: Send ICMP response
+			return nil, fmt.Errorf("Segments Left is not zero")
+		}
+		// TODO: check HMAC
+
+		// S05.   Proceed to process the next header in the packet
+		// S06. }
+	} //TODO: else if HMAC -> error: no SRH
 
 	// When processing the Upper-Layer header of a packet matching a FIB
 	// entry locally instantiated as an End.M.GTP4.E SID, N does the
 	// following:
 
 	// S01. Store the IPv6 DA and SA in buffer memory
-	// Note: IPv6 DA is in variable `dest`
-	source, ok := netip.AddrFromSlice(IPv6.SrcIP.To16())
-	if !ok {
-		return nil, fmt.Errorf("Malformed IPv6 packet")
+	sourceIPv6Slice := IPv6.SrcIP.To16()
+	sourceIPv6, err := mup.NewSourceIPv6AddressGTP4E(sourceIPv6Slice)
+	if err != nil {
+		return err
+	}
+	sourceIPv4
+	sidDST, err := mup.NewSidGTP4(dest, e.Prefix().Bits())
+	if err != nil {
+		return err
+	}
+	ipv4Slice := sidDST.IPv4().As4()
+	destIPv4 := net.IPv4(ipv4Slice[0], ipv4Slice[1], ipv4Slice[2], ipv4Slice[3])
+	if err != nil {
+		return nil, err
 	}
 	// S02. Pop the IPv6 header and all its extension headers
 	payload, err := popIPv6Headers(pqt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// S03. Push a new IPv4 header with a UDP/GTP-U header
 	ipv4 := layers.IPv4{
@@ -97,7 +111,7 @@ func (e *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 
 		// S04. Set the outer IPv4 SA and DA (from buffer memory)
 		//SrcIP:
-		//DstIP:
+		DstIP: destIPv4,
 
 		// S05. Set the outer Total Length, DSCP, Time To Live, and
 		//      Next Header fields
