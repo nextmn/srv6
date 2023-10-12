@@ -6,50 +6,62 @@ package netfunc
 
 import (
 	"fmt"
-	"net"
 	"net/netip"
 
-	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	"github.com/louisroyer/gopacket-srv6"
+	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
+	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/mup"
 )
 
 type EndpointMGTP4E struct {
-	Handler
+	BaseHandler
 }
 
-func NewEndpointMGTP4E(prefix netip.Prefix) *EndpointMGTP4E {
+func NewEndpointMGTP4E(prefix netip.Prefix, ttl uint8, hopLimit uint8) *EndpointMGTP4E {
 	return &EndpointMGTP4E{
-		Handler: NewHandler(prefix),
+		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
+	}
+}
+
+// Get IPv6 Destination Address Fields from Packet
+func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.EndMGTP4EIPv6DstFields, error) {
+	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
+	if layerIPv6 == nil {
+		return nil, fmt.Errorf("Malformed IPv6 packet")
+	}
+	// get destination address
+	dstSlice := layerIPv6.(*layers.IPv6).NetworkFlow().Dst().Raw()
+	if dst, err := mup.NewEndMGTP4EIPv6DstFields(dstSlice, uint(e.Prefix().Bits())); err != nil {
+		return nil, err
+	} else {
+		return dst, nil
+	}
+}
+
+// Get IPv6 Source Address Fields from Packet
+func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*mup.EndMGTP4EIPv6SrcFields, error) {
+	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
+	if layerIPv6 == nil {
+		return nil, fmt.Errorf("Malformed IPv6 packet")
+	}
+	// get destination address
+	srcSlice := layerIPv6.(*layers.IPv6).NetworkFlow().Src().Raw()
+	if src, err := mup.NewEndMGTP4EIPv6SrcFields(srcSlice); err != nil {
+		return nil, err
+	} else {
+		return src, nil
 	}
 }
 
 // Handle a packet
-func (e *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
-	layerType, err := networkLayerType(packet)
+func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
+	pqt, err := NewIPv6Packet(packet)
 	if err != nil {
 		return nil, err
 	}
-	if *layerType != layers.LayerTypeIPv6 {
-		return nil, fmt.Errorf("Endpoints can only handle IPv6 packets")
-	}
-
-	// create gopacket
-	pqt := gopacket.NewPacket(packet, *layerType, gopacket.Default)
-
-	// check prefix
-	layerIPv6 := pqt.Layer(layers.LayerTypeIPv6)
-	if layerIPv6 == nil {
-		return nil, fmt.Errorf("Malformed IPv6 packet")
-	}
-	IPv6 := layerIPv6.(*layers.IPv6)
-	dest, ok := netip.AddrFromSlice(IPv6.DstIP.To16())
-	if !ok {
-		return nil, fmt.Errorf("Malformed IPv6 packet")
-	}
-	if !e.Prefix().Contains(dest) {
-		return nil, fmt.Errorf("Destination address out of this endpoint’s range")
+	if err := e.CheckDAInPrefixRange(pqt); err != nil {
+		return nil, err
 	}
 
 	// SRH is optionnal (unless the endpoint is configured to accept only packet with HMAC TLV)
@@ -73,57 +85,80 @@ func (e *EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		// S06. }
 	} //TODO: else if HMAC -> error: no SRH
 
-	// When processing the Upper-Layer header of a packet matching a FIB
-	// entry locally instantiated as an End.M.GTP4.E SID, N does the
-	// following:
-
 	// S01. Store the IPv6 DA and SA in buffer memory
-	sourceIPv6Slice := IPv6.SrcIP.To16()
-	sourceIPv6, err := mup.NewSourceIPv6AddressGTP4E(sourceIPv6Slice)
-	if err != nil {
-		return err
-	}
-	sourceIPv4
-	sidDST, err := mup.NewSidGTP4(dest, e.Prefix().Bits())
-	if err != nil {
-		return err
-	}
-	ipv4Slice := sidDST.IPv4().As4()
-	destIPv4 := net.IPv4(ipv4Slice[0], ipv4Slice[1], ipv4Slice[2], ipv4Slice[3])
+	ipv6SA, err := e.ipv6SAFields(pqt)
 	if err != nil {
 		return nil, err
 	}
+	ipv6DA, err := e.ipv6DAFields(pqt)
+	if err != nil {
+		return nil, err
+	}
+
 	// S02. Pop the IPv6 header and all its extension headers
-	payload, err := popIPv6Headers(pqt)
+	payload, err := pqt.PopIPv6Headers()
 	if err != nil {
 		return nil, err
 	}
+
 	// S03. Push a new IPv4 header with a UDP/GTP-U header
+	// S04. Set the outer IPv4 SA and DA (from buffer memory)
+	// S05. Set the outer Total Length, DSCP, Time To Live, and
+	//      Next Header fields
 	ipv4 := layers.IPv4{
+		// IPv4
 		Version: 4,
+		// Next Header: UDP
+		Protocol: layers.IPProtocolUDP,
 		// Fragmentation is inefficient and should be avoided (TS 129.281 section 4.2.2)
 		// It is recommended to set the default inner MTU size instead.
-		Flags:    layers.IPv4DontFragment,
-		Id:       0, // IPv4 ID field can only be used for fragmentation (RFC 6864), and has no meaning with atomic datagrams
-		Protocol: layers.IPProtocolUDP,
-		Checksum: 0,                            // computed at serialization
-		Options:  make([]layers.IPv4Option, 0), // no option
+		Flags: layers.IPv4DontFragment,
+		// Destination IP from buffer
+		SrcIP: ipv6SA.IPv4(),
+		// Source IP from buffer
+		DstIP: ipv6DA.IPv4(),
+		// TOS = DSCP + ECN
+		// We copy the QFI into the DSCP Field
+		TOS: ipv6DA.QFI() << 2,
+		// TTL from tun config
+		TTL: e.TTL(),
+		// other fields are initialized at zero
+		// cheksum, and length are computed at serialization
 
-		// S04. Set the outer IPv4 SA and DA (from buffer memory)
-		//SrcIP:
-		DstIP: destIPv4,
+	}
 
-		// S05. Set the outer Total Length, DSCP, Time To Live, and
-		//      Next Header fields
-		//	TOS: 0, //TODO: from QFI
-		//TTL: // TODO: from tun config
-		//	IHL:    0, // computed at serialization
-		//	Length: 0, // computed at serialization
-
+	udp := layers.UDP{
+		// Source Port
+		SrcPort: ipv6SA.UDPPortNumber(),
+		SrcPort: constants.GTPU_PORT_INT,
+		// cheksum, and length are computed at serialization
 	}
 
 	// S06.    Set the GTP-U TEID (from buffer memory)
-	//gtpu := layers.GTPv1U
+	pduSessionContainerLength := 0 // FIXME
+	gtpu := layers.GTPv1U{
+		// Version should always be set to 1
+		Version: 1,
+		// TS 128281:
+		// > This bit is used as a protocol discriminator between
+		// > GTP (when PT is '1') and GTP' (whenPT is '0').
+		ProtocolType: 1,
+		// We use extension header "PDU Session Container"
+		ExtensionHeaderFlag: true,
+		GTPExtensionHeaders: nil, // FIXME
+		// TS 128281:
+		// > Since the use of Sequence Numbers is optional for G-PDUs, the PGW,
+		// > SGW, ePDG, eNodeB and TWAN should set the flag to '0'.
+		SequenceNumberFlag: false,
+		// message type: G-PDU
+		MessageType: constants.GTPU_MESSAGE_TYPE_GPDU,
+		TEID:        ipv6DA.PDUSessionID(),
+		// TS 128281:
+		// > This field indicates the length in octets of the payload, i.e. the rest of the packet following the mandatory
+		// > part of the GTP header (that is the first 8 octets). The Sequence Number, the N-PDU Number or any Extension
+		// > headers shall be considered to be part of the payload, i.e. included in the length count
+		MessageLength: uint16(len(payload.LayerContents()) + pduSessionContainerLength),
+	}
 	// create buffer for the packet
 	//buf := gopacket.NewSerializeBuffer()
 	// initialize buffer with the payload

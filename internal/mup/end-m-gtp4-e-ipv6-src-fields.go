@@ -5,8 +5,8 @@
 package mup
 
 import (
-	"fmt"
-	"net/netip"
+	"encoding/binary"
+	"net"
 )
 
 //-------------------------------------------------------
@@ -57,57 +57,56 @@ import (
 //
 //                 IPv6 SA Encoding for End.M.GTP4.E in NextMN
 
-type SourceIPv6AddressGTP4E struct {
-	ipv4 netip.Addr
-	udp  []byte
+type EndMGTP4EIPv6SrcFields struct {
+	ipv4 [IPV4_ADDR_SIZE_BYTE]byte
+	udp  [UDP_PORT_SIZE_BYTE]byte
 }
 
-func NewSourceIPv6AddressGTP4E(addr netip.Addr) (*SourceIPv6AddressGTP4E, error) {
-	if !addr.Is6() {
-		return nil, fmt.Errorf("addr must be IPv6 address")
+func NewEndMGTP4EIPv6SrcFields(addr []byte) (*EndMGTP4EIPv6SrcFields, error) {
+	if len(addr) != IPV6_ADDR_SIZE_BYTE {
+		return nil, ErrNotAnIPv6Address
 	}
-	addrSlice := addr.AsSlice()
 
 	// Prefix length extraction
-	prefixLenSlice, err := fromSlice(addrSlice, 128-7, 1)
+	prefixLenSlice, err := fromSlice(addr, IPV6_ADDR_SIZE_BIT-IPV6_LEN_ENCODING_BIT, 1)
 	if err != nil {
 		return nil, err
 	}
-	prefixLen := int(prefixLenSlice[0])
+	prefixLen := uint(prefixLenSlice[0])
 
 	if prefixLen == 0 {
-		return nil, fmt.Errorf("unknown prefix length")
+		return nil, ErrWrongValue
 	}
-	if prefixLen+32+16+7 > 128 {
-		return nil, fmt.Errorf("erroneous prefix length")
+	if prefixLen+IPV4_ADDR_SIZE_BIT+UDP_PORT_SIZE_BIT+IPV6_LEN_ENCODING_BIT > IPV6_ADDR_SIZE_BIT {
+		return nil, ErrWrongValue
 	}
 
 	// ipv4 extraction
-	ipv4Slice, err := fromSlice(addrSlice, prefixLen, 4)
-	if err != nil {
+	var ipv4 [IPV4_ADDR_SIZE_BYTE]byte
+	if src, err := fromSlice(addr, prefixLen, IPV4_ADDR_SIZE_BYTE); err != nil {
 		return nil, err
-	}
-	ipv4, ok := netip.AddrFromSlice(ipv4Slice)
-	if !ok {
-		return nil, fmt.Errorf("could not create ipv4 from slice")
+	} else {
+		copy(ipv4[:], src[:IPV4_ADDR_SIZE_BYTE])
 	}
 
 	// udp port extraction
-	udp, err := fromSlice(addrSlice, prefixLen+32, 2)
-	if err != nil {
+	var udp [UDP_PORT_SIZE_BYTE]byte
+	if src, err := fromSlice(addr, prefixLen+IPV4_ADDR_SIZE_BIT, UDP_PORT_SIZE_BYTE); err != nil {
 		return nil, err
+	} else {
+		copy(udp[:], src[:UDP_PORT_SIZE_BYTE])
 	}
 
-	return &SourceIPv6AddressGTP4E{
+	return &EndMGTP4EIPv6SrcFields{
 		ipv4: ipv4,
 		udp:  udp,
 	}, nil
 }
 
-func (s *SourceIPv6AddressGTP4E) IPv4() netip.Addr {
-	return s.ipv4
+func (e *EndMGTP4EIPv6SrcFields) IPv4() net.IP {
+	return net.IPv4(e.ipv4[0], e.ipv4[1], e.ipv4[2], e.ipv4[3])
 }
 
-func (s *SourceIPv6AddressGTP4E) UDPPortNumber() []byte {
-	return s.udp
+func (e *EndMGTP4EIPv6SrcFields) UDPPortNumber() uint16 {
+	return binary.BigEndian.Uint16([]byte{e.udp[0], e.udp[1]})
 }

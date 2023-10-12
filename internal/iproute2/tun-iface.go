@@ -74,6 +74,20 @@ func (t *TunIface) IPv6HopLimit() (uint8, error) {
 	return uint8(ret), nil
 }
 
+// IPv4 default TTL
+func (t *TunIface) IPv4TTL() (uint8, error) {
+	filename := "/proc/sys/net/ipv4/ip_default_ttl"
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return 0, err
+	}
+	ret, err := strconv.ParseUint(strings.TrimRight(string(content), "\n"), 10, 8)
+	if err != nil {
+		return 0, err
+	}
+	return uint8(ret), nil
+}
+
 // Stop TunIface related goroutines and delete the interface
 func (t *TunIface) Delete() error {
 	if t.iface == nil {

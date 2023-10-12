@@ -9,4 +9,6 @@ import "errors"
 var (
 	ErrTooShortToMarshal = errors.New("too short to serialize")
 	ErrTooShortToParse   = errors.New("too short to parse")
+	ErrNotAnIPv6Address  = errors.New("not an IPv6 Address")
+	ErrWrongValue        = errors.New("wrong value")
 )

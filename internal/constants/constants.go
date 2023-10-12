@@ -6,6 +6,9 @@ package constants
 
 // ports
 const GTPU_PORT = "2152"
+const GTPU_PORT_INT = 2152
+
+const GTPU_MESSAGE_TYPE_GPDU = 255
 
 // iproute2 rt protos
 const RT_PROTO_NEXTMN = "nextmn"

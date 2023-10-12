@@ -69,7 +69,7 @@ func (a *ArgsMobSession) PDUSessionID() uint32 {
 
 // MarshalLen returns the serial length of Args.Mob.Session.
 func (a *ArgsMobSession) MarshalLen() int {
-	return 5
+	return ARGS_MOB_SESSION_SIZE_BYTE
 }
 
 // Marshal returns the byte sequence generated from ArgsMobSession.
@@ -86,19 +86,21 @@ func (a *ArgsMobSession) MarshalTo(b []byte) error {
 	if len(b) < a.MarshalLen() {
 		return ErrTooShortToMarshal
 	}
-	b[0] = ((0x3F & a.qfi) << 2) | ((0x01 & a.r) << 1) | (0x01 & a.u)
-	binary.BigEndian.PutUint32(b[1:5], a.pduSessionID)
+	b[QFI_POS_BYTE] |= (QFI_MASK & a.qfi) << QFI_POS_BIT
+	b[R_POS_BYTE] |= (R_MASK & a.r) << R_POS_BIT
+	b[U_POS_BYTE] |= (U_MASK & a.u) << U_POS_BIT
+	binary.BigEndian.PutUint32(b[ARGS_MOB_SESSION_SIZE_BYTE-TEID_SIZE_BYTE:TEID_SIZE_BYTE], a.pduSessionID)
 	return nil
 }
 
 // UnmarshalBinary sets the values retrieved from byte sequence in an ArgsMobSession.
 func (a *ArgsMobSession) UnmarshalBinary(b []byte) error {
-	if len(b) < 5 {
+	if len(b) < ARGS_MOB_SESSION_SIZE_BYTE {
 		return ErrTooShortToParse
 	}
-	a.qfi = (0x3F & (b[0] >> 2))
-	a.r = (0x01 & (b[0] >> 1))
-	a.u = (0x01 & b[0])
-	a.pduSessionID = binary.BigEndian.Uint32(b[1:5])
+	a.qfi = QFI_MASK & (b[QFI_POS_BYTE] >> QFI_POS_BIT)
+	a.r = R_MASK & (b[R_POS_BYTE] >> R_POS_BIT)
+	a.u = U_MASK & (b[U_POS_BYTE] >> U_POS_BIT)
+	a.pduSessionID = binary.BigEndian.Uint32(b[TEID_POS_BYTE : TEID_POS_BYTE+TEID_SIZE_BYTE])
 	return nil
 }

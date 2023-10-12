@@ -5,45 +5,32 @@
 package netfunc
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net/netip"
 
-	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/nextmn/srv6/internal/constants"
 )
 
 type HeadendGTP4 struct {
-	Handler
+	BaseHandler
 }
 
-func NewHeadendGTP4(prefix netip.Prefix) *HeadendGTP4 {
+func NewHeadendGTP4(prefix netip.Prefix, ttl uint8, hopLimit uint8) *HeadendGTP4 {
 	return &HeadendGTP4{
-		Handler: NewHandler(prefix),
+		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
 	}
 }
 
 // Handle a packet
-func (h *HeadendGTP4) Handle(packet []byte) ([]byte, error) {
-	layerType, err := networkLayerType(packet)
+func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
+	pqt, err := NewIPv4Packet(packet)
 	if err != nil {
 		return nil, err
 	}
-	if *layerType != layers.LayerTypeIPv4 {
-		return nil, fmt.Errorf("Headend for GTP4 can only handle IPv4 packets")
-	}
-
-	// create gopacket
-	pqt := gopacket.NewPacket(packet, *layerType, gopacket.Default)
-
-	// check prefix
-	dstSlice := pqt.NetworkLayer().NetworkFlow().Dst().Raw()
-	dst, ok := netip.AddrFromSlice(dstSlice)
-	if !ok {
-		return nil, fmt.Errorf("Malformed address")
-	}
-	if !h.Prefix().Contains(dst) {
-		return nil, fmt.Errorf("Destination address not in handled range")
+	if err := h.CheckDAInPrefixRange(pqt); err != nil {
+		return nil, err
 	}
 
 	// RFC 9433 section 6.7. H.M.GTP4.D
@@ -53,8 +40,7 @@ func (h *HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	if transportLayer.LayerType() != layers.LayerTypeUDP {
 		return nil, fmt.Errorf("No UDP layer")
 	}
-	// TODO: use transportLayer.TransportFlow().Dst().Raw() to improve perfs
-	if transportLayer.TransportFlow().Dst().String() != constants.GTPU_PORT {
+	if binary.BigEndian.Uint16(transportLayer.TransportFlow().Dst().Raw()) != constants.GTPU_PORT_INT {
 		return nil, fmt.Errorf("No GTP-U layer")
 	}
 	// S02. Pop the outer IPv4 header and UDP/GTP-U headers

@@ -4,23 +4,12 @@
 // SPDX-License-Identifier: MIT
 package mup
 
-import "fmt"
-
 // slice: input slice
 // startBit: offset in bits
 // length: length of result in Bytes
-func fromSlice(slice []byte, startBit int, length int) ([]byte, error) {
-	if startBit < 0 {
-		return nil, fmt.Errorf("startBit is negative")
-	}
-	if length < 0 {
-		return nil, fmt.Errorf("length is negative")
-	}
-	if len(slice) < 1 {
-		return nil, fmt.Errorf("slice len is less than 1")
-	}
-	if len(slice) < length {
-		return nil, fmt.Errorf("length is superior to slice length")
+func fromSlice(slice []byte, startBit uint, length uint) ([]byte, error) {
+	if uint(len(slice)) < length {
+		return nil, ErrTooShortToParse
 	}
 	startByte := startBit / 8
 	offset := startBit % 8
