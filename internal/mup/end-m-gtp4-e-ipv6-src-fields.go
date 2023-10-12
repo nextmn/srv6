@@ -68,16 +68,14 @@ func NewEndMGTP4EIPv6SrcFields(addr []byte) (*EndMGTP4EIPv6SrcFields, error) {
 	}
 
 	// Prefix length extraction
-	prefixLenSlice, err := fromSlice(addr, IPV6_ADDR_SIZE_BIT-IPV6_LEN_ENCODING_BIT, 1)
-	if err != nil {
-		return nil, err
-	}
-	prefixLen := uint(prefixLenSlice[0])
-
+	prefixLen := uint(IPV6_LEN_ENCODING_MASK & (addr[IPV6_LEN_ENCODING_POS_BYTE] >> IPV6_LEN_ENCODING_POS_BIT))
 	if prefixLen == 0 {
+		// even if globally routable IPv6 Prefix size cannot currently be less than 32 (per ICANN policy),
+		// nothing prevent the use of such prefix with ULA (fc00::/7)
+		// or, in the future, a prefix from a currently not yet allocated address block.
 		return nil, ErrWrongValue
 	}
-	if prefixLen+IPV4_ADDR_SIZE_BIT+UDP_PORT_SIZE_BIT+IPV6_LEN_ENCODING_BIT > IPV6_ADDR_SIZE_BIT {
+	if prefixLen+IPV4_ADDR_SIZE_BIT+UDP_PORT_SIZE_BIT+IPV6_LEN_ENCODING_SIZE_BIT > IPV6_ADDR_SIZE_BIT {
 		return nil, ErrWrongValue
 	}
 
