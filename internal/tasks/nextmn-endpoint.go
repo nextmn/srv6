@@ -44,7 +44,15 @@ func (t *TaskNextMNEndpoint) RunInit() error {
 	if !ok {
 		return fmt.Errorf("Interface %s is not in registry", t.iface_name)
 	}
-	if ep, err := netfunc.NewEndpoint(t.endpoint); err != nil {
+	ttl, err := tunIface.IPv4TTL()
+	if err != nil {
+		return err
+	}
+	hopLimit, err := tunIface.IPv6HopLimit()
+	if err != nil {
+		return err
+	}
+	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit); err != nil {
 		return err
 	} else {
 		t.netfunc = ep

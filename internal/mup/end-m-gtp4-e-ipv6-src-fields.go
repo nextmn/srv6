@@ -7,6 +7,8 @@ package mup
 import (
 	"encoding/binary"
 	"net"
+
+	"github.com/google/gopacket/layers"
 )
 
 //-------------------------------------------------------
@@ -105,6 +107,6 @@ func (e *EndMGTP4EIPv6SrcFields) IPv4() net.IP {
 	return net.IPv4(e.ipv4[0], e.ipv4[1], e.ipv4[2], e.ipv4[3])
 }
 
-func (e *EndMGTP4EIPv6SrcFields) UDPPortNumber() uint16 {
-	return binary.BigEndian.Uint16([]byte{e.udp[0], e.udp[1]})
+func (e *EndMGTP4EIPv6SrcFields) UDPPortNumber() layers.UDPPort {
+	return (layers.UDPPort)(binary.BigEndian.Uint16([]byte{e.udp[0], e.udp[1]}))
 }

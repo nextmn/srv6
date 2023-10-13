@@ -38,7 +38,7 @@ func (t *TaskLinuxHeadend) RunInit() error {
 	switch t.headend.Behavior {
 	case config.H_Encaps:
 		if t.headend.MTU != nil {
-			if err := t.table.AddSeg6Encap(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name, "mtu", t.headend.mtu); err != nil {
+			if err := t.table.AddSeg6EncapWithMTU(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name, *t.headend.MTU); err != nil {
 				return err
 			}
 		} else {

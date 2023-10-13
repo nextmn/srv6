@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/netip"
 
+	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
 	"github.com/nextmn/srv6/internal/constants"
@@ -130,7 +131,7 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	udp := layers.UDP{
 		// Source Port
 		SrcPort: ipv6SA.UDPPortNumber(),
-		SrcPort: constants.GTPU_PORT_INT,
+		DstPort: constants.GTPU_PORT_INT,
 		// cheksum, and length are computed at serialization
 	}
 
@@ -160,65 +161,21 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		MessageLength: uint16(len(payload.LayerContents()) + pduSessionContainerLength),
 	}
 	// create buffer for the packet
-	//buf := gopacket.NewSerializeBuffer()
-	// initialize buffer with the payload
-	// Initial content of the buffer : [ ]
-	// Updated content of the buffer : [ PDU ]
-	//err = gopacket.Payload(pdu).SerializeTo(buf, gopacket.SerializeOptions{
-	//	FixLengths:       true,
-	//	ComputeChecksums: true,
-	//})
-
-	// S07.    Submit the packet to the egress IPv4 FIB lookup for
-	//            transmission to the new destination
-
-	// extract TEID from destination address
-	// destination address is formed as follow : [ SID (netsize bits) + IPv4 DA (only if ipv4) + ArgsMobSession ]
-	//	dstarray := dst.As16()
-	//	offset := 0
-	//	if s.gtpIPVersion == 4 {
-	//		offset = 32 / 8
-	//	}
-	// TODO: check segments left = 1, and if not send ICMP Parameter Problem to the Source Address (code 0, pointer to SegemntsLeft field), and drop the packet
-	//	args, err := mup.ParseArgsMobSession(dstarray[(s.netsize/8)+offset:])
-	//	if err != nil {
-	//		return err
-	//	}
-	//	teid := args.PDUSessionID()
-	// retrieve nextGTPNode (SHR[0])
-
-	//	nextGTPNode := ""
-	//	if s.gtpIPVersion == 6 {
-	//		// workaround: enforce use of gopacket_srv6 functions
-	//		shr := gopacket.NewPacket(pqt.Layers()[1].LayerContents(), gopacket_srv6.LayerTypeIPv6Routing, gopacket.Default).Layers()[0].(*gopacket_srv6.IPv6Routing)
-	//		log.Println("layer type", pqt.Layers()[1].LayerType())
-	//		log.Println("RoutingType", shr.RoutingType)
-	//		log.Println("LastEntry:", shr.LastEntry)
-	//		log.Println("sourceRoutingIPs len:", len(shr.SourceRoutingIPs))
-	//		log.Println("sourceRoutingIPs[0]:", shr.SourceRoutingIPs[0])
-	//		nextGTPNode = fmt.Sprintf("[%s]:%s", shr.SourceRoutingIPs[0].String(), GTPU_PORT)
-	//	} else {
-	//		// IPv4
-	//		ip_arr := dstarray[s.netsize/8 : (s.netsize/8)+4]
-	//		ipv4_address := net.IPv4(ip_arr[0], ip_arr[1], ip_arr[2], ip_arr[3])
-	//		nextGTPNode = fmt.Sprintf("%s:%s", ipv4_address, GTPU_PORT)
-	//	}
-	//	raddr, err := net.ResolveUDPAddr("udp", nextGTPNode)
-	//	if err != nil {
-	//		log.Println("Error while resolving ", nextGTPNode, "(remote node)")
-	//		return nil
-	//	}
-	// retrieve payload
-	//			pdu := pqt.Layers()[2].LayerContents() // We expect the packet to contains the following layers [ IPv6 Header (0) + IPv6Routing Ext Header (1) + PDU (2) ]
-	//			// Search for existing Uconn with this peer and use it
-	//			if s.uConn[nextGTPNode] == nil {
-	//				// Start uConn with this peer
-	//				ch := make(chan bool)
-	//				go s.StartUconn(ch, nextGTPNode, raddr)
-	//				_ = <-ch
-	//			}
-	//			s.uConn[nextGTPNode].WriteToGTP(teid, pdu, raddr)
-
-	// create gopacket
-	return nil, fmt.Errorf("TODO")
+	buf := gopacket.NewSerializeBuffer()
+	if err := gopacket.SerializeLayers(buf,
+		gopacket.SerializeOptions{
+			FixLengths:       true,
+			ComputeChecksums: true,
+		},
+		&ipv4,
+		&udp,
+		&gtpu,
+		gopacket.Payload(payload.LayerContents()),
+	); err != nil {
+		return nil, err
+	} else {
+		// S07. Submit the packet to the egress IPv4 FIB lookup for
+		//      transmission to the new destination
+		return buf.Bytes(), nil
+	}
 }

@@ -198,6 +198,14 @@ func (t Table) AddSeg6Encap(prefix string, segmentsList string, dev string) erro
 	return nil
 }
 
+// Add Linux Headend with encap and MTU
+func (t Table) AddSeg6EncapWithMTU(prefix string, segmentsList string, dev string, mtu string) error {
+	if err := t.AddRoute(prefix, "encap", "seg6", "mode", "encap", "segs", segmentsList, "dev", dev, "mtu", mtu); err != nil {
+		return err
+	}
+	return nil
+}
+
 // Delete Linux Headend with encap
 func (t Table) DelSeg6Encap(prefix string, segmentsList string, dev string) error {
 	if err := t.DelRoute(prefix, "encap", "seg6", "mode", "encap", "segs", segmentsList, "dev", dev); err != nil {

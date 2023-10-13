@@ -13,7 +13,7 @@ import (
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
-func NewEndpoint(ec *config.Endpoint) (netfunc_api.NetFunc, error) {
+func NewEndpoint(ec *config.Endpoint, ttl uint8, hopLimit uint8) (netfunc_api.NetFunc, error) {
 	p, err := netip.ParsePrefix(ec.Prefix)
 	if err != nil {
 		return nil, err
