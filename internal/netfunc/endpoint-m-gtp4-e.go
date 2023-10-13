@@ -136,7 +136,37 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	}
 
 	// S06.    Set the GTP-U TEID (from buffer memory)
-	pduSessionContainerLength := 0 // FIXME
+	pduSessionContainer := make([]byte, 2) // size should be (n×4-2) octets where n is a positive integer
+	// Since End.M.GTP4.E is intended to be used on downlink, we use a DL PDU Session Information Message
+	// If you want to use an endpoint behavior for uplink, please create a new one that would use
+	// appropriate function arguments.
+	// TS 138.415:
+	// First byte
+	// - [4 bits] PDU Type = 0 (DL PDU Session Information)
+	// - [1 bit]  QMP      = 0 (not a QoS Monitoring Packet)
+	// - [1 bit]  SNP      = 0 (QFI Sequence Number not present)
+	// - [1 bit]  MSNP     = 0 (no MBS Sequence Number Presence)
+	// - [1 bit]  Spare
+	pduSessionContainer[0] = 0
+	// Second byte
+	// - [1 bit] PPP = 0 (Paging Policy Indicator not present)
+	// - [1 bit] RQI from buffer memory
+	// - [6 bits] QFI from buffer memory
+	pduSessionContainer[1] = ipv6DA.QFI()
+	if ipv6DA.R() {
+		pduSessionContainer[1] |= 1 << 6
+	}
+
+	gtpExtensionHeaders := make([]layers.GTPExtensionHeader, 1)
+	gtpExtensionHeaders[0] = layers.GTPExtensionHeader{
+		Type:    0x85, // PDU Session Container
+		Content: pduSessionContainer,
+	}
+	gtpExtensionHeadersLen := 0
+	for _, g := range gtpExtensionHeaders {
+		gtpExtensionHeadersLen += len(g.Content) + 2 // Type + Length = 2 bytes
+	}
+
 	gtpu := layers.GTPv1U{
 		// Version should always be set to 1
 		Version: 1,
@@ -146,7 +176,7 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		ProtocolType: 1,
 		// We use extension header "PDU Session Container"
 		ExtensionHeaderFlag: true,
-		GTPExtensionHeaders: nil, // FIXME
+		GTPExtensionHeaders: gtpExtensionHeaders,
 		// TS 128281:
 		// > Since the use of Sequence Numbers is optional for G-PDUs, the PGW,
 		// > SGW, ePDG, eNodeB and TWAN should set the flag to '0'.
@@ -154,11 +184,21 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		// message type: G-PDU
 		MessageType: constants.GTPU_MESSAGE_TYPE_GPDU,
 		TEID:        ipv6DA.PDUSessionID(),
+		// Unfortunatelly, gopacket is not able to compute length at serialization for GTP…
+		// We need to do it manually :(
 		// TS 128281:
 		// > This field indicates the length in octets of the payload, i.e. the rest of the packet following the mandatory
 		// > part of the GTP header (that is the first 8 octets). The Sequence Number, the N-PDU Number or any Extension
 		// > headers shall be considered to be part of the payload, i.e. included in the length count
-		MessageLength: uint16(len(payload.LayerContents()) + pduSessionContainerLength),
+		// We need to include
+		// - payload length
+		// - 4 bytes for :
+		//   - Sequence Number (1st Octet): ignored
+		//   - Sequence Number (2nd Octet): ignored
+		//   - N-PDU Number: ignored
+		//   - Next Extension Header Type (at end of the packet: no next header)
+		// - total size of gtp extension headers
+		MessageLength: uint16(len(payload.LayerContents()) + 4 + gtpExtensionHeadersLen),
 	}
 	// create buffer for the packet
 	buf := gopacket.NewSerializeBuffer()
