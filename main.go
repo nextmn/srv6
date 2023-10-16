@@ -52,7 +52,7 @@ func main() {
 		Action: func(c *cli.Context) error {
 			conf, err := srv6_config.ParseConf(config_file)
 			if err != nil {
-				fmt.Println("Error loading config, exiting…")
+				fmt.Println("Error loading config, exiting…:", err)
 				os.Exit(1)
 			}
 

@@ -4,6 +4,13 @@
 // SPDX-License-Identifier: MIT
 package config
 
+import (
+	"fmt"
+	"strings"
+
+	"gopkg.in/yaml.v3"
+)
+
 type HeadendBehavior uint32
 
 const (
@@ -23,4 +30,19 @@ func (hb HeadendBehavior) String() string {
 	default:
 		return "Unknown"
 	}
+}
+
+// Unmarshal YAML to HeadendBehavior
+func (p *HeadendBehavior) UnmarshalYAML(n *yaml.Node) error {
+	switch strings.ToLower(n.Value) {
+	case "h.encaps":
+		*p = H_Encaps
+	case "h.inline":
+		*p = H_Inline
+	case "h.m.gtp4.d":
+		*p = H_M_GTP4_D
+	default:
+		return fmt.Errorf("Unknown headend behavior")
+	}
+	return nil
 }

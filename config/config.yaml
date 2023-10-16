@@ -25,9 +25,10 @@ headends:
     provider: "Linux"
     behavior: "H.Encaps"
     policy:
-      segments-list:
-        - "fd00:51D5:0000:2::"
-        - "fd00:51D5:0000:3::"
+      - bsid:
+          segments-list:
+            - "fd00:51D5:0000:2::"
+            - "fd00:51D5:0000:3::"
 
 locator: "fd00:51D5:0000:1::/64"
 endpoints:
