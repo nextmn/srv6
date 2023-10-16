@@ -18,10 +18,9 @@ type SingleHook struct {
 
 // Creates a new SingleHook
 func NewSingleHook(cmd *string) *SingleHook {
-	if cmd == nil {
-		return nil
+	return &SingleHook{
+		command: cmd,
 	}
-	return &SingleHook{command: cmd}
 }
 
 // Runs the command of the SingleHook

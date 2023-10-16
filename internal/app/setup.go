@@ -31,10 +31,18 @@ func NewSetup(config *config.SRv6Config) *Setup {
 // Add tasks to setup
 func (s *Setup) AddTasks() {
 	// 0.  user hooks
+	var preInitHook, preExitHook *string
+	var postInitHook, postExitHook *string
+	if s.config.Hooks != nil {
+		preInitHook = s.config.Hooks.PreInitHook
+		preExitHook = s.config.Hooks.PreExitHook
+		postInitHook = s.config.Hooks.PostInitHook
+		postExitHook = s.config.Hooks.PostExitHook
+	}
 	// 0.1 pre-hooks
-	s.tasks["hook.pre"] = tasks.NewMultiHook(s.config.Hooks.PreInitHook, s.config.Hooks.PreExitHook)
+	s.tasks["hook.pre"] = tasks.NewMultiHook(preInitHook, preExitHook)
 	// 0.2 post-hooks
-	s.tasks["hook.post"] = tasks.NewMultiHook(s.config.Hooks.PostInitHook, s.config.Hooks.PostExitHook)
+	s.tasks["hook.post"] = tasks.NewMultiHook(postInitHook, postExitHook)
 
 	// 1.  ifaces
 	// 1.1 iface linux (type dummy)

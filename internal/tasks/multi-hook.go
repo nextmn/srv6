@@ -24,7 +24,7 @@ func NewMultiHook(init *string, exit *string) *HookMulti {
 
 // Init function
 func (h *HookMulti) RunInit() error {
-	if h.exit != nil {
+	if h.init != nil {
 		if err := h.init.Run(); err != nil {
 			return err
 		}
