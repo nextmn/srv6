@@ -35,19 +35,27 @@ func (t *TaskLinuxHeadend) RunInit() error {
 	if t.headend.Policy == nil {
 		return fmt.Errorf("No policy set for this headend")
 	}
+	seglist := ""
+	for _, p := range t.headend.Policy {
+		if p.Match == nil {
+			seglist = p.Bsid.ToIPRoute2()
+			break
+		}
+
+	}
 	switch t.headend.Behavior {
 	case config.H_Encaps:
 		if t.headend.MTU != nil {
-			if err := t.table.AddSeg6EncapWithMTU(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name, *t.headend.MTU); err != nil {
+			if err := t.table.AddSeg6EncapWithMTU(t.headend.To, seglist, t.iface_name, *t.headend.MTU); err != nil {
 				return err
 			}
 		} else {
-			if err := t.table.AddSeg6Encap(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name); err != nil {
+			if err := t.table.AddSeg6Encap(t.headend.To, seglist, t.iface_name); err != nil {
 				return err
 			}
 		}
 	case config.H_Inline:
-		if err := t.table.AddSeg6Inline(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name); err != nil {
+		if err := t.table.AddSeg6Inline(t.headend.To, seglist, t.iface_name); err != nil {
 			return err
 		}
 	default:
@@ -62,13 +70,21 @@ func (t *TaskLinuxHeadend) RunExit() error {
 	if t.headend.Policy == nil {
 		return fmt.Errorf("No policy set for this headend")
 	}
+	seglist := ""
+	for _, p := range t.headend.Policy {
+		if p.Match == nil {
+			seglist = p.Bsid.ToIPRoute2()
+			break
+		}
+
+	}
 	switch t.headend.Behavior {
 	case config.H_Encaps:
-		if err := t.table.DelSeg6Encap(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name); err != nil {
+		if err := t.table.DelSeg6Encap(t.headend.To, seglist, t.iface_name); err != nil {
 			return err
 		}
 	case config.H_Inline:
-		if err := t.table.DelSeg6Inline(t.headend.To, t.headend.Policy.ToIPRoute2(), t.iface_name); err != nil {
+		if err := t.table.DelSeg6Inline(t.headend.To, seglist, t.iface_name); err != nil {
 			return err
 		}
 	default:

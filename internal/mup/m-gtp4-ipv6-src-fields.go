@@ -6,7 +6,9 @@ package mup
 
 import (
 	"encoding/binary"
+	"fmt"
 	"net"
+	"net/netip"
 
 	"github.com/google/gopacket/layers"
 )
@@ -59,12 +61,24 @@ import (
 //
 //                 IPv6 SA Encoding for End.M.GTP4.E in NextMN
 
-type EndMGTP4EIPv6SrcFields struct {
-	ipv4 [IPV4_ADDR_SIZE_BYTE]byte
-	udp  [UDP_PORT_SIZE_BYTE]byte
+type MGTP4IPv6SrcFields struct {
+	prefix netip.Prefix // prefix in canonical form
+	ipv4   [IPV4_ADDR_SIZE_BYTE]byte
+	udp    [UDP_PORT_SIZE_BYTE]byte
 }
 
-func NewEndMGTP4EIPv6SrcFields(addr []byte) (*EndMGTP4EIPv6SrcFields, error) {
+func NewMGTP4IPv6SrcFieldsFromFields(prefix netip.Prefix, ipv4 []byte, udp []byte) (*MGTP4IPv6SrcFields, error) {
+	if len(ipv4) != 4 {
+		return nil, fmt.Errorf("Not a IPv4 Address")
+	}
+	return &MGTP4IPv6SrcFields{
+		prefix: prefix.Masked(),
+		ipv4:   [4]byte{ipv4[0], ipv4[1], ipv4[2], ipv4[3]},
+		udp:    [2]byte{udp[0], udp[1]},
+	}, nil
+}
+
+func NewMGTP4IPv6SrcFields(addr []byte) (*MGTP4IPv6SrcFields, error) {
 	if len(addr) != IPV6_ADDR_SIZE_BYTE {
 		return nil, ErrNotAnIPv6Address
 	}
@@ -80,6 +94,13 @@ func NewEndMGTP4EIPv6SrcFields(addr []byte) (*EndMGTP4EIPv6SrcFields, error) {
 	if prefixLen+IPV4_ADDR_SIZE_BIT+UDP_PORT_SIZE_BIT+IPV6_LEN_ENCODING_SIZE_BIT > IPV6_ADDR_SIZE_BIT {
 		return nil, ErrWrongValue
 	}
+
+	// prefix extraction
+	a, ok := netip.AddrFromSlice(addr)
+	if !ok {
+		return nil, ErrNotAnIPv6Address
+	}
+	prefix := netip.PrefixFrom(a, int(prefixLen)).Masked()
 
 	// ipv4 extraction
 	var ipv4 [IPV4_ADDR_SIZE_BYTE]byte
@@ -97,16 +118,59 @@ func NewEndMGTP4EIPv6SrcFields(addr []byte) (*EndMGTP4EIPv6SrcFields, error) {
 		copy(udp[:], src[:UDP_PORT_SIZE_BYTE])
 	}
 
-	return &EndMGTP4EIPv6SrcFields{
-		ipv4: ipv4,
-		udp:  udp,
+	return &MGTP4IPv6SrcFields{
+		prefix: prefix,
+		ipv4:   ipv4,
+		udp:    udp,
 	}, nil
 }
 
-func (e *EndMGTP4EIPv6SrcFields) IPv4() net.IP {
+func (e *MGTP4IPv6SrcFields) IPv4() net.IP {
 	return net.IPv4(e.ipv4[0], e.ipv4[1], e.ipv4[2], e.ipv4[3])
 }
 
-func (e *EndMGTP4EIPv6SrcFields) UDPPortNumber() layers.UDPPort {
+func (e *MGTP4IPv6SrcFields) UDPPortNumber() layers.UDPPort {
 	return (layers.UDPPort)(binary.BigEndian.Uint16([]byte{e.udp[0], e.udp[1]}))
+}
+
+func (a *MGTP4IPv6SrcFields) MarshalLen() int {
+	return IPV6_ADDR_SIZE_BYTE
+}
+
+// Marshal returns the byte sequence generated from MGTP4IPv6SrcFields.
+func (a *MGTP4IPv6SrcFields) Marshal() ([]byte, error) {
+	b := make([]byte, a.MarshalLen())
+	if err := a.MarshalTo(b); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+// MarshalTo puts the byte sequence in the byte array given as b.
+// warning: no caching is done, this result will be recomputed at each call
+func (a *MGTP4IPv6SrcFields) MarshalTo(b []byte) error {
+	if len(b) < a.MarshalLen() {
+		return ErrTooShortToMarshal
+	}
+	// init ipv6 with prefix
+	ipv6 := a.prefix.Addr().AsSlice()
+
+	ipv4 := netip.AddrFrom4(a.ipv4).AsSlice()
+	udp := []byte{a.udp[0], a.udp[1]}
+	bits := a.prefix.Bits()
+	if bits == -1 {
+		return fmt.Errorf("Error with prefix length")
+	}
+
+	// add ipv4
+	if err := appendToSlice(ipv6, uint(bits), ipv4); err != nil {
+		return err
+	}
+	// add upd port
+	if err := appendToSlice(ipv6, uint(bits+IPV4_ADDR_SIZE_BYTE), udp); err != nil {
+		return err
+	}
+	// add prefix length
+	b[IPV6_LEN_ENCODING_POS_BYTE] = byte(bits)
+	return nil
 }

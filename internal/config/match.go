@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: MIT
 package config
 
-type Policy struct {
-	Match *Match `yaml:"match,omitempty"`
-	Bsid  Bsid   `yaml:"bsid"`
+type Match struct {
+	Teid *uint32 `yaml:"teid,omitempty"`
 }

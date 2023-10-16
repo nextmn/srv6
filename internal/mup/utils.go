@@ -29,3 +29,32 @@ func fromSlice(slice []byte, startBit uint, length uint) ([]byte, error) {
 	}
 	return ret, nil
 }
+
+// usage conditions :
+// 1. slice must be large enough
+// 2. every bit after endBit should be zero (no reset is performed in the function)
+func appendToSlice(slice []byte, endBit uint, appendThis []byte) error {
+	endByte := endBit / 8
+	offset := endBit % 8
+	isOffset := 0
+	if offset > 0 {
+		isOffset = 1
+	}
+	if isOffset+int(endByte)+len(appendThis) > len(slice) {
+		return ErrTooShortToMarshal
+	}
+	if offset == 0 {
+		// concatenate slices
+		copy(slice[endByte:], appendThis[endByte:])
+		return nil
+	}
+	//  add right part of bytes
+	for i, b := range appendThis {
+		slice[int(endByte)+i] |= b >> offset
+	}
+	// add left part of bytes
+	for i, b := range appendThis {
+		slice[int(endByte)+isOffset+i] |= b << (8 - offset)
+	}
+	return nil
+}

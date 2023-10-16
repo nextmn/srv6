@@ -5,13 +5,13 @@
 package config
 
 type Headend struct {
-	Name                string
-	To                  string // IP Prefix this Headend will handle (can be the same as GTP4HeadendPrefix if you have a single Headend)
-	Provider            Provider
-	Behavior            HeadendBehavior
-	Policy              *Policy
-	SourceAddressPrefix *string `yaml:"set-source-prefix"`
-	MTU                 *string `yaml:mtu,omitempty"` // suggested value is 1400 (same as UERANSIM) if the path includes a End.M.GTP4.E
+	Name                string          `yaml:"name"`
+	To                  string          `yaml:"to"` // IP Prefix this Headend will handle (can be the same as GTP4HeadendPrefix if you have a single Headend)
+	Provider            Provider        `yaml:"provider"`
+	Behavior            HeadendBehavior `yaml:"behavior"`
+	Policy              []Policy        `yaml:"policy"`
+	SourceAddressPrefix *string         `yaml:"source-address-prefix"`
+	MTU                 *string         `yaml:mtu,omitempty"` // suggested value is 1400 (same as UERANSIM) if the path includes a End.M.GTP4.E
 }
 
 type Headends []*Headend

@@ -19,7 +19,8 @@ func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8) (netfunc_api.NetF
 	}
 	switch he.Behavior {
 	case config.H_M_GTP4_D:
-		return NewNetFunc(NewHeadendGTP4(p, ttl, hopLimit)), nil
+		policy := he.Policy
+		return NewNetFunc(NewHeadendGTP4(p, policy, ttl, hopLimit)), nil
 	default:
 		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
 	}

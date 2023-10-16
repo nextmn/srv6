@@ -12,10 +12,13 @@ headends:
     provider: "NextMN"
     behavior: "H.M.GTP4.D"
     policy:
-      teid: 0x0001
-      segments-list:
-        - "fd00:51D5:0000:2::"
-        - "fd00:51D5:0000:3::"
+      - match:
+          teid: 0x0001
+        bsid:
+          bsid-prefix: "fd00:51D5:000:2::/80"
+          segments-list:
+            - "fd00:51D5:0000:3::"
+            - "fd00:51D5:0000:4::"
     source-address-prefix: "fd00:51D5:000:1:9999::/80"
   - name: "linux test"
     to: "10.0.300.0/24"

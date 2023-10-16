@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-func TestEndMGTP4EIPv6SrcFields(t *testing.T) {
+func TestMGTP4IPv6SrcFields(t *testing.T) {
 	ip_addr := []byte{
 		0x20, 0x01, 0xDB, 0x08,
 		192, 0, 2, 1,
@@ -18,7 +18,7 @@ func TestEndMGTP4EIPv6SrcFields(t *testing.T) {
 		32,
 	}
 
-	e, err := NewEndMGTP4EIPv6SrcFields(ip_addr)
+	e, err := NewMGTP4IPv6SrcFields(ip_addr)
 	if err != nil {
 		t.Fatal(err)
 	}

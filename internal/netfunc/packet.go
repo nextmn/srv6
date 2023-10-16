@@ -5,11 +5,13 @@
 package netfunc
 
 import (
+	"encoding/binary"
 	"fmt"
 	"net/netip"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	"github.com/nextmn/srv6/internal/constants"
 )
 
 type Packet struct {
@@ -81,4 +83,21 @@ func (p *Packet) PopIPv6Headers() (gopacket.Layer, error) {
 		}
 	}
 	return nil, fmt.Errorf("Nothing else than IPv6 Headers in the packet")
+}
+
+// Returns the first gopacket.Layer after IPv4/UDP/GTPU headers
+func (p *Packet) PopGTP4Headers() (gopacket.Layer, error) {
+	if p.firstLayerType != layers.LayerTypeIPv4 {
+		return nil, fmt.Errorf("Not an IPv4 packet")
+	}
+	if len(p.Layers()) < 4 {
+		return nil, fmt.Errorf("Not a GTP4 packet: not enough layers")
+	}
+	if p.Layers()[1].LayerType() != layers.LayerTypeUDP {
+		return nil, fmt.Errorf("No UDP layer")
+	}
+	if binary.BigEndian.Uint16(p.TransportLayer().TransportFlow().Dst().Raw()) != constants.GTPU_PORT_INT {
+		return nil, fmt.Errorf("No GTP-U layer")
+	}
+	return p.Layers()[3], nil
 }
