@@ -247,8 +247,10 @@ func (s *Setup) Exit() {
 	}
 	// 1.  ip rules
 	// 1.1 rule to rttable nextmn-gtp4
-	if err := s.RunExitTask("iproute2.rule.nextmn-gtp4"); err != nil {
-		fmt.Println(err)
+	if s.config.GTP4HeadendPrefix != nil {
+		if err := s.RunExitTask("iproute2.rule.nextmn-gtp4"); err != nil {
+			fmt.Println(err)
+		}
 	}
 	// 1.2 rule to rttable nextmn-srv6
 	if s.config.Locator != nil {

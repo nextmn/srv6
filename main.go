@@ -17,12 +17,15 @@ import (
 )
 
 // Handler for os signals
-func initSignals(setup *srv6_app.Setup) {
+func initSignals(ch chan *srv6_app.Setup) {
 	cancelChan := make(chan os.Signal, 1)
 	signal.Notify(cancelChan, syscall.SIGTERM, syscall.SIGINT)
 	func(_ os.Signal) {}(<-cancelChan)
-	if setup != nil {
+	select {
+	case setup := <-ch:
 		setup.Exit()
+	default:
+		break
 	}
 	os.Exit(0)
 }
@@ -31,7 +34,7 @@ func initSignals(setup *srv6_app.Setup) {
 func main() {
 	log.SetPrefix("[nextmn-SRv6] ")
 	var config_file string
-	var setup *srv6_app.Setup
+	ch := make(chan *srv6_app.Setup, 1)
 	app := &cli.App{
 		Name:                 "NextMN-SRv6",
 		Usage:                "Experimental implementation of SRv6 SIDs for MUP",
@@ -56,7 +59,10 @@ func main() {
 				os.Exit(1)
 			}
 
-			setup = srv6_app.NewSetup(conf)
+			setup := srv6_app.NewSetup(conf)
+			go func(cha chan *srv6_app.Setup, s *srv6_app.Setup) {
+				cha <- s
+			}(ch, setup)
 			setup.AddTasks()
 			if err := setup.Run(); err != nil {
 				fmt.Println("Error while running, exiting…")
@@ -66,7 +72,7 @@ func main() {
 			return nil
 		},
 	}
-	go initSignals(setup)
+	go initSignals(ch)
 	err := app.Run(os.Args)
 	if err != nil {
 		log.Fatal(err)

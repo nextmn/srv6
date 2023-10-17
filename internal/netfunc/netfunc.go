@@ -16,7 +16,7 @@ type NetFunc struct {
 
 func NewNetFunc(handler netfunc_api.Handler) *NetFunc {
 	return &NetFunc{
-		stop:    make(chan bool),
+		stop:    make(chan bool, 1),
 		handler: handler,
 	}
 }
@@ -54,5 +54,7 @@ func (n *NetFunc) Start(tunIface *iproute2.TunIface) {
 
 // Stop the NetFunc goroutine
 func (n *NetFunc) Stop() {
-	n.stop <- true
+	go func(ch chan bool) {
+		ch <- true
+	}(n.stop)
 }
