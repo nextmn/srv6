@@ -28,6 +28,11 @@ func NewSetup(config *config.SRv6Config) *Setup {
 	}
 }
 
+func (s *Setup) RegisterTask(name string, task tasks_api.Task) {
+	fmt.Printf("Task %s registered\n", name)
+	s.tasks[name] = task
+}
+
 // Add tasks to setup
 func (s *Setup) AddTasks() {
 	// 0.  user hooks
@@ -40,67 +45,67 @@ func (s *Setup) AddTasks() {
 		postExitHook = s.config.Hooks.PostExitHook
 	}
 	// 0.1 pre-hooks
-	s.tasks["hook.pre"] = tasks.NewMultiHook(preInitHook, preExitHook)
+	s.RegisterTask("hook.pre", tasks.NewMultiHook(preInitHook, preExitHook))
 	// 0.2 post-hooks
-	s.tasks["hook.post"] = tasks.NewMultiHook(postInitHook, postExitHook)
+	s.RegisterTask("hook.post", tasks.NewMultiHook(postInitHook, postExitHook))
 
 	// 1.  ifaces
 	// 1.1 iface linux (type dummy)
-	s.tasks["iproute2.iface.linux"] = tasks.NewTaskDummyIface(constants.IFACE_LINUX)
+	s.RegisterTask("iproute2.iface.linux", tasks.NewTaskDummyIface(constants.IFACE_LINUX))
 	// 1.2 ifaces golang-srv6-* (tun via water)
 	for i, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Prefix)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
-		s.tasks[t_name] = tasks.NewTaskTunIface(iface_name, s.registry)
+		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
 	}
 	// 1.3 ifaces golang-gtp4-* (tun via water)
 	for i, h := range s.config.Headends.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
-		s.tasks[t_name] = tasks.NewTaskTunIface(iface_name, s.registry)
+		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
 	}
 
 	// 2.  ip routes
 	// 2.1 blackhole route (srv6)
-	s.tasks["iproute2.route.nextmn-srv6.blackhole"] = tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_SRV6)
+	s.RegisterTask("iproute2.route.nextmn-srv6.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_SRV6))
 	// 2.2 blackhole route (gtp4)
-	s.tasks["iproute2.route.nextmn-gtp4.blackhole"] = tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_GTP4)
+	s.RegisterTask("iproute2.route.nextmn-gtp4.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_GTP4))
 
 	// 3.  endpoints + headends
 	// 3.1 linux headends
 	if s.config.LinuxHeadendSetSourceAddress != nil {
-		s.tasks["linux.headend.set-source-address"] = tasks.NewTaskLinuxHeadendSetSourceAddress(*s.config.LinuxHeadendSetSourceAddress)
+		s.RegisterTask("linux.headend.set-source-address", tasks.NewTaskLinuxHeadendSetSourceAddress(*s.config.LinuxHeadendSetSourceAddress))
 	}
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
-		s.tasks[t_name] = tasks.NewTaskLinuxHeadend(h, constants.RT_TABLE_MAIN, constants.IFACE_LINUX)
+		s.RegisterTask(t_name, tasks.NewTaskLinuxHeadend(h, constants.RT_TABLE_MAIN, constants.IFACE_LINUX))
 	}
 	// 3.1 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.endpoint/%s", e.Prefix)
-		s.tasks[t_name] = tasks.NewTaskLinuxEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, constants.IFACE_LINUX)
+		s.RegisterTask(t_name, tasks.NewTaskLinuxEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, constants.IFACE_LINUX))
 	}
 	// 3.2 nextmn endpoints
 	for i, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
-		s.tasks[t_name] = tasks.NewTaskNextMNEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, iface_name, s.registry)
+		s.RegisterTask(t_name, tasks.NewTaskNextMNEndpoint(e, constants.RT_TABLE_NEXTMN_SRV6, iface_name, s.registry))
 	}
 	// 3.3 nextmn gtp4 headends
 	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
-		s.tasks[t_name] = tasks.NewTaskNextMNHeadend(h, constants.RT_TABLE_NEXTMN_GTP4, iface_name, s.registry)
+		s.RegisterTask(t_name, tasks.NewTaskNextMNHeadend(h, constants.RT_TABLE_NEXTMN_GTP4, iface_name, s.registry))
 	}
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
 	if s.config.Locator != nil {
-		s.tasks["iproute2.rule.nextmn-srv6"] = tasks.NewTaskIP6Rule(*s.config.Locator, constants.RT_TABLE_NEXTMN_SRV6)
+		s.RegisterTask("iproute2.rule.nextmn-srv6", tasks.NewTaskIP6Rule(*s.config.Locator, constants.RT_TABLE_NEXTMN_SRV6))
 	}
 	// 4.2 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {
-		s.tasks["iproute2.rule.nextmn-gtp4"] = tasks.NewTaskIP4Rule(*s.config.GTP4HeadendPrefix, constants.RT_TABLE_NEXTMN_GTP4)
+		s.RegisterTask("iproute2.rule.nextmn-gtp4", tasks.NewTaskIP4Rule(*s.config.GTP4HeadendPrefix, constants.RT_TABLE_NEXTMN_GTP4))
 	}
 }
 
@@ -315,6 +320,8 @@ func (s *Setup) Exit() {
 
 // Run
 func (s *Setup) Run() error {
-	s.Init()
+	if err := s.Init(); err != nil {
+		return err
+	}
 	select {}
 }

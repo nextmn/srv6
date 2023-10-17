@@ -17,16 +17,17 @@ type SingleHook struct {
 }
 
 // Creates a new SingleHook
-func NewSingleHook(cmd *string) *SingleHook {
-	return &SingleHook{
+func NewSingleHook(cmd *string) SingleHook {
+	return SingleHook{
 		command: cmd,
 	}
 }
 
 // Runs the command of the SingleHook
-func (h *SingleHook) Run() error {
+func (h SingleHook) Run() error {
 	if h.command == nil {
-		return fmt.Errorf("Command is nil")
+		// nothing to do
+		return nil
 	}
 	cmd := exec.Command(*h.command)
 	cmd.Stderr = os.Stderr

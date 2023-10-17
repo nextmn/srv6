@@ -149,7 +149,7 @@ func (t Table) AddDefaultRoutesBlackhole() error {
 	if err := t.AddRoute4("blackhole", "default"); err != nil {
 		return err
 	}
-	if err := t.DelRoute6("blackhole", "default"); err != nil {
+	if err := t.AddRoute6("blackhole", "default"); err != nil {
 		return err
 	}
 	return nil
