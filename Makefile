@@ -19,16 +19,16 @@ reinstall: uninstall install
 update:
 	go mod tidy
 install:
-	$(INSTALL) nextmn-srv6 $(DESTDIR)$(bindir)/nextmn-srv6
+	$(INSTALL) srv6 $(DESTDIR)$(bindir)/srv6
 	$(INSTALL) etc/iproute2/rt_protos.d/nextmn.conf $(DESTDIR)$(IPROUTE2_RTPROTOS_D)/nextmn.conf
 	$(INSTALL) etc/iproute2/rt_tables.d/nextmn.conf $(DESTDIR)$(IPROUTE2_RTTABLES_D)/nextmn.conf
-	$(INSTALL) bash-completion/completions/nextmn-srv6 $(DESTDIR)$(BASHCOMPLETIONSDIR)/nextmn-srv6
+	$(INSTALL) bash-completion/completions/srv6 $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6
 	@echo "================================="
 	@echo ">> Now run the following command:"
-	@echo "\tsource $(DESTDIR)$(BASHCOMPLETIONSDIR)/nextmn-srv6"
+	@echo "\tsource $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6"
 	@echo "================================="
 uninstall:
-	$(RM) $(DESTDIR)$(bindir)/nextmn-srv6
-	$(RM) $(DESTDIR)$(BASHCOMPLETIONSDIR)/nextmn-srv6
+	$(RM) $(DESTDIR)$(bindir)/srv6
+	$(RM) $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6
 	$(RM) $(DESTDIR)$(IPROUTE2_RTPROTOS_D)/nextmn.conf
 	$(RM) $(DESTDIR)$(IPROUTE2_RTTABLES_D)/nextmn.conf

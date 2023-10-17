@@ -42,9 +42,9 @@ func ToEndpointBehavior(s string) (EndpointBehavior, error) {
 		return End_M_GTP6_D, nil
 	case "end.m.gtp6.di", "end.m.gtp6.d.di": // Di in iana registry, but D.Di in RFC9433
 		return End_M_GTP6_Di, nil
-	case "end.m.gpt6.e":
+	case "end.m.gtp6.e":
 		return End_M_GTP6_E, nil
-	case "end.m.gpt4.e":
+	case "end.m.gtp4.e":
 		return End_M_GTP4_E, nil
 	default:
 		return NotToBeAllocated, fmt.Errorf("The value %s cannot be converted to EndpointBehavior. It may not be implemented, or contain a typo.", s)
