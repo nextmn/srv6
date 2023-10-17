@@ -18,7 +18,7 @@ type TaskIPRule struct {
 }
 
 // Create a new Task for IPRule
-func NewTaskIP6Rule(tablename string, prefix string) *TaskIPRule {
+func NewTaskIP6Rule(prefix string, tablename string) *TaskIPRule {
 	return &TaskIPRule{
 		WithState: NewState(),
 		family4:   false,

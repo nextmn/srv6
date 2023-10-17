@@ -28,6 +28,7 @@ func ParseConf(file string) (*SRv6Config, error) {
 }
 
 type SRv6Config struct {
+	Debug *bool  `yaml:debug,omitempty"`
 	Hooks *Hooks `yaml:"hooks"`
 
 	// headends

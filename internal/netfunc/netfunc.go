@@ -5,20 +5,28 @@
 package netfunc
 
 import (
+	"fmt"
+
 	"github.com/nextmn/srv6/internal/iproute2"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
 type NetFunc struct {
+	debug   bool
 	stop    chan bool
 	handler netfunc_api.Handler
 }
 
-func NewNetFunc(handler netfunc_api.Handler) *NetFunc {
+func NewNetFunc(handler netfunc_api.Handler, debug bool) *NetFunc {
 	return &NetFunc{
+		debug:   debug,
 		stop:    make(chan bool, 1),
 		handler: handler,
 	}
+}
+
+func (n NetFunc) Debug() bool {
+	return n.debug
 }
 
 // Handle packet continuously
@@ -40,6 +48,8 @@ func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
 				go func(iface *iproute2.TunIface) {
 					if out, err := n.handler.Handle(packet[:nb]); err == nil {
 						iface.Write(out)
+					} else if n.Debug() {
+						fmt.Println(err)
 					}
 				}(tunIface)
 			}

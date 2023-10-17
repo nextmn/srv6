@@ -14,9 +14,8 @@ const GTPU_MESSAGE_TYPE_GPDU = 255
 const RT_PROTO_NEXTMN = "nextmn"
 
 // iproute2 rt tables
-const RT_TABLE_NEXTMN_SRV6 = "nextmn/srv6"
-const RT_TABLE_NEXTMN_GTP4 = "nextmn/gtp4"
-const RT_TABLE_MAIN = "main"
+const RT_TABLE_NEXTMN_IPV6 = "nextmn/ipv6"
+const RT_TABLE_NEXTMN_IPV4 = "nextmn/ipv4"
 
 // iproute2 ifaces
 const IFACE_LINUX = "nextmn-linux"

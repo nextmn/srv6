@@ -23,10 +23,11 @@ type TaskNextMNEndpoint struct {
 	registry   app_api.Registry
 	iface_name string
 	netfunc    netfunc_api.NetFunc
+	debug      bool
 }
 
 // Create a new TaskNextMNEndpoint
-func NewTaskNextMNEndpoint(endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNEndpoint {
+func NewTaskNextMNEndpoint(endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNEndpoint {
 	return &TaskNextMNEndpoint{
 		WithState:  NewState(),
 		endpoint:   endpoint,
@@ -34,6 +35,7 @@ func NewTaskNextMNEndpoint(endpoint *config.Endpoint, table_name string, iface_n
 		iface_name: iface_name,
 		registry:   registry,
 		netfunc:    nil,
+		debug:      debug,
 	}
 }
 
@@ -52,7 +54,7 @@ func (t *TaskNextMNEndpoint) RunInit() error {
 	if err != nil {
 		return err
 	}
-	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit); err != nil {
+	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit, t.debug); err != nil {
 		return err
 	} else {
 		t.netfunc = ep

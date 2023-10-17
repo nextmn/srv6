@@ -41,8 +41,8 @@ func (t *TaskLinuxHeadend) RunInit() error {
 			seglist = p.Bsid.ToIPRoute2()
 			break
 		}
-
 	}
+
 	switch t.headend.Behavior {
 	case config.H_Encaps:
 		if t.headend.MTU != nil {

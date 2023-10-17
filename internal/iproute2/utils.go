@@ -26,5 +26,5 @@ func runIP(args ...string) error {
 }
 
 func IPSrSetSourceAddress(address string) error {
-	return runIP("sr", "tunset", "set", address)
+	return runIP("sr", "tunsrc", "set", address)
 }

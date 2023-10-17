@@ -23,10 +23,11 @@ type TaskNextMNHeadend struct {
 	registry   app_api.Registry
 	iface_name string
 	netfunc    netfunc_api.NetFunc
+	debug      bool
 }
 
 // Create a new TaskNextMNHeadend
-func NewTaskNextMNHeadend(headend *config.Headend, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNHeadend {
+func NewTaskNextMNHeadend(headend *config.Headend, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadend {
 	return &TaskNextMNHeadend{
 		WithState:  NewState(),
 		headend:    headend,
@@ -34,6 +35,7 @@ func NewTaskNextMNHeadend(headend *config.Headend, table_name string, iface_name
 		iface_name: iface_name,
 		registry:   registry,
 		netfunc:    nil,
+		debug:      debug,
 	}
 }
 
@@ -52,7 +54,7 @@ func (t *TaskNextMNHeadend) RunInit() error {
 	if err != nil {
 		return err
 	}
-	if ep, err := netfunc.NewHeadend(t.headend, ttl, hopLimit); err != nil {
+	if ep, err := netfunc.NewHeadend(t.headend, ttl, hopLimit, t.debug); err != nil {
 		return err
 	} else {
 		t.netfunc = ep

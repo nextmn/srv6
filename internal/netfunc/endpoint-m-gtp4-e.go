@@ -139,6 +139,9 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		// cheksum, and length are computed at serialization
 	}
 
+	// required for checksum
+	udp.SetNetworkLayerForChecksum(&ipv4)
+
 	// S06.    Set the GTP-U TEID (from buffer memory)
 	pduSessionContainer := make([]byte, 2) // size should be (n×4-2) octets where n is a positive integer
 	// Since End.M.GTP4.E is intended to be used on downlink, we use a DL PDU Session Information Message
