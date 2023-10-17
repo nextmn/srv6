@@ -180,8 +180,10 @@ func (s *Setup) Init() error {
 
 	// 3.  endpoints + headends
 	// 3.1 linux headends
-	if err := s.RunInitTask("linux.headend.set-source-address"); err != nil {
-		return err
+	if s.config.LinuxHeadendSetSourceAddress != nil {
+		if err := s.RunInitTask("linux.headend.set-source-address"); err != nil {
+			return err
+		}
 	}
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
@@ -213,16 +215,20 @@ func (s *Setup) Init() error {
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
-	if err := s.RunInitTask("iproute2.rule.nextmn-srv6"); err != nil {
-		return err
+	if s.config.Locator != nil {
+		if err := s.RunInitTask("iproute2.rule.nextmn-srv6"); err != nil {
+			return err
+		}
 	}
 	// 4.2 rule to rttable nextmn-gtp4
-	if err := s.RunInitTask("iproute2.rule.nextmn-gtp4"); err != nil {
-		return err
+	if s.config.GTP4HeadendPrefix != nil {
+		if err := s.RunInitTask("iproute2.rule.nextmn-gtp4"); err != nil {
+			return err
+		}
 	}
 
 	// 5. user post-hook
-	if err := s.RunInitTask("hook-post"); err != nil {
+	if err := s.RunInitTask("hook.post"); err != nil {
 		return err
 	}
 
@@ -236,7 +242,7 @@ func (s *Setup) Exit() {
 	// even if previous one resulted in errors.
 
 	// 0. user pre-hook
-	if err := s.RunExitTask("hook-pre"); err != nil {
+	if err := s.RunExitTask("hook.pre"); err != nil {
 		fmt.Println(err)
 	}
 	// 1.  ip rules
@@ -245,8 +251,10 @@ func (s *Setup) Exit() {
 		fmt.Println(err)
 	}
 	// 1.2 rule to rttable nextmn-srv6
-	if err := s.RunExitTask("iproute2.rule.nextmn-srv6"); err != nil {
-		fmt.Println(err)
+	if s.config.Locator != nil {
+		if err := s.RunExitTask("iproute2.rule.nextmn-srv6"); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	// 2  endpoints + headends
@@ -278,8 +286,10 @@ func (s *Setup) Exit() {
 			fmt.Println(err)
 		}
 	}
-	if err := s.RunExitTask("linux.headend.set-source-address"); err != nil {
-		fmt.Println(err)
+	if s.config.LinuxHeadendSetSourceAddress != nil {
+		if err := s.RunExitTask("linux.headend.set-source-address"); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	// 3.  ip routes
@@ -313,7 +323,7 @@ func (s *Setup) Exit() {
 	}
 
 	// 5. user post-hook
-	if err := s.RunExitTask("hook-post"); err != nil {
+	if err := s.RunExitTask("hook.post"); err != nil {
 		fmt.Println(err)
 	}
 }

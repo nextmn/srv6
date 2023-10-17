@@ -28,7 +28,7 @@ func NewTaskIP6Rule(tablename string, prefix string) *TaskIPRule {
 }
 
 // Create a new Task for IPRule
-func NewTaskIP4Rule(tablename string, prefix string) *TaskIPRule {
+func NewTaskIP4Rule(prefix string, tablename string) *TaskIPRule {
 	return &TaskIPRule{
 		WithState: NewState(),
 		family4:   true,
