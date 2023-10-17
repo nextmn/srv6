@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	gopacket_gtp "github.com/louisroyer/gopacket-gtp"
 	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
 	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/mup"
@@ -164,8 +165,8 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		pduSessionContainer[1] |= 1 << 6
 	}
 
-	gtpExtensionHeaders := make([]layers.GTPExtensionHeader, 1)
-	gtpExtensionHeaders[0] = layers.GTPExtensionHeader{
+	gtpExtensionHeaders := make([]gopacket_gtp.GTPExtensionHeader, 1)
+	gtpExtensionHeaders[0] = gopacket_gtp.GTPExtensionHeader{
 		Type:    0x85, // PDU Session Container
 		Content: pduSessionContainer,
 	}
@@ -174,7 +175,7 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		gtpExtensionHeadersLen += len(g.Content) + 2 // Type + Length = 2 bytes
 	}
 
-	gtpu := layers.GTPv1U{
+	gtpu := gopacket_gtp.GTPv1U{
 		// Version should always be set to 1
 		Version: 1,
 		// TS 128281:
@@ -182,7 +183,6 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		// > GTP (when PT is '1') and GTP' (whenPT is '0').
 		ProtocolType: 1,
 		// We use extension header "PDU Session Container"
-		ExtensionHeaderFlag: true,
 		GTPExtensionHeaders: gtpExtensionHeaders,
 		// TS 128281:
 		// > Since the use of Sequence Numbers is optional for G-PDUs, the PGW,
