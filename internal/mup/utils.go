@@ -45,7 +45,7 @@ func appendToSlice(slice []byte, endBit uint, appendThis []byte) error {
 	}
 	if offset == 0 {
 		// concatenate slices
-		copy(slice[endByte:], appendThis[endByte:])
+		copy(slice[endByte:], appendThis[:])
 		return nil
 	}
 	//  add right part of bytes

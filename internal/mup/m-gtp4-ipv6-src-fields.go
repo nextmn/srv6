@@ -152,8 +152,9 @@ func (a *MGTP4IPv6SrcFields) MarshalTo(b []byte) error {
 	if len(b) < a.MarshalLen() {
 		return ErrTooShortToMarshal
 	}
-	// init ipv6 with prefix
-	ipv6 := a.prefix.Addr().AsSlice()
+	// init b with prefix
+	prefix := a.prefix.Addr().As16()
+	copy(b, prefix[:])
 
 	ipv4 := netip.AddrFrom4(a.ipv4).AsSlice()
 	udp := []byte{a.udp[0], a.udp[1]}
@@ -163,12 +164,12 @@ func (a *MGTP4IPv6SrcFields) MarshalTo(b []byte) error {
 	}
 
 	// add ipv4
-	if err := appendToSlice(ipv6, uint(bits), ipv4); err != nil {
-		return err
+	if err := appendToSlice(b, uint(bits), ipv4); err != nil {
+		return fmt.Errorf("Error during serialization of IPv4: %s", err)
 	}
 	// add upd port
-	if err := appendToSlice(ipv6, uint(bits+IPV4_ADDR_SIZE_BYTE), udp); err != nil {
-		return err
+	if err := appendToSlice(b, uint(bits+IPV4_ADDR_SIZE_BIT), udp); err != nil {
+		return fmt.Errorf("Error during serialization of UDP Port: %s", err)
 	}
 	// add prefix length
 	b[IPV6_LEN_ENCODING_POS_BYTE] = byte(bits)

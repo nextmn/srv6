@@ -35,11 +35,11 @@ func TestFromSlice(t *testing.T) {
 }
 
 func TestAppendToSlice(t *testing.T) {
-	b1 := []byte{0xFF, 0x55, 0x00, 0x00}
+	b1 := []byte{0xFF, 0x00, 0x00, 0x00}
 	if err := appendToSlice(b1, 8, []byte{0x00, 0xAA}); err != nil {
 		t.Fatal(err)
 	}
-	if diff := cmp.Diff(b1, []byte{0xFF, 0xAA, 0x00, 0x00}); diff != "" {
+	if diff := cmp.Diff(b1, []byte{0xFF, 0x00, 0xAA, 0x00}); diff != "" {
 		t.Error(diff)
 	}
 	b2 := []byte{0xE0, 0x00, 0x00, 0x00}

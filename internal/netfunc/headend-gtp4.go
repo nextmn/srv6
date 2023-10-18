@@ -103,7 +103,7 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	}
 	ipv6DA, err := mup.NewMGTP4IPv6DstFieldsFromFields(dstPrefix, ipv4DA, argsMobSession)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error during creation of IPv6 DA: %s", err)
 	}
 
 	// S04. Copy IPv4 SA to form IPv6 SA B'
@@ -113,12 +113,12 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	srcPrefix := h.Prefix()
 	ipv6SA, err := mup.NewMGTP4IPv6SrcFieldsFromFields(srcPrefix, ipv4SA, udpSP)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
 	}
 
 	src, err := ipv6SA.Marshal()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %s", err)
 	}
 	ipheader := &layers.IPv6{
 		SrcIP: src,
@@ -132,7 +132,7 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	}
 	seg0, err := ipv6DA.Marshal()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error during serialization of Segment[0]: %s", err)
 	}
 	segList := append([]net.IP{seg0}, bsid.ReverseSegmentsList()...)
 	srh := &gopacket_srv6.IPv6Routing{

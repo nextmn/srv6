@@ -5,8 +5,12 @@
 package mup
 
 import (
+	"fmt"
 	"net"
+	"net/netip"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestMGTP4IPv6SrcFields(t *testing.T) {
@@ -28,4 +32,25 @@ func TestMGTP4IPv6SrcFields(t *testing.T) {
 	if e.UDPPortNumber() != 0x0123 {
 		t.Fatalf("Cannot extract udp port number correctly: %x", e.UDPPortNumber())
 	}
+	ip_addr2, err := NewMGTP4IPv6SrcFieldsFromFields(netip.MustParsePrefix("fd00:1:1::/48"), []byte{10, 0, 4, 1}, []byte{0x12, 0x34})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := ip_addr2.Marshal()
+	if err != nil {
+		t.Fatal(err)
+	}
+	res2 := []byte{
+		0xfd, 0x00, 0x00, 0x01, 0x00, 0x01,
+		10, 0, 4, 1,
+		0x12, 0x34,
+		0x00, 0x00, 0x00,
+		48,
+	}
+	fmt.Println(b)
+	fmt.Println(res2)
+	if diff := cmp.Diff(b, res2); diff != "" {
+		t.Error(diff)
+	}
+
 }

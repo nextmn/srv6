@@ -106,7 +106,8 @@ func (a *MGTP4IPv6DstFields) MarshalTo(b []byte) error {
 		return ErrTooShortToMarshal
 	}
 	// init ipv6 with the prefix
-	ipv6 := a.prefix.Addr().AsSlice()
+	prefix := a.prefix.Addr().As16()
+	copy(b, prefix[:])
 
 	ipv4 := netip.AddrFrom4(a.ipv4).AsSlice()
 	bits := a.prefix.Bits()
@@ -115,7 +116,7 @@ func (a *MGTP4IPv6DstFields) MarshalTo(b []byte) error {
 	}
 
 	// add ipv4
-	if err := appendToSlice(ipv6, uint(bits), ipv4); err != nil {
+	if err := appendToSlice(b, uint(bits), ipv4); err != nil {
 		return err
 	}
 	argsMobSessionB, err := a.argsMobSession.Marshal()
@@ -123,7 +124,7 @@ func (a *MGTP4IPv6DstFields) MarshalTo(b []byte) error {
 		return err
 	}
 	// add Args-Mob-Session
-	if err := appendToSlice(ipv6, uint(bits+IPV4_ADDR_SIZE_BIT), argsMobSessionB); err != nil {
+	if err := appendToSlice(b, uint(bits+IPV4_ADDR_SIZE_BIT), argsMobSessionB); err != nil {
 		return err
 	}
 	return nil
