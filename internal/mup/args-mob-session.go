@@ -89,7 +89,7 @@ func (a *ArgsMobSession) MarshalTo(b []byte) error {
 	b[QFI_POS_BYTE] |= (QFI_MASK & a.qfi) << QFI_POS_BIT
 	b[R_POS_BYTE] |= (R_MASK & a.r) << R_POS_BIT
 	b[U_POS_BYTE] |= (U_MASK & a.u) << U_POS_BIT
-	binary.BigEndian.PutUint32(b[ARGS_MOB_SESSION_SIZE_BYTE-TEID_SIZE_BYTE:TEID_SIZE_BYTE], a.pduSessionID)
+	binary.BigEndian.PutUint32(b[TEID_POS_BYTE:TEID_SIZE_BYTE], a.pduSessionID)
 	return nil
 }
 
