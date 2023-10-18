@@ -20,9 +20,9 @@ Linux  | H.Inline | untested | -
 
 PDU Session Type | Supported?
 ---|---
-IPv4 | partial
+IPv4 | ys
 IPv6 | no
-IPv4v6 | yes
+IPv4v6 | no
 Ethernet | no
 Unstructured | no
 
