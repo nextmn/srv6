@@ -172,8 +172,17 @@ func (t Table) AddSeg6Local(sid string, behavior iana.EndpointBehavior, dev stri
 	if err != nil {
 		return err
 	}
-	if err := t.AddRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
-		return err
+	switch behavior {
+
+	case iana.End_DX4:
+		if err := t.AddRoute6(sid, "encap", "seg6local", "action", linux_behavior, "nh4", "0.0.0.0", "dev", dev); err != nil {
+			return err
+		}
+
+	default:
+		if err := t.AddRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -184,8 +193,16 @@ func (t Table) DelSeg6Local(sid string, behavior iana.EndpointBehavior, dev stri
 	if err != nil {
 		return err
 	}
-	if err := t.DelRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
-		return err
+	switch behavior {
+	case iana.End_DX4:
+		if err := t.DelRoute6(sid, "encap", "seg6local", "action", linux_behavior, "nh4", "0.0.0.0", "dev", dev); err != nil {
+			return err
+		}
+	default:
+
+		if err := t.DelRoute6(sid, "encap", "seg6local", "action", linux_behavior, "dev", dev); err != nil {
+			return err
+		}
 	}
 	return nil
 }
