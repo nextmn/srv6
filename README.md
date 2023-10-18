@@ -44,10 +44,10 @@ TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-s
 Simply run `make build` and `make install`.
 
 ### Docker
-If you plan using NextMN-UPF with Docker:
+If you plan using NextMN-SRv6 with Docker:
 - The container requires the `NET_ADMIN` capability;
 - The container should enable IPv6, and Segment Routing
-- The container requires the forwarding to be enabled (not enabled by the UPF itself);
+- The container requires the forwarding to be enabled (not enabled by the container itself);
 - The tun interface (`/dev/net/tun`) must be available in the container.
 
 This can be done in `docker-compose.yaml` by defining the following for the service:
