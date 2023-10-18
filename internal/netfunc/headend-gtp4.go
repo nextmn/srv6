@@ -19,12 +19,14 @@ import (
 type HeadendGTP4 struct {
 	policy []config.Policy
 	BaseHandler
+	sourceAddressPrefix netip.Prefix
 }
 
-func NewHeadendGTP4(prefix netip.Prefix, policy []config.Policy, ttl uint8, hopLimit uint8) *HeadendGTP4 {
+func NewHeadendGTP4(prefix netip.Prefix, sourceAddressPrefix netip.Prefix, policy []config.Policy, ttl uint8, hopLimit uint8) *HeadendGTP4 {
 	return &HeadendGTP4{
-		policy:      policy,
-		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
+		sourceAddressPrefix: sourceAddressPrefix,
+		policy:              policy,
+		BaseHandler:         NewBaseHandler(prefix, ttl, hopLimit),
 	}
 }
 
@@ -110,7 +112,7 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
-	srcPrefix := h.Prefix()
+	srcPrefix := h.sourceAddressPrefix
 	ipv6SA, err := mup.NewMGTP4IPv6SrcFieldsFromFields(srcPrefix, ipv4SA, udpSP)
 	if err != nil {
 		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
@@ -120,12 +122,13 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %s", err)
 	}
+
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
 		DstIP:      bsid.ReverseSegmentsList()[0],
 		Version:    6,
-		NextHeader: 43, // IPv6-Route
+		NextHeader: layers.IPProtocolIPv6Routing, // IPv6-Route
 		HopLimit:   h.HopLimit(),
 		// TODO: Generate a FlowLabel with hash(IPv6SA + IPv6DA + policy)
 		TrafficClass: qfi << 2,
@@ -142,6 +145,9 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 		SourceRoutingIPs: segList,
 		Tag:              0, // not used
 		Flags:            0, // no flag defined
+		GopacketIpv6ExtensionBase: gopacket_srv6.GopacketIpv6ExtensionBase{
+			NextHeader: layers.IPProtocolIPv4,
+		},
 	}
 
 	// S05. Encapsulate the packet into a new IPv6 header
@@ -154,6 +160,7 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 		ipheader,
 		srh,
 		gopacket.Payload(payload.LayerContents()),
+		gopacket.Payload(payload.LayerPayload()),
 	); err != nil {
 		return nil, err
 	} else {

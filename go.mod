@@ -6,7 +6,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gopacket v1.1.19
 	github.com/louisroyer/gopacket-gtp v0.0.5
-	github.com/louisroyer/gopacket-srv6 v0.0.5
+	github.com/louisroyer/gopacket-srv6 v0.0.6
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/urfave/cli/v2 v2.25.7
 	gopkg.in/yaml.v3 v3.0.1

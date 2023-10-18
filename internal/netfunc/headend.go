@@ -20,7 +20,15 @@ func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8, debug bool) (netf
 	switch he.Behavior {
 	case config.H_M_GTP4_D:
 		policy := he.Policy
-		return NewNetFunc(NewHeadendGTP4(p, policy, ttl, hopLimit), debug), nil
+		if he.SourceAddressPrefix == nil {
+			return nil, fmt.Errorf("Missing source-address-prefix")
+		}
+		srcAddressPrefix, err := netip.ParsePrefix(*he.SourceAddressPrefix)
+		if err != nil {
+			return nil, err
+		}
+
+		return NewNetFunc(NewHeadendGTP4(p, srcAddressPrefix, policy, ttl, hopLimit), debug), nil
 	default:
 		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
 	}

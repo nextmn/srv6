@@ -218,6 +218,7 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 		&udp,
 		&gtpu,
 		gopacket.Payload(payload.LayerContents()),
+		gopacket.Payload(payload.LayerPayload()),
 	); err != nil {
 		return nil, err
 	} else {

@@ -8,6 +8,8 @@ github.com/louisroyer/gopacket-gtp v0.0.5 h1:3k67pLeHJPeIVt4zUxOpL0weVP0ANimHWK0
 github.com/louisroyer/gopacket-gtp v0.0.5/go.mod h1:/gtAnzNjcQlADZgX46340wS8eNtuk4CKELYmLQbynGU=
 github.com/louisroyer/gopacket-srv6 v0.0.5 h1:DyyL9u6XwTeULsPKq5zs+MYyo0oZjN5Kas1N1SCXmzE=
 github.com/louisroyer/gopacket-srv6 v0.0.5/go.mod h1:AifV+WVuFi3c9fOohh2EgERRJJY2BO1AVPf0GRdrNzo=
+github.com/louisroyer/gopacket-srv6 v0.0.6 h1:/ElsYLQmhXvirf5zWke6nCgaGq+Az4rUd0FzlhS2fNw=
+github.com/louisroyer/gopacket-srv6 v0.0.6/go.mod h1:AifV+WVuFi3c9fOohh2EgERRJJY2BO1AVPf0GRdrNzo=
 github.com/russross/blackfriday/v2 v2.1.0 h1:JIOH55/0cWyOuilr9/qlrm0BSXldqnqwMsf35Ld67mk=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8 h1:TG/diQgUe0pntT/2D9tmUCz4VNwm9MfrtPr0SU2qSX8=
