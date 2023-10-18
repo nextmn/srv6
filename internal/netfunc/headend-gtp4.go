@@ -123,19 +123,24 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %s", err)
 	}
 
+	seg0, err := ipv6DA.Marshal()
+	if err != nil {
+		return nil, fmt.Errorf("Error during serialization of Segment[0]: %s", err)
+	}
+	nextHop := seg0
+	if len(bsid.SegmentsList) > 0 {
+		nextHop = bsid.ReverseSegmentsList()[0]
+	}
+
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
-		DstIP:      bsid.ReverseSegmentsList()[0],
+		DstIP:      nextHop,
 		Version:    6,
 		NextHeader: layers.IPProtocolIPv6Routing, // IPv6-Route
 		HopLimit:   h.HopLimit(),
 		// TODO: Generate a FlowLabel with hash(IPv6SA + IPv6DA + policy)
 		TrafficClass: qfi << 2,
-	}
-	seg0, err := ipv6DA.Marshal()
-	if err != nil {
-		return nil, fmt.Errorf("Error during serialization of Segment[0]: %s", err)
 	}
 	segList := append([]net.IP{seg0}, bsid.ReverseSegmentsList()...)
 	srh := &gopacket_srv6.IPv6Routing{
