@@ -4,25 +4,33 @@ This project is still at the early stages of development and contains bugs and w
 Please do not use it for anything other than experimentation. Expect breaking changes until v1.0.0
 
 ## Roadmap
-Behavior | Implemented? | Todo
----|---|---
-End.MAP | no | -
-End.M.GTP6.D | no | -
-End.M.GTP6.D.Di | partial | handle GTP6 packets using go-packet instead of go-gtp, respect S04, send ICMP when errors, optional: respond to GTP Echo Req
-End.M.GTP6.E | partial | create GTP6 packets using go-packet instead of go-gtp, send ICMP when errors
-End.M.GTP4.E | partial | create GTP4 packets using go-packet instead of go-gtp, send ICMP when errors, IPv4 SA from SRv6 DA 
-H.M.GTP4.D | partial | handle GTP4 packets using go-packets instead of go-gtp, send ArgsMobSession and IPv4 DA, send ICMP when errors, optional: respond to GTP Echo Req
-End.Limit | no | -
+Provider | Behavior | Implemented? | Todo
+---|---|---|---
+NextMN | End.MAP | no | -
+NextMN | End.M.GTP6.D | no | -
+NextMN | End.M.GTP6.D.Di | no | -
+NextMN | End.M.GTP6.E | yes | send ICMP when errors
+NextMN | End.M.GTP4.E | yes | send ICMP when errors
+NextMN | H.M.GTP4.D | yes | send ICMP when errors, optional: respond to GTP Echo Req
+NextMN | End.Limit | no | -
+Linux  | End | yes | -
+Linux  | End.DX4 | yes | -
+Linux  | H.Encaps | yes | -
+Linux  | H.Inline | untested | -
 
 PDU Session Type | Supported?
 ---|---
 IPv4 | partial
-IPv6 | partial
+IPv6 | no
 IPv4v6 | yes
 Ethernet | no
 Unstructured | no
 
 TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-srv6-ctrl).
+
+
+## Testbed
+- [louisroyer/test-srv6-stateless](https://github.com/louisroyer/test-srv6-stateless)
 
 ## Getting started
 ### Build dependencies
