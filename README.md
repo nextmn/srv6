@@ -30,7 +30,7 @@ TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-s
 
 
 ## Testbed
-- [louisroyer/test-srv6-stateless](https://github.com/louisroyer/test-srv6-stateless)
+- [louisroyer/test-srv6-mup](https://github.com/louisroyer/test-srv6-mup)
 
 ## Getting started
 ### Build dependencies
