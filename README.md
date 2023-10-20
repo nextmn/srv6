@@ -32,6 +32,9 @@ TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-s
 ## Testbed
 - [louisroyer/test-srv6-mup](https://github.com/louisroyer/test-srv6-mup)
 
+## Incoming packet flow
+![incoming packet flow](./images/incoming-packet-flow.svg)
+
 ## Getting started
 ### Build dependencies
 - golang
