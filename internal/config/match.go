@@ -5,5 +5,6 @@
 package config
 
 type Match struct {
-	Teid *uint32 `yaml:"teid,omitempty"`
+	Teid                     *uint32 `yaml:"teid,omitempty"`
+	InnerHeaderIPv4SrcPrefix *string `yaml:"inner-header-ipv4-src-prefix,omitempty"` // e.g. 192.168.0.1/32, Teid must be present
 }

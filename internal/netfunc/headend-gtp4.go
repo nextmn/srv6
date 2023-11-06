@@ -79,6 +79,9 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	ipv4DA := pqt.NetworkLayer().NetworkFlow().Dst().Raw()
 	argsMobSession := mup.NewArgsMobSession(qfi, reflectiveQosIndication, false, teid)
 
+	var innerHeaderIPv4 netip.Addr
+	isInnerHeaderIPv4 := false
+
 	var bsid *config.Bsid
 	for _, p := range h.policy {
 		if p.Match == nil {
@@ -86,14 +89,35 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 			break
 		}
 		if p.Match.Teid != nil {
-			if *p.Match.Teid == teid {
-				bsid = &p.Bsid
-				break
+			if *p.Match.Teid != teid {
+				continue
+			}
+			if p.Match.InnerHeaderIPv4SrcPrefix != nil {
+				if !isInnerHeaderIPv4 {
+					// init innerHeaderIPv4
+					inner, ok := payload.(*layers.IPv4)
+					if !ok {
+						return nil, fmt.Errorf("Payload is not IPv4")
+					}
+					if inner.Version != 4 {
+						return nil, fmt.Errorf("Payload is IPv%d instead of IPv4", inner.Version)
+					}
+					innerHeaderIPv4 = netip.AddrFrom4([4]byte{inner.SrcIP[0], inner.SrcIP[1], inner.SrcIP[2], inner.SrcIP[3]})
+					isInnerHeaderIPv4 = true
+				}
+				prefix, err := netip.ParsePrefix(*p.Match.InnerHeaderIPv4SrcPrefix)
+				if err != nil {
+					return nil, fmt.Errorf("Malformed matching criteria (inner Header IPv4 Prefix): %s", err)
+				}
+				if prefix.Contains(innerHeaderIPv4) {
+					bsid = &p.Bsid
+					break
+				}
 			}
 		}
 	}
 	if bsid == nil {
-		return nil, fmt.Errorf("No policy found for this teid")
+		return nil, fmt.Errorf("Could not found policy matching criterias")
 	}
 
 	if bsid.BsidPrefix == nil {
