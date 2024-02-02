@@ -42,6 +42,9 @@ func (t *TaskLinuxHeadend) RunInit() error {
 			break
 		}
 	}
+	if seglist == "" {
+		return fmt.Errorf("Segment List is empty. Bad YAML indentation?")
+	}
 
 	switch t.headend.Behavior {
 	case config.H_Encaps:
