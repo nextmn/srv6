@@ -83,16 +83,23 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 	isInnerHeaderIPv4 := false
 
 	var bsid *config.Bsid
+
+	// find a policy matching criterias
 	for _, p := range h.policy {
+		// catch-all policy (should be last policy in list)
 		if p.Match == nil {
 			bsid = &p.Bsid
 			break
 		}
+
+		// otherwise, teid is mandatory
 		if p.Match.Teid != nil {
 			if *p.Match.Teid != teid {
+				// teid doesn't match
 				continue
 			}
 			if p.Match.InnerHeaderIPv4SrcPrefix != nil {
+				// teid matches, and we need to check the prefix
 				if !isInnerHeaderIPv4 {
 					// init innerHeaderIPv4
 					inner, ok := payload.(*layers.IPv4)
@@ -110,9 +117,15 @@ func (h HeadendGTP4) Handle(packet []byte) ([]byte, error) {
 					return nil, fmt.Errorf("Malformed matching criteria (inner Header IPv4 Prefix): %s", err)
 				}
 				if prefix.Contains(innerHeaderIPv4) {
+					// prefix matches
 					bsid = &p.Bsid
 					break
 				}
+				// prefix doesn't match: continue
+			} else {
+				// teid matches, and no prefix to check
+				bsid = &p.Bsid
+				break
 			}
 		}
 	}
