@@ -4,6 +4,10 @@
 #  pre-exit-hook:
 #  post-exit-hook:
 
+http-address: "192.0.2.1"
+http-port: "8080"
+controller-uri: "http://192.0.2.2:8080"
+
 linux-headend-set-source-address: "fd00:51D5:0000::"
 ipv4-headend-prefix: "10.0.200.3/32"
 headends:
