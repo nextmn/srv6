@@ -63,7 +63,7 @@ func (s *Setup) AddTasks() {
 	// 0.3 http server
 	// 0.4 controller registry
 	if s.config.Locator != nil {
-		s.RegisterTask("ctrl.registry", tasks.NewControllerRegistry(s.config.ControllerURI, s.config.BackboneAddress, *s.config.Locator, httpURI))
+		s.RegisterTask("ctrl.registry", tasks.NewControllerRegistry(s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI))
 	}
 
 	// 1.  ifaces
@@ -272,10 +272,11 @@ func (s *Setup) Exit() {
 
 	// 0.2. unregister from controller
 	if s.config.Locator != nil {
-		if err := s.RunInitTask("ctrl.registry"); err != nil {
+		if err := s.RunExitTask("ctrl.registry"); err != nil {
 			fmt.Println(err)
 		}
 	}
+
 	// 1.  ip rules
 	// 1.1 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {
@@ -293,7 +294,7 @@ func (s *Setup) Exit() {
 	// 2  endpoints + headends
 	// 2. nextmn gtp4 headends
 	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
-		t_name := fmt.Sprintf("nextmn.headend/%s", h.Name)
+		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}

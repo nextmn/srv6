@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/netip"
 )
 
 // ControllerRegistry registers and unregisters into controller
@@ -17,12 +18,12 @@ type ControllerRegistry struct {
 	RemoteControlURI string // URI of the controller
 	LocalControlURI  string // URI of the router, used to control it
 	Locator          string
-	Backbone         string
+	Backbone         netip.Addr
 	Resource         string
 }
 
 // Create a new ControllerRegistry
-func NewControllerRegistry(remoteControlURI string, backbone string, locator string, localControlURI string) *ControllerRegistry {
+func NewControllerRegistry(remoteControlURI string, backbone netip.Addr, locator string, localControlURI string) *ControllerRegistry {
 	return &ControllerRegistry{
 		WithState:        NewState(),
 		RemoteControlURI: remoteControlURI,
@@ -37,7 +38,7 @@ func NewControllerRegistry(remoteControlURI string, backbone string, locator str
 func (t *ControllerRegistry) RunInit() error {
 	data := map[string]string{
 		"locator":  t.Locator,
-		"backbone": t.Backbone,
+		"backbone": t.Backbone.String(),
 		"control":  t.LocalControlURI,
 	}
 	json_data, err := json.Marshal(data)
@@ -54,7 +55,7 @@ func (t *ControllerRegistry) RunInit() error {
 		return fmt.Errorf("HTTP Bad request\n")
 	}
 	if resp.StatusCode >= 500 {
-		return fmt.Errorf("HTTP Control Server: internal error %v\n", resp.Body)
+		return fmt.Errorf("HTTP Control Server: internal error\n")
 	}
 	if resp.StatusCode == 201 { // created
 		t.Resource = resp.Header.Get("Location")

@@ -6,6 +6,7 @@ package config
 
 import (
 	"io/ioutil"
+	"net/netip"
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
@@ -33,13 +34,13 @@ type SRv6Config struct {
 
 	// interface with controller
 	HTTPAddress string  `yaml:"http-address"`
-	HTTPPort    *string `yaml:"http-port,omitemty"` // default: 80
+	HTTPPort    *string `yaml:"http-port,omitempty"` // default: 80
 	// TODO: use a better type for this information
-	ControllerURI string `yaml:controller-uri"` // example: http://192.0.2.2/8080
+	ControllerURI string `yaml:"controller-uri"` // example: http://192.0.2.2/8080
 
 	// Backbone IPv6 address
 	// TODO: use a better type for this information
-	BackboneAddress string
+	BackboneIP netip.Addr `yaml:"backbone-ip"`
 
 	// headends
 	LinuxHeadendSetSourceAddress *string  `yaml:"linux-headend-set-source-address,omitempty"`
