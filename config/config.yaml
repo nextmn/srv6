@@ -4,6 +4,11 @@
 #  pre-exit-hook:
 #  post-exit-hook:
 
+http-address: "192.0.2.1"
+http-port: "8080"
+controller-uri: "http://192.0.2.2:8080"
+backbone-ip: "fd00::01"
+
 linux-headend-set-source-address: "fd00:51D5:0000::"
 ipv4-headend-prefix: "10.0.200.3/32"
 headends:
@@ -21,7 +26,7 @@ headends:
             - "fd00:51D5:0000:4::"
     source-address-prefix: "fd00:51D5:000:1:9999::/80"
   - name: "linux test"
-    to: "10.0.300.0/24"
+    to: "10.0.100.0/24"
     provider: "Linux"
     behavior: "H.Encaps"
     policy:

@@ -55,6 +55,17 @@ func (s *Setup) AddTasks() {
 	// 0.2 post-hooks
 	s.RegisterTask("hook.post", tasks.NewMultiHook(postInitHook, postExitHook))
 
+	httpPort := "80" // default http port
+	if s.config.HTTPPort != nil {
+		httpPort = *s.config.HTTPPort
+	}
+	httpURI := "http://" + s.config.HTTPAddress + httpPort
+	// 0.3 http server
+	// 0.4 controller registry
+	if s.config.Locator != nil {
+		s.RegisterTask("ctrl.registry", tasks.NewControllerRegistry(s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI))
+	}
+
 	// 1.  ifaces
 	// 1.1 iface linux (type dummy)
 	s.RegisterTask("iproute2.iface.linux", tasks.NewTaskDummyIface(constants.IFACE_LINUX))
@@ -149,9 +160,16 @@ func (s *Setup) RunExitTask(name string) error {
 
 // Init
 func (s *Setup) Init() error {
-	// 0. user pre-hook
+	// 0.1. user pre-hook
 	if err := s.RunInitTask("hook.pre"); err != nil {
 		return err
+	}
+
+	// 0.2. register into controller
+	if s.config.Locator != nil {
+		if err := s.RunInitTask("ctrl.registry"); err != nil {
+			return err
+		}
 	}
 
 	// 1.  ifaces
@@ -247,10 +265,18 @@ func (s *Setup) Exit() {
 	// and a maximum of exit tasks must be run,
 	// even if previous one resulted in errors.
 
-	// 0. user pre-hook
+	// 0.1. user pre-hook
 	if err := s.RunExitTask("hook.pre"); err != nil {
 		fmt.Println(err)
 	}
+
+	// 0.2. unregister from controller
+	if s.config.Locator != nil {
+		if err := s.RunExitTask("ctrl.registry"); err != nil {
+			fmt.Println(err)
+		}
+	}
+
 	// 1.  ip rules
 	// 1.1 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {
@@ -268,7 +294,7 @@ func (s *Setup) Exit() {
 	// 2  endpoints + headends
 	// 2. nextmn gtp4 headends
 	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
-		t_name := fmt.Sprintf("nextmn.headend/%s", h.Name)
+		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}

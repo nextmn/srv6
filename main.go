@@ -65,8 +65,8 @@ func main() {
 			}(ch, setup)
 			setup.AddTasks()
 			if err := setup.Run(); err != nil {
-				fmt.Println("Error while running, exiting…")
-				log.Fatal(err)
+				fmt.Println("Error while running, exiting…:", err)
+				setup.Exit()
 				os.Exit(2)
 			}
 			return nil
