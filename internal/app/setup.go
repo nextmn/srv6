@@ -59,7 +59,13 @@ func (s *Setup) AddTasks() {
 	if s.config.HTTPPort != nil {
 		httpPort = *s.config.HTTPPort
 	}
-	httpURI := "http://" + s.config.HTTPAddress + httpPort
+	httpURI := "http://"
+	if s.config.HTTPAddress.Is6() {
+		httpURI = httpURI + "[" + s.config.HTTPAddress.String() + "]" + httpPort
+	} else {
+		httpURI = httpURI + s.config.HTTPAddress.String() + httpPort
+	}
+
 	// 0.3 http server
 	// 0.4 controller registry
 	if s.config.Locator != nil {

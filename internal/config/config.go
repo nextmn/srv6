@@ -33,8 +33,8 @@ type SRv6Config struct {
 	Hooks *Hooks `yaml:"hooks"`
 
 	// interface with controller
-	HTTPAddress string  `yaml:"http-address"`
-	HTTPPort    *string `yaml:"http-port,omitempty"` // default: 80
+	HTTPAddress netip.Addr `yaml:"http-address"`
+	HTTPPort    *string    `yaml:"http-port,omitempty"` // default: 80
 	// TODO: use a better type for this information
 	ControllerURI string `yaml:"controller-uri"` // example: http://192.0.2.2/8080
 
