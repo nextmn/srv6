@@ -1,7 +1,9 @@
 # NextMN-SRv6
 NextMN-SRv6 is an experimental implementation for some [SRv6 MUP Endpoint Behaviors](https://datatracker.ietf.org/doc/draft-ietf-dmm-srv6-mobile-uplane/).
-This project is still at the early stages of development and contains bugs and will crash in unexpected manners.
-Please do not use it for anything other than experimentation. Expect breaking changes until v1.0.0
+
+> [!WARNING]
+> This project is still at the early stages of development and contains bugs and will crash in unexpected manners.
+> Please do not use it for anything other than experimentation. Expect breaking changes until v1.0.0
 
 ## Roadmap
 Provider | Behavior | Implemented? | Todo
