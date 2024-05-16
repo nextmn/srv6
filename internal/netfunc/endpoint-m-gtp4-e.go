@@ -10,8 +10,8 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
-	gopacket_gtp "github.com/louisroyer/gopacket-gtp"
-	gopacket_srv6 "github.com/louisroyer/gopacket-srv6"
+	gopacket_gtp "github.com/nextmn/gopacket-gtp"
+	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/mup"
 )
