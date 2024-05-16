@@ -29,11 +29,8 @@ IPv4v6 | no
 Ethernet | no
 Unstructured | no
 
-TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/louisroyer/nextmn-srv6-ctrl).
+TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/nextmn/srv6-ctrl).
 
-
-## Testbed
-- [louisroyer/test-srv6-mup](https://github.com/louisroyer/test-srv6-mup)
 
 ## Incoming packet flow
 ![incoming packet flow](./images/incoming-packet-flow.svg)
