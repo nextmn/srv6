@@ -61,9 +61,9 @@ func (s *Setup) AddTasks() {
 	}
 	httpURI := "http://"
 	if s.config.HTTPAddress.Is6() {
-		httpURI = httpURI + "[" + s.config.HTTPAddress.String() + "]" + httpPort
+		httpURI = httpURI + "[" + s.config.HTTPAddress.String() + "]:" + httpPort
 	} else {
-		httpURI = httpURI + s.config.HTTPAddress.String() + httpPort
+		httpURI = httpURI + s.config.HTTPAddress.String() + ":" + httpPort
 	}
 
 	// 0.3 http server
