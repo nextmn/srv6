@@ -67,6 +67,10 @@ func (s *Setup) AddTasks() {
 	}
 
 	// 0.3 http server
+
+	rr := tasks.NewRulesRegistry()
+	s.RegisterTask("ctrl.rest-api", tasks.NewHttpServerTask(httpURI, rr))
+
 	// 0.4 controller registry
 	if s.config.Locator != nil {
 		s.RegisterTask("ctrl.registry", tasks.NewControllerRegistry(s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI))
@@ -171,7 +175,12 @@ func (s *Setup) Init() error {
 		return err
 	}
 
-	// 0.2. register into controller
+	// 0.2 http server
+	if err := s.RunInitTask("ctrl.rest-api"); err != nil {
+		return err
+	}
+
+	// 0.3. register into controller
 	if s.config.Locator != nil {
 		if err := s.RunInitTask("ctrl.registry"); err != nil {
 			return err
@@ -362,7 +371,12 @@ func (s *Setup) Exit() {
 		fmt.Println(err)
 	}
 
-	// 5. user post-hook
+	// 5. http server
+	if err := s.RunExitTask("ctrl.rest-api"); err != nil {
+		fmt.Println(err)
+	}
+
+	// 6. user post-hook
 	if err := s.RunExitTask("hook.post"); err != nil {
 		fmt.Println(err)
 	}
