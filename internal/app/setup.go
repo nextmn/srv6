@@ -65,11 +65,12 @@ func (s *Setup) AddTasks() {
 	} else {
 		httpURI = httpURI + s.config.HTTPAddress.String() + ":" + httpPort
 	}
+	httpAddr := fmt.Sprintf("[%s]:%s", s.config.HTTPAddress, httpPort)
 
 	// 0.3 http server
 
 	rr := tasks.NewRulesRegistry()
-	s.RegisterTask("ctrl.rest-api", tasks.NewHttpServerTask(httpURI, rr))
+	s.RegisterTask("ctrl.rest-api", tasks.NewHttpServerTask(httpAddr, rr))
 
 	// 0.4 controller registry
 	if s.config.Locator != nil {
