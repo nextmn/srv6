@@ -27,12 +27,12 @@ func NewHttpServerTask(httpAddr string, rr *RulesRegistry) *HttpServerTask {
 		c.Header("Cache-Control", "no-cache")
 		c.JSON(http.StatusOK, gin.H{"ready": true})
 	})
-	r.POST("/rule", rr.PostRule)
-	r.GET("/rule/:uuid", rr.GetRule)
+	r.POST("/rules", rr.PostRule)
+	r.GET("/rules/:uuid", rr.GetRule)
 	r.GET("/rules", rr.GetRules)
-	r.PATCH("/rule/:uuid/enable", rr.EnableRule)
-	r.PATCH("/rule/:uuid/disable", rr.DisableRule)
-	r.DELETE("/rule/:uuid", rr.DeleteRule)
+	r.PATCH("/rules/:uuid/enable", rr.EnableRule)
+	r.PATCH("/rules/:uuid/disable", rr.DisableRule)
+	r.DELETE("/rules/:uuid", rr.DeleteRule)
 	return &HttpServerTask{
 		WithState: NewState(),
 		srv: &http.Server{
