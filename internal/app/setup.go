@@ -171,7 +171,7 @@ func (s *Setup) AddTasks() {
 		s.RegisterTask("iproute2.rule.nextmn-gtp4", tasks.NewTaskIP4Rule(*s.config.GTP4HeadendPrefix, constants.RT_TABLE_NEXTMN_IPV4))
 	}
 	// 4.3 rule to rttable nextmn-ipv4
-	if s.config.GTP4HeadendPrefix != nil {
+	if s.config.IPV4HeadendPrefix != nil {
 		s.RegisterTask("iproute2.rule.nextmn-ipv4", tasks.NewTaskIP4Rule(*s.config.IPV4HeadendPrefix, constants.RT_TABLE_NEXTMN_IPV4))
 	}
 }
