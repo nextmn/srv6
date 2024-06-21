@@ -36,7 +36,7 @@ func (t *TaskLinuxHeadend) RunInit() error {
 		return fmt.Errorf("No policy set for this headend")
 	}
 	seglist := ""
-	for _, p := range t.headend.Policy {
+	for _, p := range *t.headend.Policy {
 		if p.Match == nil {
 			seglist = p.Bsid.ToIPRoute2()
 			break
@@ -74,7 +74,7 @@ func (t *TaskLinuxHeadend) RunExit() error {
 		return fmt.Errorf("No policy set for this headend")
 	}
 	seglist := ""
-	for _, p := range t.headend.Policy {
+	for _, p := range *t.headend.Policy {
 		if p.Match == nil {
 			seglist = p.Bsid.ToIPRoute2()
 			break

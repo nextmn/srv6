@@ -19,7 +19,10 @@ func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8, debug bool) (netf
 	}
 	switch he.Behavior {
 	case config.H_M_GTP4_D:
-		policy := he.Policy
+		if he.Policy == nil {
+			return nil, fmt.Errorf("Policy is nil")
+		}
+		policy := *he.Policy
 		if he.SourceAddressPrefix == nil {
 			return nil, fmt.Errorf("Missing source-address-prefix")
 		}
