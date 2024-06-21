@@ -22,4 +22,5 @@ const IFACE_LINUX = "nextmn-linux"
 
 // golang/water ifaces
 const IFACE_GOLANG_SRV6_PREFIX = "nextmn-srv6-"
+const IFACE_GOLANG_IPV4_PREFIX = "nextmn-ipv4-" // ipv4 excluding gtp4
 const IFACE_GOLANG_GTP4_PREFIX = "nextmn-gtp4-"

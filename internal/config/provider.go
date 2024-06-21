@@ -16,6 +16,7 @@ type Provider int
 const (
 	ProviderLinux Provider = iota
 	ProviderNextMN
+	ProviderNextMNWithController
 )
 
 func (p Provider) String() string {
@@ -24,6 +25,8 @@ func (p Provider) String() string {
 		return "Linux"
 	case ProviderNextMN:
 		return "NextMN"
+	case ProviderNextMNWithController:
+		return "NextMN (via controller)"
 	default:
 		return "Unknown provider"
 	}
@@ -36,6 +39,8 @@ func (p *Provider) UnmarshalYAML(n *yaml.Node) error {
 		*p = ProviderLinux
 	case "nextmn":
 		*p = ProviderNextMN
+	case "nextmn-ctrl", "nextmnwithcontroller", "nextmn-with-controller", "nextmn-via-controller":
+		*p = ProviderNextMNWithController
 	default:
 		return fmt.Errorf("Unknown provider")
 	}

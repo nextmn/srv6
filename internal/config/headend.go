@@ -35,3 +35,13 @@ func (he Headends) FilterWithBehavior(provider Provider, behavior HeadendBehavio
 	}
 	return newList
 }
+
+func (he Headends) FilterWithoutBehavior(provider Provider, behavior HeadendBehavior) Headends {
+	newList := make([]*Headend, 0)
+	for _, e := range he {
+		if e.Provider == provider && e.Behavior != behavior {
+			newList = append(newList, e)
+		}
+	}
+	return newList
+}

@@ -10,7 +10,7 @@ controller-uri: "http://192.0.2.2:8080"
 backbone-ip: "fd00::01"
 
 linux-headend-set-source-address: "fd00:51D5:0000::"
-ipv4-headend-prefix: "10.0.200.3/32"
+gtp4-headend-prefix: "10.0.200.3/32"
 headends:
   - name: "gtp4 to sr"
     to: "10.0.200.3/32"

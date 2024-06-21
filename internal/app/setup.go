@@ -10,6 +10,7 @@ import (
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/config"
 	"github.com/nextmn/srv6/internal/constants"
+	"github.com/nextmn/srv6/internal/ctrl"
 	tasks "github.com/nextmn/srv6/internal/tasks"
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 )
@@ -69,7 +70,7 @@ func (s *Setup) AddTasks() {
 
 	// 0.3 http server
 
-	rr := tasks.NewRulesRegistry()
+	rr := ctrl.NewRulesRegistry()
 	s.RegisterTask("ctrl.rest-api", tasks.NewHttpServerTask(httpAddr, rr))
 
 	// 0.4 controller registry
@@ -87,17 +88,33 @@ func (s *Setup) AddTasks() {
 		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
 	}
 	// 1.3 ifaces golang-gtp4-* (tun via water)
-	for i, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
 		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
 	}
+	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-gtp4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
+	}
+	// 1.4 ifaces golang-ipv4-* (tun via water)
+	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.tun.golang-ipv4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
+	}
+	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-ipv4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskTunIface(iface_name, s.registry))
+	}
 
 	// 2.  ip routes
-	// 2.1 blackhole route (srv6)
-	s.RegisterTask("iproute2.route.nextmn-srv6.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_IPV6))
-	// 2.2 blackhole route (gtp4)
-	s.RegisterTask("iproute2.route.nextmn-gtp4.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_IPV4))
+	// 2.1 blackhole route (ipv6)
+	s.RegisterTask("iproute2.route.nextmn-ipv6.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_IPV6))
+	// 2.2 blackhole route (ipv4)
+	s.RegisterTask("iproute2.route.nextmn-ipv4.blackhole", tasks.NewTaskBlackhole(constants.RT_TABLE_NEXTMN_IPV4))
 
 	// 3.  endpoints + headends
 	// 3.1 linux headends
@@ -119,11 +136,29 @@ func (s *Setup) AddTasks() {
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
 		s.RegisterTask(t_name, tasks.NewTaskNextMNEndpoint(e, constants.RT_TABLE_NEXTMN_IPV6, iface_name, s.registry, debug))
 	}
-	// 3.3 nextmn gtp4 headends
+	// 3.3 nextmn ipv4 headends
+	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.headend.ipv4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskNextMNHeadend(h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+	}
+	// 3.4 nextmn gtp4 headends
 	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
 		s.RegisterTask(t_name, tasks.NewTaskNextMNHeadend(h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+	}
+	// 3.5 nextmn-ctrl ipv4 headends
+	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.ipv4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskNextMNHeadendWithCtrl(h, rr, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+	}
+	// 3.6 nextmn-ctrl gtp4 headends
+	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.gtp4/%s", h.Name)
+		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
+		s.RegisterTask(t_name, tasks.NewTaskNextMNHeadendWithCtrl(h, rr, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
 	}
 
 	// 4.  ip rules
@@ -134,6 +169,10 @@ func (s *Setup) AddTasks() {
 	// 4.2 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {
 		s.RegisterTask("iproute2.rule.nextmn-gtp4", tasks.NewTaskIP4Rule(*s.config.GTP4HeadendPrefix, constants.RT_TABLE_NEXTMN_IPV4))
+	}
+	// 4.3 rule to rttable nextmn-ipv4
+	if s.config.GTP4HeadendPrefix != nil {
+		s.RegisterTask("iproute2.rule.nextmn-ipv4", tasks.NewTaskIP4Rule(*s.config.IPV4HeadendPrefix, constants.RT_TABLE_NEXTMN_IPV4))
 	}
 }
 
@@ -201,20 +240,39 @@ func (s *Setup) Init() error {
 		}
 	}
 	// 1.3 iface golang-gtp4 (tun via water)
-	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-gtp4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-gtp4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
+	// 1.3 iface golang-ipv4 (tun via water)
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.tun.golang-ipv4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-ipv4/%s", h.Name)
 		if err := s.RunInitTask(t_name); err != nil {
 			return err
 		}
 	}
 
 	// 2.  ip routes
-	// 2.1 blackhole route (srv6)
-	if err := s.RunInitTask("iproute2.route.nextmn-srv6.blackhole"); err != nil {
+	// 2.1 blackhole route (ipv6)
+	if err := s.RunInitTask("iproute2.route.nextmn-ipv6.blackhole"); err != nil {
 		return err
 	}
-	// 2.2 blackhole route (gtp4)
-	if err := s.RunInitTask("iproute2.route.nextmn-gtp4.blackhole"); err != nil {
+	// 2.2 blackhole route (ipv4)
+	if err := s.RunInitTask("iproute2.route.nextmn-ipv4.blackhole"); err != nil {
 		return err
 	}
 
@@ -252,6 +310,27 @@ func (s *Setup) Init() error {
 			return err
 		}
 	}
+	// 3.5 nextmn ipv4 headends
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.headend.ipv4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
+	// 3.4 nextmn-ctrl gtp4 headends
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.gtp4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
+	// 3.4 nextmn-ctrl ipv4 headends
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.ipv4/%s", h.Name)
+		if err := s.RunInitTask(t_name); err != nil {
+			return err
+		}
+	}
 
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
@@ -263,6 +342,12 @@ func (s *Setup) Init() error {
 	// 4.2 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {
 		if err := s.RunInitTask("iproute2.rule.nextmn-gtp4"); err != nil {
+			return err
+		}
+	}
+	// 4.3 rule to rttable nextmn-gtp4
+	if s.config.IPV4HeadendPrefix != nil {
+		if err := s.RunInitTask("iproute2.rule.nextmn-ipv4"); err != nil {
 			return err
 		}
 	}
@@ -300,7 +385,13 @@ func (s *Setup) Exit() {
 			fmt.Println(err)
 		}
 	}
-	// 1.2 rule to rttable nextmn-srv6
+	// 1.2 rule to rttable nextmn-ipv4
+	if s.config.IPV4HeadendPrefix != nil {
+		if err := s.RunExitTask("iproute2.rule.nextmn-ipv4"); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 1.3 rule to rttable nextmn-srv6
 	if s.config.Locator != nil {
 		if err := s.RunExitTask("iproute2.rule.nextmn-srv6"); err != nil {
 			fmt.Println(err)
@@ -308,28 +399,49 @@ func (s *Setup) Exit() {
 	}
 
 	// 2  endpoints + headends
-	// 2. nextmn gtp4 headends
+	// 2.1 nextmn ipv4 headends
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.headend.ipv4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 2.2 nextmn gtp4 headends
 	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	// 2.2 nextmn endpoints
+	// 2.3 nextmn-ctrl ipv4 headends
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.ipv4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 2.4 nextmn-ctrl gtp4 headends
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.headend.gtp4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 2.5 nextmn endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	// 2.3 linux endpoints
+	// 2.6 linux endpoints
 	for _, e := range s.config.Endpoints.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.endpoint/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	// 2.3 linux headends
+	// 2.7 linux headends
 	for _, h := range s.config.Headends.Filter(config.ProviderLinux) {
 		t_name := fmt.Sprintf("linux.headend/%s", h.Name)
 		if err := s.RunExitTask(t_name); err != nil {
@@ -343,31 +455,50 @@ func (s *Setup) Exit() {
 	}
 
 	// 3.  ip routes
-	// 3.1 blackhole route (gtp4)
-	if err := s.RunExitTask("iproute2.route.nextmn-gtp4.blackhole"); err != nil {
+	// 3.1 blackhole route (ipv4)
+	if err := s.RunExitTask("iproute2.route.nextmn-ipv4.blackhole"); err != nil {
 		fmt.Println(err)
 	}
-	// 3.2 blackhole route (srv6)
-	if err := s.RunExitTask("iproute2.route.nextmn-srv6.blackhole"); err != nil {
+	// 3.2 blackhole route (ipv6)
+	if err := s.RunExitTask("iproute2.route.nextmn-ipv6.blackhole"); err != nil {
 		fmt.Println(err)
 	}
 
 	// 4.  ifaces
 	// 4.1 ifaces golang-gtp4-* (tun via water)
-	for _, h := range s.config.Headends.Filter(config.ProviderNextMN) {
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-gtp4/%s", h.Name)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	// 4.2 ifaces golang-srv6-* (tun via water)
+	for _, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-gtp4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 4.2 ifaces golang-ipv4-* (tun via water)
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn.tun.golang-ipv4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	for _, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
+		t_name := fmt.Sprintf("nextmn-ctrl.tun.golang-ipv4/%s", h.Name)
+		if err := s.RunExitTask(t_name); err != nil {
+			fmt.Println(err)
+		}
+	}
+	// 4.3 ifaces golang-srv6-* (tun via water)
 	for _, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.tun.golang-srv6/%s", e.Prefix)
 		if err := s.RunExitTask(t_name); err != nil {
 			fmt.Println(err)
 		}
 	}
-	// 4.3 iface linux (type dummy)
+	// 4.4 iface linux (type dummy)
 	if err := s.RunExitTask("iproute2.iface.linux"); err != nil {
 		fmt.Println(err)
 	}

@@ -11,17 +11,18 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nextmn/srv6/internal/ctrl"
 )
 
 // HttpServerTask starts an http server
 type HttpServerTask struct {
 	WithState
 	srv           *http.Server
-	rulesRegistry *RulesRegistry
+	rulesRegistry *ctrl.RulesRegistry
 }
 
 // Create a new HttpServerTask
-func NewHttpServerTask(httpAddr string, rr *RulesRegistry) *HttpServerTask {
+func NewHttpServerTask(httpAddr string, rr *ctrl.RulesRegistry) *HttpServerTask {
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
