@@ -7,6 +7,7 @@ package ctrl
 import (
 	"fmt"
 	"net/http"
+	"net/netip"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -24,6 +25,20 @@ func NewRulesRegistry() *RulesRegistry {
 	return &RulesRegistry{
 		rules: make(jsonapi.RuleMap),
 	}
+}
+
+func (rr *RulesRegistry) Action(dstIp netip.Addr) (jsonapi.Action, error) {
+	rr.RLock()
+	defer rr.RUnlock()
+	for _, r := range rr.rules {
+		if !r.Enabled {
+			continue
+		}
+		if r.Match.DstIpPrefix.Contains(dstIp) {
+			return r.Action, nil
+		}
+	}
+	return jsonapi.Action{}, fmt.Errorf("Not found")
 }
 
 func (rr *RulesRegistry) GetRule(c *gin.Context) {

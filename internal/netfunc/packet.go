@@ -11,7 +11,9 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+	json_api "github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/constants"
+	"github.com/nextmn/srv6/internal/ctrl"
 )
 
 type Packet struct {
@@ -70,6 +72,16 @@ func (p *Packet) CheckDAInPrefixRange(prefix netip.Prefix) error {
 		return fmt.Errorf("Destination address out of this handler’s range")
 	}
 	return nil
+}
+
+// Returns the Action related to this packet
+func (p *Packet) Action(rr *ctrl.RulesRegistry) (json_api.Action, error) {
+	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
+	dst, ok := netip.AddrFromSlice(dstSlice)
+	if !ok {
+		return json_api.Action{}, fmt.Errorf("Malformed packet")
+	}
+	return rr.Action(dst)
 }
 
 // Returns the first gopacket.Layer after IPv6 header / extension headers
