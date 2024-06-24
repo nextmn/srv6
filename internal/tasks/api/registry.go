@@ -4,12 +4,8 @@
 // SPDX-License-Identifier: MIT
 package tasks_api
 
-// Pairs of Task to be run
-type Task interface {
-	NameBase() string
-	NameInit() string
-	NameExit() string
+type Registry interface {
+	Register(task Task)
 	RunInit() error
-	RunExit() error
-	State() bool // true when the initialized and not yet exited
+	RunExit()
 }

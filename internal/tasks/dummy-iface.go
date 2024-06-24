@@ -10,15 +10,17 @@ import (
 
 // TaskDummyIface
 type TaskDummyIface struct {
+	WithName
 	WithState
 	iface *iproute2.DummyIface
 }
 
 // Create a new Task for DummyIface
-func NewTaskDummyIface(name string) *TaskDummyIface {
+func NewTaskDummyIface(name string, iface_name string) *TaskDummyIface {
 	return &TaskDummyIface{
+		WithName:  NewName(name),
 		WithState: NewState(),
-		iface:     iproute2.NewDummyIface(name),
+		iface:     iproute2.NewDummyIface(iface_name),
 	}
 }
 

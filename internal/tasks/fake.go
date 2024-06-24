@@ -6,12 +6,14 @@ package tasks
 
 // FakeTask is a dummy task that do nothing
 type FakeTask struct {
+	WithName
 	WithState
 }
 
 // Create a new FakeTask
-func NewFakeTask() *FakeTask {
+func NewFakeTask(name string) *FakeTask {
 	return &FakeTask{
+		WithName:  NewName(name),
 		WithState: NewState(),
 	}
 }

@@ -14,13 +14,19 @@ import (
 // HookSingle
 type SingleHook struct {
 	command *string
+	name    string
 }
 
 // Creates a new SingleHook
-func NewSingleHook(cmd *string) SingleHook {
+func NewSingleHook(name string, cmd *string) SingleHook {
 	return SingleHook{
+		name:    name,
 		command: cmd,
 	}
+}
+
+func (h SingleHook) Name() string {
+	return h.name
 }
 
 // Runs the command of the SingleHook

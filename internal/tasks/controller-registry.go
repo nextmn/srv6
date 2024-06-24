@@ -14,6 +14,7 @@ import (
 
 // ControllerRegistry registers and unregisters into controller
 type ControllerRegistry struct {
+	WithName
 	WithState
 	RemoteControlURI string // URI of the controller
 	LocalControlURI  string // URI of the router, used to control it
@@ -23,8 +24,9 @@ type ControllerRegistry struct {
 }
 
 // Create a new ControllerRegistry
-func NewControllerRegistry(remoteControlURI string, backbone netip.Addr, locator string, localControlURI string) *ControllerRegistry {
+func NewControllerRegistry(name string, remoteControlURI string, backbone netip.Addr, locator string, localControlURI string) *ControllerRegistry {
 	return &ControllerRegistry{
+		WithName:         NewName(name),
 		WithState:        NewState(),
 		RemoteControlURI: remoteControlURI,
 		LocalControlURI:  localControlURI,

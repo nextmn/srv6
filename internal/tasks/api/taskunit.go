@@ -6,5 +6,6 @@ package tasks_api
 
 // Task to be run
 type TaskUnit interface {
+	Name() string
 	Run() error
 }

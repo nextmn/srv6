@@ -11,6 +11,7 @@ import (
 
 // TaskIPRule
 type TaskIPRule struct {
+	WithName
 	WithState
 	prefix  string
 	family4 bool
@@ -18,22 +19,24 @@ type TaskIPRule struct {
 }
 
 // Create a new Task for IPRule
-func NewTaskIP6Rule(prefix string, tablename string) *TaskIPRule {
+func NewTaskIP6Rule(name string, prefix string, table_name string) *TaskIPRule {
 	return &TaskIPRule{
+		WithName:  NewName(name),
 		WithState: NewState(),
 		family4:   false,
 		prefix:    prefix,
-		table:     iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
+		table:     iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 	}
 }
 
 // Create a new Task for IPRule
-func NewTaskIP4Rule(prefix string, tablename string) *TaskIPRule {
+func NewTaskIP4Rule(name string, prefix string, table_name string) *TaskIPRule {
 	return &TaskIPRule{
+		WithName:  NewName(name),
 		WithState: NewState(),
 		family4:   true,
 		prefix:    prefix,
-		table:     iproute2.NewTable(tablename, constants.RT_PROTO_NEXTMN),
+		table:     iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 	}
 }
 

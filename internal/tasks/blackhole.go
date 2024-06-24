@@ -11,13 +11,15 @@ import (
 
 // TaskBlackhole
 type TaskBlackhole struct {
+	WithName
 	WithState
 	table iproute2.Table
 }
 
 // Create a new TaskBlackhole
-func NewTaskBlackhole(table_name string) *TaskBlackhole {
+func NewTaskBlackhole(name string, table_name string) *TaskBlackhole {
 	return &TaskBlackhole{
+		WithName:  NewName(name),
 		WithState: NewState(),
 		table:     iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 	}

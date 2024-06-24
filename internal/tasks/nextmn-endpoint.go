@@ -17,6 +17,7 @@ import (
 
 // TaskNextMNEndpoint creates a new endpoint
 type TaskNextMNEndpoint struct {
+	WithName
 	WithState
 	endpoint   *config.Endpoint
 	table      iproute2.Table
@@ -27,8 +28,9 @@ type TaskNextMNEndpoint struct {
 }
 
 // Create a new TaskNextMNEndpoint
-func NewTaskNextMNEndpoint(endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNEndpoint {
+func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNEndpoint {
 	return &TaskNextMNEndpoint{
+		WithName:   NewName(name),
 		WithState:  NewState(),
 		endpoint:   endpoint,
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),

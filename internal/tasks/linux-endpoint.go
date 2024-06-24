@@ -12,6 +12,7 @@ import (
 
 // TaskLinuxEndpoint creates a new linux endpoint
 type TaskLinuxEndpoint struct {
+	WithName
 	WithState
 	endpoint   *config.Endpoint
 	table      iproute2.Table
@@ -19,8 +20,9 @@ type TaskLinuxEndpoint struct {
 }
 
 // Create a new TaskLinuxEndpoint
-func NewTaskLinuxEndpoint(endpoint *config.Endpoint, table_name string, iface_name string) *TaskLinuxEndpoint {
+func NewTaskLinuxEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string) *TaskLinuxEndpoint {
 	return &TaskLinuxEndpoint{
+		WithName:   NewName(name),
 		WithState:  NewState(),
 		endpoint:   endpoint,
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),

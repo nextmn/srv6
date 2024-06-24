@@ -17,6 +17,7 @@ import (
 
 // TaskNextMNHeadend creates a new headend
 type TaskNextMNHeadend struct {
+	WithName
 	WithState
 	headend    *config.Headend
 	table      iproute2.Table
@@ -27,8 +28,9 @@ type TaskNextMNHeadend struct {
 }
 
 // Create a new TaskNextMNHeadend
-func NewTaskNextMNHeadend(headend *config.Headend, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadend {
+func NewTaskNextMNHeadend(name string, headend *config.Headend, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadend {
 	return &TaskNextMNHeadend{
+		WithName:   NewName(name),
 		WithState:  NewState(),
 		headend:    headend,
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),

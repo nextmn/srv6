@@ -5,21 +5,35 @@
 package tasks
 
 import tasks_api "github.com/nextmn/srv6/internal/tasks/api"
+import "fmt"
 
 // HookMulti is a Task that runs 2 SingleHook
 type HookMulti struct {
+	WithName
 	WithState
 	init tasks_api.TaskUnit
 	exit tasks_api.TaskUnit
 }
 
 // Creates a new MultiHook
-func NewMultiHook(init *string, exit *string) *HookMulti {
+func NewMultiHook(init_name string, init *string, exit_name string, exit *string) *HookMulti {
 	return &HookMulti{
 		WithState: NewState(),
-		init:      NewSingleHook(init),
-		exit:      NewSingleHook(exit),
+		init:      NewSingleHook(init_name, init),
+		exit:      NewSingleHook(exit_name, exit),
 	}
+}
+
+func (h *HookMulti) NameBase() string {
+	return fmt.Sprintf("%s/%s", h.init.Name(), h.exit.Name())
+}
+
+func (h *HookMulti) NameInit() string {
+	return h.init.Name()
+}
+
+func (h *HookMulti) NameExit() string {
+	return h.exit.Name()
 }
 
 // Init function

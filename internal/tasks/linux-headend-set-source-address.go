@@ -10,13 +10,15 @@ import (
 
 // TaskLinuxHeadendSetSourceAddress
 type TaskLinuxHeadendSetSourceAddress struct {
+	WithName
 	WithState
 	address string
 }
 
 // Create a new TaskLinuxHeadendSetSourceAddress
-func NewTaskLinuxHeadendSetSourceAddress(address string) *TaskLinuxHeadendSetSourceAddress {
+func NewTaskLinuxHeadendSetSourceAddress(name string, address string) *TaskLinuxHeadendSetSourceAddress {
 	return &TaskLinuxHeadendSetSourceAddress{
+		WithName:  NewName(name),
 		WithState: NewState(),
 		address:   address,
 	}

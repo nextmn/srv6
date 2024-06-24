@@ -14,6 +14,7 @@ import (
 
 // TaskLinuxHeadend creates a new linux headend
 type TaskLinuxHeadend struct {
+	WithName
 	WithState
 	headend    *config.Headend
 	table      iproute2.Table
@@ -21,8 +22,9 @@ type TaskLinuxHeadend struct {
 }
 
 // Create a new TaskLinuxHeadend
-func NewTaskLinuxHeadend(headend *config.Headend, table_name string, iface_name string) *TaskLinuxHeadend {
+func NewTaskLinuxHeadend(name string, headend *config.Headend, table_name string, iface_name string) *TaskLinuxHeadend {
 	return &TaskLinuxHeadend{
+		WithName:   NewName(name),
 		WithState:  NewState(),
 		headend:    headend,
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),

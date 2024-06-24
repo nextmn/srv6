@@ -11,16 +11,18 @@ import (
 
 // TaskTunIface
 type TaskTunIface struct {
+	WithName
 	WithState
 	iface    *iproute2.TunIface
 	registry app_api.Registry
 }
 
 // Create a new Task for TunIface
-func NewTaskTunIface(name string, registry app_api.Registry) *TaskTunIface {
+func NewTaskTunIface(name string, iface_name string, registry app_api.Registry) *TaskTunIface {
 	return &TaskTunIface{
+		WithName:  NewName(name),
 		WithState: NewState(),
-		iface:     iproute2.NewTunIface(name),
+		iface:     iproute2.NewTunIface(iface_name),
 		registry:  registry,
 	}
 }

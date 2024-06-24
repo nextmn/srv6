@@ -16,13 +16,14 @@ import (
 
 // HttpServerTask starts an http server
 type HttpServerTask struct {
+	WithName
 	WithState
 	srv           *http.Server
 	rulesRegistry *ctrl.RulesRegistry
 }
 
 // Create a new HttpServerTask
-func NewHttpServerTask(httpAddr string, rr *ctrl.RulesRegistry) *HttpServerTask {
+func NewHttpServerTask(name string, httpAddr string, rr *ctrl.RulesRegistry) *HttpServerTask {
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
@@ -35,6 +36,7 @@ func NewHttpServerTask(httpAddr string, rr *ctrl.RulesRegistry) *HttpServerTask 
 	r.PATCH("/rules/:uuid/disable", rr.DisableRule)
 	r.DELETE("/rules/:uuid", rr.DeleteRule)
 	return &HttpServerTask{
+		WithName:  NewName(name),
 		WithState: NewState(),
 		srv: &http.Server{
 			Addr:    httpAddr,
