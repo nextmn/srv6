@@ -40,8 +40,8 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	src := net.ParseIP("::")           // FIXME: don't hardcode
-	nextHop := net.ParseIP(action.SRH) // FIXME: allow multiple segments
+	src := net.ParseIP("::")            // FIXME: don't hardcode
+	nextHop := action.NextHop.AsSlice() // FIXME: allow multiple segments
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
@@ -54,7 +54,11 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	}
 	// FIXME: allow multiple segments
 	//segList := append([]net.IP{seg0}, bsid.ReverseSegmentsList()...)
-	segList := []net.IP{nextHop}
+	segList := []net.IP{}
+	for _, seg := range action.SRH {
+		segList = append(segList, seg.AsSlice())
+	}
+
 	srh := &gopacket_srv6.IPv6Routing{
 		RoutingType: 4,
 		// the first item on segments list is the next endpoint

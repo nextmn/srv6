@@ -67,6 +67,8 @@ github.com/nextmn/json-api v0.0.2 h1:Xo18bv+eWPc+BBfjNP5MdA0bWokaupzEGW5kt1BwYxg
 github.com/nextmn/json-api v0.0.2/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
 github.com/nextmn/json-api v0.0.3 h1:COfRvrXsPOnkYTMoEfcX55n2H1dDKJh86AqT8+N6qZo=
 github.com/nextmn/json-api v0.0.3/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
+github.com/nextmn/json-api v0.0.4 h1:K8zNEesHMv8gHxP4zDoTbIhIhH85/8YY18hQaKpuUy4=
+github.com/nextmn/json-api v0.0.4/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
 github.com/pelletier/go-toml/v2 v2.2.2/go.mod h1:1t835xjRzz80PqgE6HHgN2JOsmgYu/h4qDAS4n929Rs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
