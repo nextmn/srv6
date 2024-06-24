@@ -35,7 +35,7 @@ TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/nextmn/srv6-ctrl).
 
 
 ## Incoming packet flow
-![incoming packet flow](./images/incoming-packet-flow.svg)
+![incoming packet flow](./doc/img/incoming-packet-flow.svg)
 
 ## Getting started
 ### Build dependencies
