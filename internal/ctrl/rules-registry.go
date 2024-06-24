@@ -27,14 +27,14 @@ func NewRulesRegistry() *RulesRegistry {
 	}
 }
 
-func (rr *RulesRegistry) Action(dstIp netip.Addr) (jsonapi.Action, error) {
+func (rr *RulesRegistry) Action(UEIp netip.Addr) (jsonapi.Action, error) {
 	rr.RLock()
 	defer rr.RUnlock()
 	for _, r := range rr.rules {
 		if !r.Enabled {
 			continue
 		}
-		if r.Match.DstIpPrefix.Contains(dstIp) {
+		if r.Match.UEIpPrefix.Contains(UEIp) {
 			return r.Action, nil
 		}
 	}

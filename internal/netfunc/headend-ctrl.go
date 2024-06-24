@@ -21,6 +21,8 @@ func NewHeadendWithCtrl(he *config.Headend, rr *ctrl.RulesRegistry, ttl uint8, h
 	switch he.Behavior {
 	case config.H_Encaps:
 		return NewNetFunc(NewHeadendEncapsWithCtrl(p, rr, ttl, hopLimit), debug), nil
+	case config.H_M_GTP4_D:
+		return NewNetFunc(NewHeadendGTP4WithCtrl(p, rr, ttl, hopLimit), debug), nil
 	default:
 		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
 	}
