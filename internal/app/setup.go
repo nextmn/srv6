@@ -61,16 +61,17 @@ func (s *Setup) AddTasks() {
 	}
 	httpAddr := fmt.Sprintf("[%s]:%s", s.config.HTTPAddress, httpPort)
 
-	// 0.2 http server
+	// 0.2 database
+	s.tasks.Register(tasks.NewDBTask("database"))
+
+	// 0.3 http server
 
 	rr := ctrl.NewRulesRegistry()
 	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", httpAddr, rr))
 
-	// 0.3 controller registry
+	// 0.4 controller registry
 	if s.config.Locator != nil {
 		s.tasks.Register(tasks.NewControllerRegistryTask("ctrl.registry", s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI, s.registry))
-		// 0.4 database
-		s.tasks.Register(tasks.NewDBTask("database", s.registry))
 	}
 
 	// 1.  ifaces
