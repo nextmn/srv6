@@ -19,33 +19,26 @@ import (
 type HeadendGTP4WithCtrl struct {
 	RulesRegistry *ctrl.RulesRegistry
 	BaseHandler
-	db        *sql.DB
-	tableName string
+	db *sql.DB
 }
 
 func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
-	tableName := fmt.Sprintf("uplink-%s" + prefix.String())
-	s, err := db.Prepare(`CREATE TABLE IF NOT EXISTS $1
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink-gtp4
 		id INT NOT NULL AUTO_INCREMENT,
 		uplink_teid INTEGER,
 		gnb_ip INET,
 		ue_ip_address INET,
+		srgw_prefix CIDR,
 		PRIMARY KEY (id);
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("Could not prepare request: %s", err)
-	}
-	defer s.Close()
-	_, err = s.Exec(tableName)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create table in database: %s", err)
+		return nil, fmt.Errorf("Could not create table uplink-gtp4 in database: %s", err)
 	}
 
 	return &HeadendGTP4WithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
 		db:            db,
-		tableName:     tableName,
 	}, nil
 }
 
