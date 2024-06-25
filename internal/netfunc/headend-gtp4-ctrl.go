@@ -23,7 +23,7 @@ type HeadendGTP4WithCtrl struct {
 }
 
 func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink-gtp4
+	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4
 		id INT NOT NULL AUTO_INCREMENT,
 		uplink_teid INTEGER,
 		gnb_ip INET,
@@ -32,7 +32,7 @@ func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uin
 		PRIMARY KEY (id);
 	`)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create table uplink-gtp4 in database: %s", err)
+		return nil, fmt.Errorf("Could not create table uplink_gtp4 in database: %s", err)
 	}
 
 	return &HeadendGTP4WithCtrl{
