@@ -66,7 +66,7 @@ func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := e.CheckDAInPrefixRange(pqt); err != nil {
+	if _, err := e.CheckDAInPrefixRange(pqt); err != nil {
 		return nil, err
 	}
 

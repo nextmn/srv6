@@ -6,40 +6,55 @@ package netfunc
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/netip"
 
 	"database/sql"
+	"github.com/gofrs/uuid"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	"github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/ctrl"
 )
 
 type HeadendGTP4WithCtrl struct {
 	RulesRegistry *ctrl.RulesRegistry
 	BaseHandler
-	db *sql.DB
+	db         *sql.DB
+	get_action *sql.Stmt
+	insert     *sql.Stmt
 }
 
 func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4 (
-		id INT NOT NULL AUTO_INCREMENT,
 		uplink_teid INTEGER,
-		gnb_ip INET,
-		ue_ip_address INET,
-		srgw_prefix CIDR,
-		PRIMARY KEY (id)
+		srgw_ip INET,
+		action_uuid NOT NULL UUID,
+		PRIMARY KEY(uplink_teid, srgw_ip)
 		);
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not create table uplink_gtp4 in database: %s", err)
 	}
 
+	get_action, err := db.Prepare(`SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2)`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare statement for get_action: %s", err)
+	}
+
+	insert, err := db.Prepare(`INSERT INTO uplink_gtp4 (uplink_teid, srgw_ip, action_uuid) VALUES($1, $2, $3)`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare statement for insert: %s", err)
+	}
+
 	return &HeadendGTP4WithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
 		db:            db,
+		get_action:    get_action,
+		insert:        insert,
 	}, nil
 }
 
@@ -49,7 +64,8 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := h.CheckDAInPrefixRange(pqt); err != nil {
+	srgw_ip, err := h.CheckDAInPrefixRange(pqt)
+	if err != nil {
 		return nil, err
 	}
 
@@ -66,29 +82,34 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	if layerGTPU == nil {
 		return nil, fmt.Errorf("Could not parse GTPU layer")
 	}
-	//gtpu := layerGTPU.(*layers.GTPv1U)
-	//teid := gtpu.TEID
+	gtpu := layerGTPU.(*layers.GTPv1U)
+	teid := gtpu.TEID
 
-	// TODO: create a dedicated parser for GTPU extension Headers
-	// TODO: create a dedicated parser for PDU Session Container
-	//var qfi uint8 = 0
-	//var reflectiveQosIndication = false
-	//if gtpu.ExtensionHeaderFlag && len(gtpu.GTPExtensionHeaders) > 0 {
-	// TS 129.281, Fig. 5.2.1-3:
-	// > For a GTP-PDU with several Extension Headers, the PDU Session
-	// > Container should be the first Extension Header.
-	//	firstExt := gtpu.GTPExtensionHeaders[0]
-	//	if firstExt.Type == 0x85 { // PDU Session Container
-	//		b := firstExt.Content
-	//		if (b[0] & 0xF0 >> 4) == 0 { // PDU Type == DL PDU Session Information
-	//			qfi = uint8(b[1] & 0x3F)
-	//			rqi := b[1] & 0x40 >> 6
-	//			if rqi == 0 {
-	//				reflectiveQosIndication = true
-	//			}
-	//		}
-	//	}
-	//}
+	var action_uuid *uuid.UUID
+	h.get_action.QueryRow(teid, srgw_ip).Scan(action_uuid)
+
+	var action jsonapi.Action
+	if action_uuid == nil {
+		ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
+		if !ok {
+			return nil, err
+		}
+		*action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+		if err != nil {
+			return nil, err
+		}
+		_, err := h.insert.Exec(teid, srgw_ip, action_uuid)
+		if err != nil {
+			log.Println("Warning: could not perform insert in headend gtp4 ctrl")
+		}
+
+	} else {
+		action, err = h.RulesRegistry.ByUUID(*action_uuid)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	nextHop := net.ParseIP("::") // FIXME: use right ip
 
 	ipheader := &layers.IPv6{
@@ -102,7 +123,10 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 		//TrafficClass: qfi << 2,
 		//TrafficClass: 0, // FIXME
 	}
-	segList := []net.IP{net.ParseIP("::")} //FIXME: fill this array
+	segList := []net.IP{}
+	for _, seg := range action.SRH {
+		segList = append(segList, seg.AsSlice())
+	}
 	srh := &gopacket_srv6.IPv6Routing{
 		RoutingType: 4,
 		// the first item on segments list is the next endpoint

@@ -27,18 +27,31 @@ func NewRulesRegistry() *RulesRegistry {
 	}
 }
 
-func (rr *RulesRegistry) Action(UEIp netip.Addr) (jsonapi.Action, error) {
+func (rr *RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
 	rr.RLock()
 	defer rr.RUnlock()
-	for _, r := range rr.rules {
+	for id, r := range rr.rules {
 		if !r.Enabled {
 			continue
 		}
 		if r.Match.UEIpPrefix.Contains(UEIp) {
-			return r.Action, nil
+			return id, r.Action, nil
 		}
 	}
-	return jsonapi.Action{}, fmt.Errorf("Not found")
+	return uuid.UUID{}, jsonapi.Action{}, fmt.Errorf("Not found")
+}
+
+func (rr *RulesRegistry) ByUUID(uuid uuid.UUID) (jsonapi.Action, error) {
+	rr.RLock()
+	defer rr.RUnlock()
+	if rule, ok := rr.rules[uuid]; !ok {
+		return jsonapi.Action{}, fmt.Errorf("Not found")
+	} else {
+		if !rule.Enabled {
+			return rule.Action, fmt.Errorf("Disabled")
+		}
+		return rule.Action, nil
+	}
 }
 
 func (rr *RulesRegistry) GetRule(c *gin.Context) {

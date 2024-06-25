@@ -36,7 +36,7 @@ func (h BaseHandler) HopLimit() uint8 {
 	return h.hopLimit
 }
 
-// Return nil if the packet IP destination address (first network layer) is in the prefix range
-func (h BaseHandler) CheckDAInPrefixRange(pqt *Packet) error {
+// Return the packet IP destination address (first network layer) if it is in the prefix range
+func (h BaseHandler) CheckDAInPrefixRange(pqt *Packet) (netip.Addr, error) {
 	return pqt.CheckDAInPrefixRange(h.Prefix())
 }

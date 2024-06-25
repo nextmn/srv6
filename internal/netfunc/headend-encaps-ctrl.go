@@ -33,10 +33,10 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := h.CheckDAInPrefixRange(pqt); err != nil {
+	if _, err := h.CheckDAInPrefixRange(pqt); err != nil {
 		return nil, err
 	}
-	action, err := pqt.Action(h.RulesRegistry)
+	_, action, err := pqt.Action(h.RulesRegistry)
 	if err != nil {
 		return nil, err
 	}

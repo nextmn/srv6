@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/netip"
 
+	"github.com/gofrs/uuid"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	json_api "github.com/nextmn/json-api/jsonapi"
@@ -59,27 +60,27 @@ func NewIPv4Packet(packet []byte) (*Packet, error) {
 	}, nil
 }
 
-// Return nil if the packet IP destination address (first network layer) is in the prefix range
-func (p *Packet) CheckDAInPrefixRange(prefix netip.Prefix) error {
+// Return the packet IP destination address (first network layer) if it is in the prefix range
+func (p *Packet) CheckDAInPrefixRange(prefix netip.Prefix) (netip.Addr, error) {
 	// get destination address
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
-		return fmt.Errorf("Malformed packet")
+		return netip.Addr{}, fmt.Errorf("Malformed packet")
 	}
 	// check if in range
 	if !prefix.Contains(dst) {
-		return fmt.Errorf("Destination address out of this handler’s range")
+		return netip.Addr{}, fmt.Errorf("Destination address out of this handler’s range")
 	}
-	return nil
+	return dst, nil
 }
 
 // Returns the Action related to this packet
-func (p *Packet) Action(rr *ctrl.RulesRegistry) (json_api.Action, error) {
+func (p *Packet) Action(rr *ctrl.RulesRegistry) (uuid.UUID, json_api.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
-		return json_api.Action{}, fmt.Errorf("Malformed packet")
+		return uuid.UUID{}, json_api.Action{}, fmt.Errorf("Malformed packet")
 	}
 	return rr.Action(dst)
 }
