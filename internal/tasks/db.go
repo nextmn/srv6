@@ -82,9 +82,6 @@ func (db *DBTask) RunInit() error {
 		return fmt.Errorf("Could not open postgres database")
 	}
 	defer initdb.Close()
-	if err := initdb.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database: %s", err)
-	}
 	if _, err := initdb.Exec(fmt.Sprintf("CREATE DATABASE %s", db.dbname)); err != nil {
 		return fmt.Errorf("Could not create database: %s", err)
 	}
@@ -117,9 +114,6 @@ func (db *DBTask) RunExit() error {
 		return fmt.Errorf("Could not open postgres database: %s", err)
 	}
 	defer rmdb.Close()
-	if err := rmdb.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database: %s", err)
-	}
 	if _, err := rmdb.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", db.dbname)); err != nil {
 		return fmt.Errorf("Could not create database: %s", err)
 	}
