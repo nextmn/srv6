@@ -7,16 +7,19 @@ package app
 import (
 	"fmt"
 
+	"github.com/nextmn/srv6/internal/ctrl"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
 
 type Registry struct {
-	ifaces map[string]*iproute2.TunIface
+	ifaces             map[string]*iproute2.TunIface
+	controllerRegistry *ctrl.ControllerRegistry
 }
 
 func NewRegistry() *Registry {
 	return &Registry{
-		ifaces: make(map[string]*iproute2.TunIface),
+		ifaces:             make(map[string]*iproute2.TunIface),
+		controllerRegistry: nil,
 	}
 }
 
@@ -35,4 +38,19 @@ func (r *Registry) RegisterTunIface(iface *iproute2.TunIface) error {
 
 func (r *Registry) DeleteTunIface(name string) {
 	delete(r.ifaces, name)
+}
+
+func (r *Registry) RegisterControllerRegistry(cr *ctrl.ControllerRegistry) {
+	r.controllerRegistry = cr
+}
+
+func (r *Registry) ControllerRegistry() (*ctrl.ControllerRegistry, bool) {
+	if r.controllerRegistry == nil {
+		return nil, false
+	} else {
+		return r.controllerRegistry, true
+	}
+}
+func (r *Registry) DeleteControllerRegistry() {
+	r.controllerRegistry = nil
 }

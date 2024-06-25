@@ -49,10 +49,6 @@ func (s *Setup) AddTasks() {
 	// 0.1 pre-hooks
 	s.tasks.Register(tasks.NewMultiHook("hook.pre.init", preInitHook, "hook.post.exit", postExitHook))
 
-	// 0.2 database
-
-	s.tasks.Register(tasks.NewDBTask("database"))
-
 	httpPort := "80" // default http port
 	if s.config.HTTPPort != nil {
 		httpPort = *s.config.HTTPPort
@@ -65,14 +61,16 @@ func (s *Setup) AddTasks() {
 	}
 	httpAddr := fmt.Sprintf("[%s]:%s", s.config.HTTPAddress, httpPort)
 
-	// 0.3 http server
+	// 0.2 http server
 
 	rr := ctrl.NewRulesRegistry()
 	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", httpAddr, rr))
 
-	// 0.4 controller registry
+	// 0.3 controller registry
 	if s.config.Locator != nil {
-		s.tasks.Register(tasks.NewControllerRegistry("ctrl.registry", s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI))
+		s.tasks.Register(tasks.NewControllerRegistryTask("ctrl.registry", s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI, s.registry))
+		// 0.4 database
+		s.tasks.Register(tasks.NewDBTask("database", s.registry))
 	}
 
 	// 1.  ifaces

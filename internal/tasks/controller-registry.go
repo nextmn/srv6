@@ -8,47 +8,52 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	"github.com/nextmn/srv6/internal/ctrl"
 	"net/http"
 	"net/netip"
 )
 
 // ControllerRegistry registers and unregisters into controller
-type ControllerRegistry struct {
+type ControllerRegistryTask struct {
 	WithName
 	WithState
-	RemoteControlURI string // URI of the controller
-	LocalControlURI  string // URI of the router, used to control it
-	Locator          string
-	Backbone         netip.Addr
-	Resource         string
+	ControllerRegistry *ctrl.ControllerRegistry
+	SetupRegistry      app_api.Registry
 }
 
 // Create a new ControllerRegistry
-func NewControllerRegistry(name string, remoteControlURI string, backbone netip.Addr, locator string, localControlURI string) *ControllerRegistry {
-	return &ControllerRegistry{
-		WithName:         NewName(name),
-		WithState:        NewState(),
-		RemoteControlURI: remoteControlURI,
-		LocalControlURI:  localControlURI,
-		Locator:          locator,
-		Backbone:         backbone,
-		Resource:         "",
+func NewControllerRegistryTask(name string, remoteControlURI string, backbone netip.Addr, locator string, localControlURI string, setup_registry app_api.Registry) *ControllerRegistryTask {
+	return &ControllerRegistryTask{
+		WithName:  NewName(name),
+		WithState: NewState(),
+		ControllerRegistry: &ctrl.ControllerRegistry{
+			RemoteControlURI: remoteControlURI,
+			LocalControlURI:  localControlURI,
+			Locator:          locator,
+			Backbone:         backbone,
+			Resource:         "",
+		},
+		SetupRegistry: setup_registry,
 	}
 }
 
 // Init
-func (t *ControllerRegistry) RunInit() error {
+func (t *ControllerRegistryTask) RunInit() error {
+	if t.SetupRegistry != nil {
+		t.SetupRegistry.RegisterControllerRegistry(t.ControllerRegistry)
+	}
 	data := map[string]string{
-		"locator":  t.Locator,
-		"backbone": t.Backbone.String(),
-		"control":  t.LocalControlURI,
+		"locator":  t.ControllerRegistry.Locator,
+		"backbone": t.ControllerRegistry.Backbone.String(),
+		"control":  t.ControllerRegistry.LocalControlURI,
 	}
 	json_data, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	// TODO: retry on timeout failure
-	resp, err := http.Post(t.RemoteControlURI+"/routers", "application/json", bytes.NewBuffer(json_data))
+	resp, err := http.Post(t.ControllerRegistry.RemoteControlURI+"/routers", "application/json", bytes.NewBuffer(json_data))
 	if err != nil {
 		return err
 	}
@@ -60,7 +65,11 @@ func (t *ControllerRegistry) RunInit() error {
 		return fmt.Errorf("HTTP Control Server: internal error\n")
 	}
 	if resp.StatusCode == 201 { // created
-		t.Resource = resp.Header.Get("Location")
+		t.ControllerRegistry.Resource = resp.Header.Get("Location")
+	}
+
+	if t.SetupRegistry != nil {
+		t.SetupRegistry.DeleteControllerRegistry()
 	}
 
 	t.state = true
@@ -68,15 +77,15 @@ func (t *ControllerRegistry) RunInit() error {
 }
 
 // Exit
-func (t *ControllerRegistry) RunExit() error {
+func (t *ControllerRegistryTask) RunExit() error {
 	// TODO: retry on timeout failure
 	// TODO: if Resource has scheme, don't concatenate
-	if t.Resource == "" {
+	if t.ControllerRegistry.Resource == "" {
 		// nothing to do
 		t.state = false
 		return nil
 	}
-	req, err := http.NewRequest("DELETE", t.RemoteControlURI+t.Resource, nil)
+	req, err := http.NewRequest("DELETE", t.ControllerRegistry.RemoteControlURI+t.ControllerRegistry.Resource, nil)
 	if err != nil {
 		return err
 	}
