@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/netip"
 
+	"database/sql"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
@@ -18,13 +19,34 @@ import (
 type HeadendGTP4WithCtrl struct {
 	RulesRegistry *ctrl.RulesRegistry
 	BaseHandler
+	db        *sql.DB
+	tableName string
 }
 
-func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8) *HeadendGTP4WithCtrl {
+func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
+	tableName := fmt.Sprintf("uplink-%s" + prefix.String())
+	s, err := db.Prepare(`CREATE TABLE IF NOT EXISTS $1
+		id INT NOT NULL AUTO_INCREMENT,
+		uplink_teid INTEGER,
+		gnb_ip INET,
+		ue_ip_address INET,
+		PRIMARY KEY (id);
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare request: %s", err)
+	}
+	defer s.Close()
+	_, err = s.Exec(tableName)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create table in database: %s", err)
+	}
+
 	return &HeadendGTP4WithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
-	}
+		db:            db,
+		tableName:     tableName,
+	}, nil
 }
 
 // Handle a packet

@@ -62,7 +62,7 @@ func (s *Setup) AddTasks() {
 	httpAddr := fmt.Sprintf("[%s]:%s", s.config.HTTPAddress, httpPort)
 
 	// 0.2 database
-	s.tasks.Register(tasks.NewDBTask("database"))
+	s.tasks.Register(tasks.NewDBTask("database", s.registry))
 
 	// 0.3 http server
 

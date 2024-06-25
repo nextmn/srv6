@@ -5,8 +5,8 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
-
 	"github.com/nextmn/srv6/internal/ctrl"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -14,12 +14,14 @@ import (
 type Registry struct {
 	ifaces             map[string]*iproute2.TunIface
 	controllerRegistry *ctrl.ControllerRegistry
+	db                 *sql.DB
 }
 
 func NewRegistry() *Registry {
 	return &Registry{
 		ifaces:             make(map[string]*iproute2.TunIface),
 		controllerRegistry: nil,
+		db:                 nil,
 	}
 }
 
@@ -52,4 +54,18 @@ func (r *Registry) ControllerRegistry() (*ctrl.ControllerRegistry, bool) {
 }
 func (r *Registry) DeleteControllerRegistry() {
 	r.controllerRegistry = nil
+}
+
+func (r *Registry) RegisterDB(db *sql.DB) {
+	r.db = db
+}
+
+func (r *Registry) DB() (*sql.DB, bool) {
+	if r.db == nil {
+		return nil, false
+	}
+	return r.db, true
+}
+func (r *Registry) DeleteDB() {
+	r.db = nil
 }

@@ -4,8 +4,11 @@
 // SPDX-License-Identifier: MIT
 package app_api
 
-import "github.com/nextmn/srv6/internal/iproute2"
-import "github.com/nextmn/srv6/internal/ctrl"
+import (
+	"database/sql"
+	"github.com/nextmn/srv6/internal/ctrl"
+	"github.com/nextmn/srv6/internal/iproute2"
+)
 
 type Registry interface {
 	// ifaces
@@ -15,4 +18,7 @@ type Registry interface {
 	RegisterControllerRegistry(*ctrl.ControllerRegistry)
 	ControllerRegistry() (*ctrl.ControllerRegistry, bool)
 	DeleteControllerRegistry()
+	RegisterDB(*sql.DB)
+	DB() (*sql.DB, bool)
+	DeleteDB()
 }

@@ -58,7 +58,7 @@ func (t *TaskNextMNHeadendWithCtrl) RunInit() error {
 	if err != nil {
 		return err
 	}
-	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, t.rr, ttl, hopLimit, t.debug); err != nil {
+	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, t.rr, ttl, hopLimit, t.debug, t.registry); err != nil {
 		return err
 	} else {
 		t.netfunc = ep

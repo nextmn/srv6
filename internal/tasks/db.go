@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
+	app_api "github.com/nextmn/srv6/internal/app/api"
 	"os"
 )
 
@@ -21,13 +22,15 @@ type DBTask struct {
 	password string
 	host     string
 	dbname   string
+	registry app_api.Registry
 }
 
 // Create a new DBTask
-func NewDBTask(name string) *DBTask {
+func NewDBTask(name string, registry app_api.Registry) *DBTask {
 	return &DBTask{
 		WithName:  NewName(name),
 		WithState: NewState(),
+		registry:  registry,
 	}
 }
 
@@ -89,12 +92,19 @@ func (db *DBTask) RunInit() error {
 		return fmt.Errorf("Could not connect to postgres database: %s", err)
 	}
 
+	if db.registry != nil {
+		db.registry.RegisterDB(db.db)
+	}
+
 	return nil
 }
 
 // Exit
 func (db *DBTask) RunExit() error {
 	db.state = false
+	if db.registry != nil {
+		db.registry.DeleteDB()
+	}
 	if db.db == nil {
 		return fmt.Errorf("No database")
 	}
