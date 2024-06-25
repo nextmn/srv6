@@ -85,16 +85,16 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
 
-	var action_uuid *uuid.UUID
-	h.get_action.QueryRow(teid, srgw_ip).Scan(action_uuid)
+	var action_uuid uuid.UUID
+	h.get_action.QueryRow(teid, srgw_ip).Scan(&action_uuid)
 
 	var action jsonapi.Action
-	if action_uuid == nil {
+	if &action_uuid == nil {
 		ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
 		if !ok {
 			return nil, err
 		}
-		*action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+		action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
 		if err != nil {
 			return nil, err
 		}
@@ -104,7 +104,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 		}
 
 	} else {
-		action, err = h.RulesRegistry.ByUUID(*action_uuid)
+		action, err = h.RulesRegistry.ByUUID(action_uuid)
 		if err != nil {
 			return nil, err
 		}
