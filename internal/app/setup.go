@@ -49,6 +49,10 @@ func (s *Setup) AddTasks() {
 	// 0.1 pre-hooks
 	s.tasks.Register(tasks.NewMultiHook("hook.pre.init", preInitHook, "hook.post.exit", postExitHook))
 
+	// 0.2 database
+
+	s.tasks.Register(tasks.NewDBTask("database"))
+
 	httpPort := "80" // default http port
 	if s.config.HTTPPort != nil {
 		httpPort = *s.config.HTTPPort

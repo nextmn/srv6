@@ -9,6 +9,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/go-cmp v0.6.0
 	github.com/google/gopacket v1.1.19
+	github.com/lib/pq v1.10.9
 	github.com/nextmn/gopacket-gtp v0.0.6
 	github.com/nextmn/gopacket-srv6 v0.0.7
 	github.com/nextmn/json-api v0.0.5
