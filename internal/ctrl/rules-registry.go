@@ -28,6 +28,8 @@ func NewRulesRegistry() *RulesRegistry {
 }
 
 func (rr *RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
+	log.Println("Into RulesRegistry.Action")
+	log.Printf("UE ip addr in action: %s", UEIp)
 	rr.RLock()
 	defer rr.RUnlock()
 	for id, r := range rr.rules {
