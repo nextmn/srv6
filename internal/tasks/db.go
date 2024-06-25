@@ -83,21 +83,21 @@ func (db *DBTask) RunInit() error {
 	}
 	defer initdb.Close()
 	if err := initdb.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database")
+		return fmt.Errorf("Could not connect to postgres database: %s", err)
 	}
 	if _, err := initdb.Exec(fmt.Sprintf("CREATE DATABASE %s", db.dbname)); err != nil {
-		return fmt.Errorf("Could not create database")
+		return fmt.Errorf("Could not create database: %s", err)
 	}
 
 	// Create a conn for this database
 	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
 	database, err := sql.Open("postgres", psqlconn)
 	if err != nil {
-		return fmt.Errorf("Error while openning postgres database")
+		return fmt.Errorf("Error while openning postgres database: %s", err)
 	}
 	db.db = database
 	if err := db.db.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database")
+		return fmt.Errorf("Could not connect to postgres database: %s", err)
 	}
 
 	return nil
@@ -114,14 +114,14 @@ func (db *DBTask) RunExit() error {
 	conninfo := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
 	rmdb, err := sql.Open("postgres", conninfo)
 	if err != nil {
-		return fmt.Errorf("Could not open postgres database")
+		return fmt.Errorf("Could not open postgres database: %s", err)
 	}
 	defer rmdb.Close()
 	if err := rmdb.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database")
+		return fmt.Errorf("Could not connect to postgres database: %s", err)
 	}
 	if _, err := rmdb.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", db.dbname)); err != nil {
-		return fmt.Errorf("Could not create database")
+		return fmt.Errorf("Could not create database: %s", err)
 	}
 	return nil
 }

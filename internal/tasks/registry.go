@@ -30,7 +30,7 @@ func (r *Registry) RunInit() error {
 			continue
 		}
 		if err := t.RunInit(); err != nil {
-			return fmt.Errorf("[Failed] %s: %s", t.NameInit(), err)
+			return fmt.Errorf("[Failed] %s: %s\n", t.NameInit(), err)
 		}
 		fmt.Printf("[OK] %s\n", t.NameInit())
 	}
@@ -45,7 +45,7 @@ func (r *Registry) RunExit() {
 			continue
 		}
 		if err := t.RunExit(); err != nil {
-			fmt.Printf("[Failed] %s: %s", t.NameExit(), err)
+			fmt.Printf("[Failed] %s: %s\n", t.NameExit(), err)
 		} else {
 			fmt.Printf("[OK] %s\n", t.NameExit())
 		}
