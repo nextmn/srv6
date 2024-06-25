@@ -31,7 +31,7 @@ func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uin
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 		uplink_teid INTEGER,
 		srgw_ip INET,
-		action_uuid NOT NULL UUID,
+		action_uuid UUID NOT NULL,
 		PRIMARY KEY(uplink_teid, srgw_ip)
 		);
 	`)
