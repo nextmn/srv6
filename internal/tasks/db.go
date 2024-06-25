@@ -76,7 +76,7 @@ func (db *DBTask) RunInit() error {
 	}
 
 	// Create database on postgres
-	conninfo := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
+	conninfo := fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
 	initdb, err := sql.Open("postgres", conninfo)
 	if err != nil {
 		return fmt.Errorf("Could not open postgres database")
@@ -90,7 +90,7 @@ func (db *DBTask) RunInit() error {
 	}
 
 	// Create a conn for this database
-	psqlconn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
+	psqlconn := fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' dbname='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
 	database, err := sql.Open("postgres", psqlconn)
 	if err != nil {
 		return fmt.Errorf("Error while openning postgres database: %s", err)
@@ -111,7 +111,7 @@ func (db *DBTask) RunExit() error {
 	}
 	db.db.Close()
 	// delete database on postgres
-	conninfo := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
+	conninfo := fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
 	rmdb, err := sql.Open("postgres", conninfo)
 	if err != nil {
 		return fmt.Errorf("Could not open postgres database: %s", err)
