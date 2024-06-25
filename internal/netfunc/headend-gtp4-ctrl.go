@@ -86,23 +86,25 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	teid := gtpu.TEID
 
 	var action_uuid uuid.UUID
-	h.get_action.QueryRow(teid, srgw_ip).Scan(&action_uuid)
-
 	var action jsonapi.Action
-	if &action_uuid == nil {
-		ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
-		if !ok {
+	err = h.get_action.QueryRow(teid, srgw_ip).Scan(&action_uuid)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
+			if !ok {
+				return nil, err
+			}
+			action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+			if err != nil {
+				return nil, err
+			}
+			_, err := h.insert.Exec(teid, srgw_ip, action_uuid)
+			if err != nil {
+				log.Println("Warning: could not perform insert in headend gtp4 ctrl")
+			}
+		} else {
 			return nil, err
 		}
-		action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
-		if err != nil {
-			return nil, err
-		}
-		_, err := h.insert.Exec(teid, srgw_ip, action_uuid)
-		if err != nil {
-			log.Println("Warning: could not perform insert in headend gtp4 ctrl")
-		}
-
 	} else {
 		action, err = h.RulesRegistry.ByUUID(action_uuid)
 		if err != nil {
