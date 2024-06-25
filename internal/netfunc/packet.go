@@ -14,7 +14,7 @@ import (
 	"github.com/google/gopacket/layers"
 	json_api "github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/constants"
-	"github.com/nextmn/srv6/internal/ctrl"
+	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 )
 
 type Packet struct {
@@ -76,7 +76,7 @@ func (p *Packet) CheckDAInPrefixRange(prefix netip.Prefix) (netip.Addr, error) {
 }
 
 // Returns the Action related to this packet
-func (p *Packet) Action(rr *ctrl.RulesRegistry) (uuid.UUID, json_api.Action, error) {
+func (p *Packet) Action(rr ctrl_api.RulesRegistry) (uuid.UUID, json_api.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {

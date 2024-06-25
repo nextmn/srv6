@@ -22,13 +22,13 @@ type RulesRegistry struct {
 	rules jsonapi.RuleMap
 }
 
-func NewRulesRegistry() *RulesRegistry {
-	return &RulesRegistry{
+func NewRulesRegistry() RulesRegistry {
+	return RulesRegistry{
 		rules: make(jsonapi.RuleMap),
 	}
 }
 
-func (rr *RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
+func (rr RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
 	log.Println("Into RulesRegistry.Action")
 	log.Printf("UE ip addr in action: %s", UEIp)
 	rr.RLock()
@@ -44,7 +44,7 @@ func (rr *RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, err
 	return uuid.UUID{}, jsonapi.Action{}, fmt.Errorf("Not found")
 }
 
-func (rr *RulesRegistry) ByUUID(uuid uuid.UUID) (jsonapi.Action, error) {
+func (rr RulesRegistry) ByUUID(uuid uuid.UUID) (jsonapi.Action, error) {
 	rr.RLock()
 	defer rr.RUnlock()
 	if rule, ok := rr.rules[uuid]; !ok {
@@ -57,7 +57,7 @@ func (rr *RulesRegistry) ByUUID(uuid uuid.UUID) (jsonapi.Action, error) {
 	}
 }
 
-func (rr *RulesRegistry) GetRule(c *gin.Context) {
+func (rr RulesRegistry) GetRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
@@ -74,11 +74,11 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
 }
 
-func (rr *RulesRegistry) GetRules(c *gin.Context) {
+func (rr RulesRegistry) GetRules(c *gin.Context) {
 	c.JSON(http.StatusOK, rr.rules)
 }
 
-func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
+func (rr RulesRegistry) DeleteRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
@@ -96,7 +96,7 @@ func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
 	c.Status(http.StatusNoContent) // successful deletion
 }
 
-func (rr *RulesRegistry) EnableRule(c *gin.Context) {
+func (rr RulesRegistry) EnableRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
@@ -115,7 +115,7 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
 }
 
-func (rr *RulesRegistry) DisableRule(c *gin.Context) {
+func (rr RulesRegistry) DisableRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
@@ -135,7 +135,7 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 }
 
 // Post a new rule
-func (rr *RulesRegistry) PostRule(c *gin.Context) {
+func (rr RulesRegistry) PostRule(c *gin.Context) {
 	var rule jsonapi.Rule
 	if err := c.BindJSON(&rule); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "could not deserialize", "error": fmt.Sprintf("%v", err)})

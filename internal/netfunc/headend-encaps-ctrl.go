@@ -12,15 +12,15 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/nextmn/srv6/internal/ctrl"
+	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 )
 
 type HeadendEncapsWithCtrl struct {
-	RulesRegistry *ctrl.RulesRegistry
+	RulesRegistry ctrl_api.RulesRegistry
 	BaseHandler
 }
 
-func NewHeadendEncapsWithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8) *HeadendEncapsWithCtrl {
+func NewHeadendEncapsWithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8) *HeadendEncapsWithCtrl {
 	return &HeadendEncapsWithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),

@@ -10,11 +10,11 @@ import (
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/config"
-	"github.com/nextmn/srv6/internal/ctrl"
+	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
-func NewHeadendWithCtrl(he *config.Headend, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, debug bool, setup_registry app_api.Registry) (netfunc_api.NetFunc, error) {
+func NewHeadendWithCtrl(he *config.Headend, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, debug bool, setup_registry app_api.Registry) (netfunc_api.NetFunc, error) {
 	p, err := netip.ParsePrefix(he.To)
 	if err != nil {
 		return nil, err

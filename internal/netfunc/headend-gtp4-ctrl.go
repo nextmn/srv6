@@ -16,18 +16,18 @@ import (
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/json-api/jsonapi"
-	"github.com/nextmn/srv6/internal/ctrl"
+	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 )
 
 type HeadendGTP4WithCtrl struct {
-	RulesRegistry *ctrl.RulesRegistry
+	RulesRegistry ctrl_api.RulesRegistry
 	BaseHandler
 	db         *sql.DB
 	get_action *sql.Stmt
 	insert     *sql.Stmt
 }
 
-func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr *ctrl.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
+func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 		uplink_teid INTEGER,
 		srgw_ip INET,

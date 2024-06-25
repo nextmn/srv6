@@ -10,7 +10,7 @@ import (
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/config"
 	"github.com/nextmn/srv6/internal/constants"
-	"github.com/nextmn/srv6/internal/ctrl"
+	ctrl_api "github.com/nextmn/srv6/internal/ctrl"
 	"github.com/nextmn/srv6/internal/iproute2"
 	"github.com/nextmn/srv6/internal/netfunc"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
@@ -20,7 +20,7 @@ import (
 type TaskNextMNHeadendWithCtrl struct {
 	WithName
 	WithState
-	rr         *ctrl.RulesRegistry
+	rr         ctrl_api.RulesRegistry
 	headend    *config.Headend
 	table      iproute2.Table
 	registry   app_api.Registry
@@ -30,7 +30,7 @@ type TaskNextMNHeadendWithCtrl struct {
 }
 
 // Create a new TaskNextMNHeadend
-func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, rr *ctrl.RulesRegistry, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadendWithCtrl {
+func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, rr ctrl_api.RulesRegistry, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadendWithCtrl {
 	return &TaskNextMNHeadendWithCtrl{
 		WithName:   NewName(name),
 		WithState:  NewState(),
