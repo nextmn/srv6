@@ -47,9 +47,8 @@ func (r *Registry) RegisterControllerRegistry(cr *ctrl.ControllerRegistry) {
 func (r *Registry) ControllerRegistry() (*ctrl.ControllerRegistry, bool) {
 	if r.controllerRegistry == nil {
 		return nil, false
-	} else {
-		return r.controllerRegistry, true
 	}
+	return r.controllerRegistry, true
 }
 func (r *Registry) DeleteControllerRegistry() {
 	r.controllerRegistry = nil

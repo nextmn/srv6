@@ -42,6 +42,8 @@ func NewControllerRegistryTask(name string, remoteControlURI string, backbone ne
 func (t *ControllerRegistryTask) RunInit() error {
 	if t.SetupRegistry != nil {
 		t.SetupRegistry.RegisterControllerRegistry(t.ControllerRegistry)
+	} else {
+		return fmt.Errorf("could not register ControllerRegistry")
 	}
 	data := map[string]string{
 		"locator":  t.ControllerRegistry.Locator,
@@ -68,10 +70,6 @@ func (t *ControllerRegistryTask) RunInit() error {
 		t.ControllerRegistry.Resource = resp.Header.Get("Location")
 	}
 
-	if t.SetupRegistry != nil {
-		t.SetupRegistry.DeleteControllerRegistry()
-	}
-
 	t.state = true
 	return nil
 }
@@ -80,6 +78,10 @@ func (t *ControllerRegistryTask) RunInit() error {
 func (t *ControllerRegistryTask) RunExit() error {
 	// TODO: retry on timeout failure
 	// TODO: if Resource has scheme, don't concatenate
+	if t.SetupRegistry != nil {
+		t.SetupRegistry.DeleteControllerRegistry()
+	}
+
 	if t.ControllerRegistry.Resource == "" {
 		// nothing to do
 		t.state = false

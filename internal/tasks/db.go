@@ -37,6 +37,7 @@ func NewDBTask(name string, registry app_api.Registry) *DBTask {
 // Init
 func (db *DBTask) RunInit() error {
 	db.state = true
+	// Getting config from environment
 	host, ok := os.LookupEnv("POSTGRES_HOST")
 	if !ok {
 		return fmt.Errorf("No host provided for postgres")
@@ -105,6 +106,9 @@ func (db *DBTask) RunInit() error {
 // Exit
 func (db *DBTask) RunExit() error {
 	db.state = false
+	if db.db == nil {
+		return fmt.Errorf("No database")
+	}
 	db.db.Close()
 	// delete database on postgres
 	conninfo := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable", db.host, db.port, db.user, db.password, db.dbname)
