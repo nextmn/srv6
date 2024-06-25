@@ -6,6 +6,7 @@ package ctrl
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
 	"sync"
