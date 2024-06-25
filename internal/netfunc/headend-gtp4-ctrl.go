@@ -87,7 +87,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 
 	var action_uuid uuid.UUID
 	var action jsonapi.Action
-	err = h.get_action.QueryRow(teid, srgw_ip).Scan(&action_uuid)
+	err = h.get_action.QueryRow(teid, srgw_ip.String()).Scan(&action_uuid)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
@@ -98,7 +98,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			_, err := h.insert.Exec(teid, srgw_ip, action_uuid)
+			_, err := h.insert.Exec(teid, srgw_ip.String(), action_uuid.String())
 			if err != nil {
 				log.Println("Warning: could not perform insert in headend gtp4 ctrl")
 			}
