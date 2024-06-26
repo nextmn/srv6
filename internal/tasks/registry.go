@@ -5,7 +5,10 @@
 package tasks
 
 import tasks_api "github.com/nextmn/srv6/internal/tasks/api"
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type Registry struct {
 	Tasks []tasks_api.Task
@@ -19,7 +22,7 @@ func NewRegistry() *Registry {
 
 // Register a new task
 func (r *Registry) Register(task tasks_api.Task) {
-	fmt.Printf("Task %s registered\n", task.NameBase())
+	log.Printf("Task %s registered\n", task.NameBase())
 	r.Tasks = append(r.Tasks, task)
 }
 
@@ -32,7 +35,7 @@ func (r *Registry) RunInit() error {
 		if err := t.RunInit(); err != nil {
 			return fmt.Errorf("[Failed] %s: %s\n", t.NameInit(), err)
 		}
-		fmt.Printf("[OK] %s\n", t.NameInit())
+		log.Printf("[OK] %s\n", t.NameInit())
 	}
 	return nil
 }
@@ -45,9 +48,9 @@ func (r *Registry) RunExit() {
 			continue
 		}
 		if err := t.RunExit(); err != nil {
-			fmt.Printf("[Failed] %s: %s\n", t.NameExit(), err)
+			log.Printf("[Failed] %s: %s\n", t.NameExit(), err)
 		} else {
-			fmt.Printf("[OK] %s\n", t.NameExit())
+			log.Printf("[OK] %s\n", t.NameExit())
 		}
 	}
 }

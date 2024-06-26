@@ -94,7 +94,6 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 			if !ok {
 				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
 			}
-			log.Printf("UE IP Address : %s\n", ue_ip_address)
 			action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
 			if err != nil {
 				return nil, err
