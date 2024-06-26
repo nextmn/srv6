@@ -10,7 +10,6 @@ import (
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/config"
 	"github.com/nextmn/srv6/internal/constants"
-	"github.com/nextmn/srv6/internal/ctrl"
 	tasks "github.com/nextmn/srv6/internal/tasks"
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 )
@@ -66,8 +65,7 @@ func (s *Setup) AddTasks() {
 
 	// 0.3 http server
 
-	rr := ctrl.NewRulesRegistry()
-	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", httpAddr, rr))
+	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", httpAddr, s.registry))
 
 	// 0.4 controller registry
 	if s.config.Locator != nil {
@@ -148,13 +146,13 @@ func (s *Setup) AddTasks() {
 	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn-ctrl.headend.ipv4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, rr, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
 	}
 	// 3.6 nextmn-ctrl gtp4 headends
 	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn-ctrl.headend.gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, rr, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
 	}
 
 	// 4.  ip rules

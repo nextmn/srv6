@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	ctrl "github.com/nextmn/srv6/internal/ctrl"
 	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 )
 
@@ -20,10 +22,15 @@ type HttpServerTask struct {
 	WithState
 	srv           *http.Server
 	rulesRegistry ctrl_api.RulesRegistryHTTP
+	setupRegistry app_api.Registry
 }
 
 // Create a new HttpServerTask
-func NewHttpServerTask(name string, httpAddr string, rr ctrl_api.RulesRegistryHTTP) *HttpServerTask {
+func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Registry) *HttpServerTask {
+	rr := ctrl.NewRulesRegistry()
+	if setupRegistry != nil {
+		setupRegistry.RegisterRulesRegistry(rr)
+	}
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
@@ -43,12 +50,16 @@ func NewHttpServerTask(name string, httpAddr string, rr ctrl_api.RulesRegistryHT
 			Handler: r,
 		},
 		rulesRegistry: rr,
+		setupRegistry: setupRegistry,
 	}
 }
 
 // Init
 func (t *HttpServerTask) RunInit() error {
 	t.state = true
+	if t.setupRegistry != nil {
+		t.setupRegistry.DeleteRulesRegistry()
+	}
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("listen: %s\n", err)
