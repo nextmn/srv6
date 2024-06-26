@@ -21,8 +21,8 @@ type RulesRegistry struct {
 	rules jsonapi.RuleMap
 }
 
-func NewRulesRegistry() RulesRegistry {
-	return RulesRegistry{
+func NewRulesRegistry() *RulesRegistry {
+	return &RulesRegistry{
 		rules: make(jsonapi.RuleMap),
 	}
 }
