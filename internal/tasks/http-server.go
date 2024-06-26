@@ -21,16 +21,13 @@ type HttpServerTask struct {
 	WithName
 	WithState
 	srv           *http.Server
-	rulesRegistry ctrl_api.RulesRegistryHTTP
+	rulesRegistry ctrl_api.RulesRegistry
 	setupRegistry app_api.Registry
 }
 
 // Create a new HttpServerTask
 func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Registry) *HttpServerTask {
 	rr := ctrl.NewRulesRegistry()
-	if setupRegistry != nil {
-		setupRegistry.RegisterRulesRegistry(rr)
-	}
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
@@ -56,21 +53,24 @@ func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Regis
 
 // Init
 func (t *HttpServerTask) RunInit() error {
-	t.state = true
 	if t.setupRegistry != nil {
-		t.setupRegistry.DeleteRulesRegistry()
+		t.setupRegistry.RegisterRulesRegistry(t.rulesRegistry)
 	}
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("listen: %s\n", err)
 		}
 	}()
+	t.state = true
 	return nil
 }
 
 // Exit
 func (t *HttpServerTask) RunExit() error {
 	t.state = false
+	if t.setupRegistry != nil {
+		t.setupRegistry.DeleteRulesRegistry()
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	if err := t.srv.Shutdown(ctx); err != nil {
