@@ -26,6 +26,7 @@ type HeadendGTP4WithCtrl struct {
 	db         *sql.DB
 	get_action *sql.Stmt
 	insert     *sql.Stmt
+	update     *sql.Stmt
 }
 
 func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
@@ -50,12 +51,18 @@ func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl 
 		return nil, fmt.Errorf("Could not prepare statement for insert: %s", err)
 	}
 
+	update, err := db.Prepare(`UPDATE uplink_gtp4 SET action = $1 WHERE (uplink_teid, srgw_ip)`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
+	}
+
 	return &HeadendGTP4WithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
 		db:            db,
 		get_action:    get_action,
 		insert:        insert,
+		update:        update,
 	}, nil
 }
 
@@ -109,8 +116,18 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	} else {
 		action, err = h.RulesRegistry.ByUUID(action_uuid)
 		if err != nil {
-			// FIXME: if the action is disable, this would error but we should update the database instead
-			return nil, err
+			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
+			if !ok {
+				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
+			}
+			action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+			if err != nil {
+				return nil, err
+			}
+			_, err := h.update.Exec(action_uuid.String(), teid, srgw_ip.String())
+			if err != nil {
+				log.Println("Warning: could not perform update in headend gtp4 ctrl")
+			}
 		}
 	}
 

@@ -58,6 +58,7 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	for _, seg := range action.SRH {
 		segList = append(segList, seg.AsSlice())
 	}
+	segList = append(segList, nextHop)
 
 	srh := &gopacket_srv6.IPv6Routing{
 		RoutingType: 4,
