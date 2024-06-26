@@ -109,6 +109,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	} else {
 		action, err = h.RulesRegistry.ByUUID(action_uuid)
 		if err != nil {
+			// FIXME: if the action is disable, this would error but we should update the database instead
 			return nil, err
 		}
 	}
