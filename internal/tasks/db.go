@@ -9,7 +9,9 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	app_api "github.com/nextmn/srv6/internal/app/api"
+	"log"
 	"os"
+	"time"
 )
 
 // DBTask initializes the database
@@ -88,8 +90,23 @@ func (db *DBTask) RunInit() error {
 		return fmt.Errorf("Error while openning postgres database: %s", err)
 	}
 	db.db = database
-	if err := db.db.Ping(); err != nil {
-		return fmt.Errorf("Could not connect to postgres database: %s", err)
+
+	maxAttempts := 16
+	ok = false
+	for errcnt := 0; errcnt < maxAttempts; errcnt++ {
+		if err := db.db.Ping(); err != nil {
+			// Exponential backoff
+			time.Sleep(100 * (1 << errcnt) * time.Millisecond)
+			if errcnt > 2 {
+				log.Printf("Could not connect to postgres database. Retrying (attempt %d)\n", errcnt)
+			}
+		} else {
+			ok = true
+			break
+		}
+	}
+	if !ok {
+		return fmt.Errorf("Could not connect to postgres database after %d attempts: %s", maxAttempts, err)
 	}
 
 	if db.registry != nil {
