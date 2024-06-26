@@ -112,7 +112,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 		}
 	}
 
-	nextHop := net.ParseIP("::") // FIXME: use right ip
+	nextHop := action.NextHop.AsSlice()
 
 	ipheader := &layers.IPv6{
 		SrcIP: net.ParseIP("::"),
