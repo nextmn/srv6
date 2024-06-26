@@ -17,6 +17,7 @@ import (
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/json-api/jsonapi"
 	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	"github.com/nextmn/srv6/internal/mup"
 )
 
 type HeadendGTP4WithCtrl struct {
@@ -112,10 +113,24 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 		}
 	}
 
+	// S04. Copy IPv4 SA to form IPv6 SA B'
+	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
+	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
+
+	srcPrefix := netip.MustParsePrefix("fc00:1:1::/48") // FIXME: dont hardcode
+	ipv6SA, err := mup.NewMGTP4IPv6SrcFieldsFromFields(srcPrefix, ipv4SA, udpSP)
+	if err != nil {
+		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
+	}
+
+	src, err := ipv6SA.Marshal()
+	if err != nil {
+		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %s", err)
+	}
 	nextHop := action.NextHop.AsSlice()
 
 	ipheader := &layers.IPv6{
-		SrcIP: net.ParseIP("::"),
+		SrcIP: src,
 		// S06. Set the IPv6 DA = B
 		DstIP:      nextHop,
 		Version:    6,
@@ -129,6 +144,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	for _, seg := range action.SRH {
 		segList = append(segList, seg.AsSlice())
 	}
+	segList = append(segList, nextHop)
 	srh := &gopacket_srv6.IPv6Routing{
 		RoutingType: 4,
 		// the first item on segments list is the next endpoint

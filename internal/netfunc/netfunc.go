@@ -5,7 +5,7 @@
 package netfunc
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/nextmn/srv6/internal/iproute2"
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
@@ -49,7 +49,7 @@ func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
 					if out, err := n.handler.Handle(packet[:nb]); err == nil {
 						iface.Write(out)
 					} else if n.Debug() {
-						fmt.Println(err)
+						log.Println(err)
 					}
 				}(tunIface)
 			}
