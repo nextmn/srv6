@@ -51,7 +51,7 @@ func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl 
 		return nil, fmt.Errorf("Could not prepare statement for insert: %s", err)
 	}
 
-	update, err := db.Prepare(`UPDATE uplink_gtp4 SET action = $1 WHERE (uplink_teid, srgw_ip)`)
+	update, err := db.Prepare(`UPDATE uplink_gtp4 SET action = $1 WHERE (uplink_teid =$2 AND srgw_ip = $3)`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
 	}
