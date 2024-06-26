@@ -46,7 +46,7 @@ func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Regis
 			Addr:    httpAddr,
 			Handler: r,
 		},
-		rulesRegistry: rr,
+		rulesRegistry: &rr,
 		setupRegistry: setupRegistry,
 	}
 }
