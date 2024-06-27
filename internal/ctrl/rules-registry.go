@@ -6,6 +6,7 @@ package ctrl
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"net/netip"
 	"sync"
@@ -185,7 +186,10 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 		}
 	}
 	rr.rules[id] = rule
-	rr.db.InsertRule(id, rule)
+	err = rr.db.InsertRule(id, rule)
+	if err != nil {
+		log.Printf("Could not insert rule in the database: %s\n", err)
+	}
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
 	c.JSON(http.StatusCreated, rr.rules[id])
 }
