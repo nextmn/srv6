@@ -128,12 +128,16 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 }
 
 func (db *Database) InsertRule(uuid uuid.UUID, r jsonapi.Rule) error {
+	srh := []string{}
+	for _, ip := range r.Action.SRH {
+		srh = append(srh, ip.String())
+	}
 	switch r.Type {
 	case "uplink":
-		_, err := db.insert_uplink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Match.GNBIpPrefix, r.Action.NextHop, r.Action.SRH)
+		_, err := db.insert_uplink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Action.NextHop.String(), srh)
 		return err
 	case "downlink":
-		_, err := db.insert_downlink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Action.NextHop, r.Action.SRH)
+		_, err := db.insert_downlink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), srh)
 		return err
 	default:
 		return fmt.Errorf("Wrong type for the rule")
