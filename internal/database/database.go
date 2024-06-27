@@ -62,8 +62,8 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		uuid UUID PRIMARY KEY,
 		type_uplink BOOL NOT NULL,
 		enabled BOOL NOT NULL,
-		match_id INTEGER REFERENCE(match),
-		action_id INTEGER REFERENCE(action)
+		match_id INTEGER REFERENCE match(id),
+		action_id INTEGER REFERENCE action(id)
 		);
 	`)
 	if err != nil {
