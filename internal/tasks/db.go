@@ -9,6 +9,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	app_api "github.com/nextmn/srv6/internal/app/api"
+	"github.com/nextmn/srv6/internal/database"
 	"log"
 	"os"
 	"time"
@@ -18,7 +19,7 @@ import (
 type DBTask struct {
 	WithName
 	WithState
-	db       *sql.DB
+	db       *database.Database
 	user     string
 	port     string
 	password string
@@ -85,16 +86,15 @@ func (db *DBTask) RunInit() error {
 
 	// Create a conn for this database
 	psqlconn := fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' dbname='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
-	database, err := sql.Open("postgres", psqlconn)
+	postgres, err := sql.Open("postgres", psqlconn)
 	if err != nil {
 		return fmt.Errorf("Error while openning postgres database: %s", err)
 	}
-	db.db = database
 
 	maxAttempts := 16
 	ok = false
 	for errcnt := 0; errcnt < maxAttempts; errcnt++ {
-		if err := db.db.Ping(); err != nil {
+		if err := postgres.Ping(); err != nil {
 			// Exponential backoff
 			time.Sleep(100 * (1 << errcnt) * time.Millisecond)
 			if errcnt > 2 {
@@ -107,6 +107,11 @@ func (db *DBTask) RunInit() error {
 	}
 	if !ok {
 		return fmt.Errorf("Could not connect to postgres database after %d attempts: %s", maxAttempts, err)
+	}
+
+	db.db, err = database.NewDatabase(postgres)
+	if err != nil {
+		return err
 	}
 
 	if db.registry != nil {

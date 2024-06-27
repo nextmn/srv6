@@ -11,58 +11,26 @@ import (
 	"net/netip"
 
 	"database/sql"
-	"github.com/gofrs/uuid"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/json-api/jsonapi"
 	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	db_api "github.com/nextmn/srv6/internal/database/api"
 	"github.com/nextmn/srv6/internal/mup"
 )
 
 type HeadendGTP4WithCtrl struct {
 	RulesRegistry ctrl_api.RulesRegistry
 	BaseHandler
-	db         *sql.DB
-	get_action *sql.Stmt
-	insert     *sql.Stmt
-	update     *sql.Stmt
+	db db_api.Uplink
 }
 
-func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, db *sql.DB) (*HeadendGTP4WithCtrl, error) {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4 (
-		uplink_teid INTEGER,
-		srgw_ip INET,
-		action_uuid UUID NOT NULL,
-		PRIMARY KEY(uplink_teid, srgw_ip)
-		);
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create table uplink_gtp4 in database: %s", err)
-	}
-
-	get_action, err := db.Prepare(`SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for get_action: %s", err)
-	}
-
-	insert, err := db.Prepare(`INSERT INTO uplink_gtp4 (uplink_teid, srgw_ip, action_uuid) VALUES($1, $2, $3)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for insert: %s", err)
-	}
-
-	update, err := db.Prepare(`UPDATE uplink_gtp4 SET action_uuid = $1 WHERE (uplink_teid =$2 AND srgw_ip = $3)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
-	}
-
+func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, db db_api.Uplink) (*HeadendGTP4WithCtrl, error) {
 	return &HeadendGTP4WithCtrl{
 		RulesRegistry: rr,
 		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
 		db:            db,
-		get_action:    get_action,
-		insert:        insert,
-		update:        update,
 	}, nil
 }
 
@@ -93,9 +61,8 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
 
-	var action_uuid uuid.UUID
 	var action jsonapi.Action
-	err = h.get_action.QueryRow(teid, srgw_ip.String()).Scan(&action_uuid)
+	action_uuid, err := h.db.GetAction(teid, srgw_ip)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
@@ -106,7 +73,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			_, err := h.insert.Exec(teid, srgw_ip.String(), action_uuid.String())
+			err := h.db.InsertAction(teid, srgw_ip, action_uuid)
 			if err != nil {
 				log.Println("Warning: could not perform insert in headend gtp4 ctrl")
 			}
@@ -124,7 +91,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 			if err != nil {
 				return nil, err
 			}
-			_, err := h.update.Exec(action_uuid.String(), teid, srgw_ip.String())
+			err := h.db.UpdateAction(teid, srgw_ip, action_uuid)
 			if err != nil {
 				log.Println("Warning: could not perform update in headend gtp4 ctrl")
 			}

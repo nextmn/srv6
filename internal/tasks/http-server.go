@@ -6,6 +6,7 @@ package tasks
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -20,42 +21,58 @@ import (
 type HttpServerTask struct {
 	WithName
 	WithState
-	srv           *http.Server
-	rulesRegistry ctrl_api.RulesRegistry
-	setupRegistry app_api.Registry
+	srv               *http.Server
+	httpAddr          string
+	rulesRegistry     ctrl_api.RulesRegistry
+	rulesRegistryHTTP ctrl_api.RulesRegistryHTTP
+	setupRegistry     app_api.Registry
 }
 
 // Create a new HttpServerTask
 func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Registry) *HttpServerTask {
-	rr := ctrl.NewRulesRegistry()
-	r := gin.Default()
-	r.GET("/status", func(c *gin.Context) {
-		c.Header("Cache-Control", "no-cache")
-		c.JSON(http.StatusOK, gin.H{"ready": true})
-	})
-	r.POST("/rules", rr.PostRule)
-	r.GET("/rules/:uuid", rr.GetRule)
-	r.GET("/rules", rr.GetRules)
-	r.PATCH("/rules/:uuid/enable", rr.EnableRule)
-	r.PATCH("/rules/:uuid/disable", rr.DisableRule)
-	r.DELETE("/rules/:uuid", rr.DeleteRule)
 	return &HttpServerTask{
-		WithName:  NewName(name),
-		WithState: NewState(),
-		srv: &http.Server{
-			Addr:    httpAddr,
-			Handler: r,
-		},
-		rulesRegistry: rr,
-		setupRegistry: setupRegistry,
+		WithName:          NewName(name),
+		WithState:         NewState(),
+		srv:               nil,
+		httpAddr:          httpAddr,
+		rulesRegistry:     nil,
+		rulesRegistryHTTP: nil,
+		setupRegistry:     setupRegistry,
 	}
 }
 
 // Init
 func (t *HttpServerTask) RunInit() error {
+	if t.setupRegistry == nil {
+		return fmt.Errorf("Registry is nil")
+	}
+	db, ok := t.setupRegistry.DB()
+	if !ok {
+		return fmt.Errorf("DB is not in Registry")
+	}
+	rr := ctrl.NewRulesRegistry(db)
+	t.rulesRegistry = rr
+	t.rulesRegistryHTTP = rr
+	r := gin.Default()
+	r.GET("/status", func(c *gin.Context) {
+		c.Header("Cache-Control", "no-cache")
+		c.JSON(http.StatusOK, gin.H{"ready": true})
+	})
+	r.POST("/rules", t.rulesRegistryHTTP.PostRule)
+	r.GET("/rules/:uuid", t.rulesRegistryHTTP.GetRule)
+	r.GET("/rules", t.rulesRegistryHTTP.GetRules)
+	r.PATCH("/rules/:uuid/enable", t.rulesRegistryHTTP.EnableRule)
+	r.PATCH("/rules/:uuid/disable", t.rulesRegistryHTTP.DisableRule)
+	r.DELETE("/rules/:uuid", t.rulesRegistryHTTP.DeleteRule)
+	t.srv = &http.Server{
+		Addr:    t.httpAddr,
+		Handler: r,
+	}
+
 	if t.setupRegistry != nil {
 		t.setupRegistry.RegisterRulesRegistry(t.rulesRegistry)
 	}
+
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("listen: %s\n", err)

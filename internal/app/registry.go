@@ -5,17 +5,17 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/nextmn/srv6/internal/ctrl"
 	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	"github.com/nextmn/srv6/internal/database"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
 
 type Registry struct {
 	ifaces             map[string]*iproute2.TunIface
 	controllerRegistry *ctrl.ControllerRegistry
-	db                 *sql.DB
+	db                 *database.Database
 	rulesRegistry      ctrl_api.RulesRegistry
 }
 
@@ -59,11 +59,11 @@ func (r *Registry) DeleteControllerRegistry() {
 	r.controllerRegistry = nil
 }
 
-func (r *Registry) RegisterDB(db *sql.DB) {
+func (r *Registry) RegisterDB(db *database.Database) {
 	r.db = db
 }
 
-func (r *Registry) DB() (*sql.DB, bool) {
+func (r *Registry) DB() (*database.Database, bool) {
 	if r.db == nil {
 		return nil, false
 	}

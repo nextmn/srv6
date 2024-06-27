@@ -13,17 +13,20 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/nextmn/json-api/jsonapi"
+	"github.com/nextmn/srv6/internal/database"
 )
 
 // A RulesRegistry contains rules for an headend
 type RulesRegistry struct {
 	sync.RWMutex
 	rules jsonapi.RuleMap
+	db    *database.Database
 }
 
-func NewRulesRegistry() *RulesRegistry {
+func NewRulesRegistry(db *database.Database) *RulesRegistry {
 	return &RulesRegistry{
 		rules: make(jsonapi.RuleMap),
+		db:    db,
 	}
 }
 
