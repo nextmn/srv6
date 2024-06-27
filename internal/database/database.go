@@ -62,8 +62,8 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		uuid UUID PRIMARY KEY,
 		type_uplink BOOL NOT NULL,
 		enabled BOOL NOT NULL,
-		match_id INTEGER REFERENCES match(id),
-		action_id INTEGER REFERENCES action(id)
+		match_id INTEGER NOT NULL REFERENCES match(id),
+		action_id INTEGER NOT NULL REFERENCES action(id)
 		);
 	`)
 	if err != nil {
@@ -83,12 +83,12 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 	}
 
 	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_downlink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
-		LANGUAGE SQL
-		BEGIN ATOMIC
+		LANGUAGE plpgsql AS $$
+		BEGIN
 			INSERT INTO match(ue_ip_prefix) VALUES (ue_ip_prefix) RETURNING id AS match_id;
 			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id AS action_id;
 			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, FALSE, enabled, match_id, action_id);
-		END;
+		END;$$;
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not create procedure insert_downlink_rule in database: %s", err)
