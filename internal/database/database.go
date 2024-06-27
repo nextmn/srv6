@@ -17,8 +17,8 @@ type Database struct {
 	get_action           *sql.Stmt
 	insert_action        *sql.Stmt
 	update_action        *sql.Stmt
-	update_uplink_rule   *sql.Stmt
-	update_downlink_rule *sql.Stmt
+	insert_uplink_rule   *sql.Stmt
+	insert_downlink_rule *sql.Stmt
 }
 
 func NewDatabase(db *sql.DB) (*Database, error) {
@@ -108,11 +108,11 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
 	}
 
-	update_uplink_rule, err := db.Prepare(`CALL update_uplink_rule($1, $2, $3, $4, $5, $6)`)
+	insert_uplink_rule, err := db.Prepare(`CALL update_uplink_rule($1, $2, $3, $4, $5, $6)`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not prepare statement for update_uplink_rule: %s", err)
 	}
-	update_downlink_rule, err := db.Prepare(`CALL update_downlink_rule($1, $2, $3, $4, $5)`)
+	insert_downlink_rule, err := db.Prepare(`CALL update_downlink_rule($1, $2, $3, $4, $5)`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not prepare statement for update_downlink_rule: %s", err)
 	}
@@ -122,18 +122,18 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		get_action:           get_action,
 		insert_action:        insert_action,
 		update_action:        update_action,
-		update_uplink_rule:   update_uplink_rule,
-		update_downlink_rule: update_downlink_rule,
+		insert_uplink_rule:   insert_uplink_rule,
+		insert_downlink_rule: insert_downlink_rule,
 	}, nil
 }
 
 func (db *Database) InsertRule(uuid uuid.UUID, r jsonapi.Rule) error {
 	switch r.Type {
 	case "uplink":
-		_, err := db.update_uplink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Match.GNBIpPrefix, r.Action.NextHop, r.Action.SRH)
+		_, err := db.insert_uplink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Match.GNBIpPrefix, r.Action.NextHop, r.Action.SRH)
 		return err
 	case "downlink":
-		_, err := db.update_downlink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Action.NextHop, r.Action.SRH)
+		_, err := db.insert_downlink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Action.NextHop, r.Action.SRH)
 		return err
 	default:
 		return fmt.Errorf("Wrong type for the rule")
