@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gofrs/uuid"
+	"github.com/lib/pq"
 	"github.com/nextmn/json-api/jsonapi"
 	"net/netip"
 )
@@ -134,10 +135,10 @@ func (db *Database) InsertRule(uuid uuid.UUID, r jsonapi.Rule) error {
 	}
 	switch r.Type {
 	case "uplink":
-		_, err := db.insert_uplink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Action.NextHop.String(), srh)
+		_, err := db.insert_uplink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh))
 		return err
 	case "downlink":
-		_, err := db.insert_downlink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), srh)
+		_, err := db.insert_downlink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh))
 		return err
 	default:
 		return fmt.Errorf("Wrong type for the rule")
