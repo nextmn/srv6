@@ -37,7 +37,7 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 
 	// Rules - Actions
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS action (
-		id SERIAL PRIMARY KEY
+		id SERIAL PRIMARY KEY,
 		next_hop INET NOT NULL,
 		srh INET ARRAY NOT NULL
 		);
@@ -48,7 +48,7 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 
 	// Rules - Match
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS match (
-		id SERIAL PRIMARY KEY
+		id SERIAL PRIMARY KEY,
 		ue_ip_prefix CIDR NOT NULL,
 		gnb_ip_prefix CIDR
 		);
