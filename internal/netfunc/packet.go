@@ -75,14 +75,24 @@ func (p *Packet) CheckDAInPrefixRange(prefix netip.Prefix) (netip.Addr, error) {
 	return dst, nil
 }
 
-// Returns the Action related to this packet
-func (p *Packet) Action(rr ctrl_api.RulesRegistry) (uuid.UUID, json_api.Action, error) {
+func (p *Packet) GetSrcAddr() (netip.Addr, error) {
+	// get destination address
+	srcSlice := p.NetworkLayer().NetworkFlow().Src().Raw()
+	src, ok := netip.AddrFromSlice(srcSlice)
+	if !ok {
+		return netip.Addr{}, fmt.Errorf("Malformed packet")
+	}
+	return src, nil
+}
+
+// Returns the DownlinkAction related to this packet
+func (p *Packet) DownlinkAction(rr ctrl_api.RulesRegistry) (uuid.UUID, json_api.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
 		return uuid.UUID{}, json_api.Action{}, fmt.Errorf("Malformed packet")
 	}
-	return rr.Action(dst)
+	return rr.DownlinkAction(dst)
 }
 
 // Returns the first gopacket.Layer after IPv6 header / extension headers

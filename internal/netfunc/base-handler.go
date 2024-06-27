@@ -40,3 +40,7 @@ func (h BaseHandler) HopLimit() uint8 {
 func (h BaseHandler) CheckDAInPrefixRange(pqt *Packet) (netip.Addr, error) {
 	return pqt.CheckDAInPrefixRange(h.Prefix())
 }
+
+func (h BaseHandler) GetSrcAddr(pqt *Packet) (netip.Addr, error) {
+	return pqt.GetSrcAddr()
+}

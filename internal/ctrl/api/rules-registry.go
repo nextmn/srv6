@@ -11,6 +11,7 @@ import (
 )
 
 type RulesRegistry interface {
-	Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error)
+	UplinkAction(UEIp netip.Addr, GnbIp netip.Addr) (uuid.UUID, jsonapi.Action, error)
+	DownlinkAction(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error)
 	ByUUID(uuid uuid.UUID) (jsonapi.Action, error)
 }

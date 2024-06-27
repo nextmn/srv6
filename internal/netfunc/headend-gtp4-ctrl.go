@@ -44,6 +44,10 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	gnb_ip, err := h.GetSrcAddr(pqt)
+	if err != nil {
+		return nil, err
+	}
 
 	// RFC 9433 section 6.7. H.M.GTP4.D
 
@@ -62,18 +66,18 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	teid := gtpu.TEID
 
 	var action jsonapi.Action
-	action_uuid, err := h.db.GetAction(teid, srgw_ip)
+	action_uuid, err := h.db.GetAction(teid, srgw_ip, gnb_ip)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
 			if !ok {
 				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
 			}
-			action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+			action_uuid, action, err = h.RulesRegistry.UplinkAction(ue_ip_address, gnb_ip)
 			if err != nil {
 				return nil, err
 			}
-			err := h.db.InsertAction(teid, srgw_ip, action_uuid)
+			err := h.db.InsertAction(teid, srgw_ip, gnb_ip, action_uuid)
 			if err != nil {
 				log.Println("Warning: could not perform insert in headend gtp4 ctrl")
 			}
@@ -87,11 +91,11 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 			if !ok {
 				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
 			}
-			action_uuid, action, err = h.RulesRegistry.Action(ue_ip_address)
+			action_uuid, action, err = h.RulesRegistry.UplinkAction(ue_ip_address, gnb_ip)
 			if err != nil {
 				return nil, err
 			}
-			err := h.db.UpdateAction(teid, srgw_ip, action_uuid)
+			err := h.db.UpdateAction(teid, srgw_ip, gnb_ip, action_uuid)
 			if err != nil {
 				log.Println("Warning: could not perform update in headend gtp4 ctrl")
 			}

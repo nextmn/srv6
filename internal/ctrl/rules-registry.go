@@ -30,11 +30,34 @@ func NewRulesRegistry(db *database.Database) *RulesRegistry {
 	}
 }
 
-func (rr *RulesRegistry) Action(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
+func (rr *RulesRegistry) UplinkAction(UEIp netip.Addr, GnbIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
 	rr.RLock()
 	defer rr.RUnlock()
 	for id, r := range rr.rules {
 		if !r.Enabled {
+			continue
+		}
+		if r.Type != "uplink" {
+			continue
+		}
+		if !r.Match.GNBIpPrefix.Contains(GnbIp) {
+			continue
+		}
+		if r.Match.UEIpPrefix.Contains(UEIp) {
+			return id, r.Action, nil
+		}
+	}
+	return uuid.UUID{}, jsonapi.Action{}, fmt.Errorf("Not found")
+}
+
+func (rr *RulesRegistry) DownlinkAction(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
+	rr.RLock()
+	defer rr.RUnlock()
+	for id, r := range rr.rules {
+		if !r.Enabled {
+			continue
+		}
+		if r.Type != "downlink" {
 			continue
 		}
 		if r.Match.UEIpPrefix.Contains(UEIp) {

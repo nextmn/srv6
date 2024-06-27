@@ -10,7 +10,7 @@ import (
 )
 
 type Uplink interface {
-	InsertAction(uplinkTeid uint32, SrgwIp netip.Addr, actionUuid uuid.UUID) error
-	UpdateAction(uplinkTeid uint32, SrgwIp netip.Addr, actionUuid uuid.UUID) error
-	GetAction(UplinkTeid uint32, SrgwIp netip.Addr) (uuid.UUID, error)
+	InsertAction(uplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, actionUuid uuid.UUID) error
+	UpdateAction(uplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, actionUuid uuid.UUID) error
+	GetAction(UplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr) (uuid.UUID, error)
 }
