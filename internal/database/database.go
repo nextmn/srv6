@@ -112,9 +112,9 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Could not prepare statement for insert_uplink_rule: %s", err)
 	}
-	insert_downlink_rule, err := db.Prepare(`CALL update_downlink_rule($1, $2, $3, $4, $5)`)
+	insert_downlink_rule, err := db.Prepare(`CALL insert_downlink_rule($1, $2, $3, $4, $5)`)
 	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for update_downlink_rule: %s", err)
+		return nil, fmt.Errorf("Could not prepare statement for insert_downlink_rule: %s", err)
 	}
 
 	return &Database{
