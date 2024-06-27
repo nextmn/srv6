@@ -108,9 +108,9 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
 	}
 
-	insert_uplink_rule, err := db.Prepare(`CALL update_uplink_rule($1, $2, $3, $4, $5, $6)`)
+	insert_uplink_rule, err := db.Prepare(`CALL insert_uplink_rule($1, $2, $3, $4, $5, $6)`)
 	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for update_uplink_rule: %s", err)
+		return nil, fmt.Errorf("Could not prepare statement for insert_uplink_rule: %s", err)
 	}
 	insert_downlink_rule, err := db.Prepare(`CALL update_downlink_rule($1, $2, $3, $4, $5)`)
 	if err != nil {
