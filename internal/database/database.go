@@ -72,7 +72,7 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 
 	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_uplink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN gnb_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
 		LANGUAGE plpgsql AS $$
-		BEGIN ATOMIC
+		BEGIN
 			INSERT INTO match(ue_ip_prefix, gnb_ip_prefix) VALUES (ue_ip_prefix, gnb_ip_prefix) RETURNING id AS match_id;
 			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id AS action_id;
 			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, TRUE, enabled, match_id, action_id);
