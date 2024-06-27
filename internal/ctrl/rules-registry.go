@@ -185,6 +185,7 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 		}
 	}
 	rr.rules[id] = rule
+	rr.db.InsertRule(id, rule)
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
 	c.JSON(http.StatusCreated, rr.rules[id])
 }

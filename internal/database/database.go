@@ -8,14 +8,17 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/gofrs/uuid"
+	"github.com/nextmn/json-api/jsonapi"
 	"net/netip"
 )
 
 type Database struct {
 	*sql.DB
-	get_action    *sql.Stmt
-	insert_action *sql.Stmt
-	update_action *sql.Stmt
+	get_action           *sql.Stmt
+	insert_action        *sql.Stmt
+	update_action        *sql.Stmt
+	update_uplink_rule   *sql.Stmt
+	update_downlink_rule *sql.Stmt
 }
 
 func NewDatabase(db *sql.DB) (*Database, error) {
@@ -32,6 +35,65 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		return nil, fmt.Errorf("Could not create table uplink_gtp4 in database: %s", err)
 	}
 
+	// Rules - Actions
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS action (
+		id SERIAL PRIMARY KEY
+		next_hop INET NOT NULL,
+		srh INET ARRAY NOT NULL
+		);
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create table action in database: %s", err)
+	}
+
+	// Rules - Match
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS match (
+		id SERIAL PRIMARY KEY
+		ue_ip_prefix CIDR NOT NULL,
+		gnb_ip_prefix CIDR
+		);
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create table match in database: %s", err)
+	}
+
+	// Rules
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS rule (
+		uuid UUID PRIMARY KEY,
+		type_uplink BOOL NOT NULL,
+		enabled BOOL NOT NULL,
+		match_id INTEGER REFERENCE(match),
+		action_id INTEGER REFERENCE(action)
+		);
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create table rule in database: %s", err)
+	}
+
+	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_uplink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN gnb_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
+		LANGUAGE SQL
+		BEGIN ATOMIC
+			INSERT INTO match(ue_ip, gnb_ip) VALUES (ue_ip_prefix, gnb_ip_prefix) RETURNING id AS match_id;
+			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id AS action_id;
+			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, TRUE, enabled, match_id, action_id);
+		END;
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create procedure insert_uplink_rule in database: %s", err)
+	}
+
+	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_downlink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
+		LANGUAGE SQL
+		BEGIN ATOMIC
+			INSERT INTO match(ue_ip) VALUES (ue_ip_prefix) RETURNING id AS match_id;
+			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id AS action_id;
+			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, FALSE, enabled, match_id, action_id);
+		END;
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not create procedure insert_downlink_rule in database: %s", err)
+	}
+
 	get_action, err := db.Prepare(`SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2 AND gnb_ip = $3)`)
 	if err != nil {
 		return nil, fmt.Errorf("Could not prepare statement for get_action: %s", err)
@@ -46,14 +108,37 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
 	}
 
+	update_uplink_rule, err := db.Prepare(`CALL update_uplink_rule($1, $2, $3, $4, $5, $6)`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare statement for update_uplink_rule: %s", err)
+	}
+	update_downlink_rule, err := db.Prepare(`CALL update_downlink_rule($1, $2, $3, $4, $5)`)
+	if err != nil {
+		return nil, fmt.Errorf("Could not prepare statement for update_downlink_rule: %s", err)
+	}
+
 	return &Database{
-		DB:            db,
-		get_action:    get_action,
-		insert_action: insert_action,
-		update_action: update_action,
+		DB:                   db,
+		get_action:           get_action,
+		insert_action:        insert_action,
+		update_action:        update_action,
+		update_uplink_rule:   update_uplink_rule,
+		update_downlink_rule: update_downlink_rule,
 	}, nil
 }
 
+func (db *Database) InsertRule(uuid uuid.UUID, r jsonapi.Rule) error {
+	switch r.Type {
+	case "uplink":
+		_, err := db.update_uplink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Match.GNBIpPrefix, r.Action.NextHop, r.Action.SRH)
+		return err
+	case "downlink":
+		_, err := db.update_downlink_rule.Exec(uuid, r.Enabled, r.Match.UEIpPrefix, r.Action.NextHop, r.Action.SRH)
+		return err
+	default:
+		return fmt.Errorf("Wrong type for the rule")
+	}
+}
 func (db *Database) InsertAction(uplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, actionUuid uuid.UUID) error {
 	_, err := db.insert_action.Exec(uplinkTeid, SrgwIp.String(), GnbIp.String(), actionUuid.String())
 	return err
