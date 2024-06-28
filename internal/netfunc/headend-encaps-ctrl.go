@@ -40,8 +40,8 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	src := net.ParseIP("::")            // FIXME: REQUIRED!!! use the right address
-	nextHop := action.NextHop.AsSlice() // FIXME: allow multiple segments
+	src := net.ParseIP("fc00:3:1:0A03:0001:0868::30") // FIXME: dont hardcode
+	nextHop := action.NextHop.AsSlice()               // FIXME: allow multiple segments
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
