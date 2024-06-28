@@ -41,7 +41,7 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 		return nil, err
 	}
 	src := net.ParseIP("fc00:3:1:0A03:0001:0868::30") // FIXME: dont hardcode
-	nextHop := action.NextHop.AsSlice()               // FIXME: allow multiple segments
+	nextHop := action.NextHop.AsSlice()
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
@@ -52,8 +52,6 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 		// TODO: Generate a FlowLabel with hash(IPv6SA + IPv6DA + policy)
 		TrafficClass: 0, // FIXME: put this in Action
 	}
-	// FIXME: allow multiple segments
-	//segList := append([]net.IP{seg0}, bsid.ReverseSegmentsList()...)
 	segList := []net.IP{}
 	for _, seg := range action.SRH {
 		segList = append(segList, seg.AsSlice())

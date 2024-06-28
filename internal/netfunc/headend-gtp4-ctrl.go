@@ -127,7 +127,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 		HopLimit:   h.HopLimit(),
 		// TODO: Generate a FlowLabel with hash(IPv6SA + IPv6DA + policy)
 		//TrafficClass: qfi << 2,
-		//TrafficClass: 0, // FIXME
+		TrafficClass: 0, // FIXME
 	}
 	segList := []net.IP{}
 	for _, seg := range action.SRH {
