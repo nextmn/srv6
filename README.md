@@ -16,8 +16,8 @@ NextMN | End.M.GTP4.E | yes | send ICMP when errors
 NextMN | H.M.GTP4.D | yes | send ICMP when errors, optional: respond to GTP Echo Req
 NextMN | End.Limit | no | -
 NextMN | [End.M.GTP6.E.Red](https://datatracker.ietf.org/doc/draft-kawakami-dmm-srv6-gtp6e-reduced/) | no | requires a map of gnbs addr; [order of bit field considerations](https://datatracker.ietf.org/meeting/118/materials/slides-118-dmm-draft-kawakami-dmm-srv6-gtp6e-reduced-01)
-NextMNWithCtrl | H.M.GTP4.D | todo | |
-NextMNWithCtrl | H.Encaps | todo | |
+NextMNWithCtrl | H.M.GTP4.D | partial | src address should not be hardcoded |
+NextMNWithCtrl | H.Encaps | partial | src address should not be hardcoded |
 Linux  | End | yes | -
 Linux  | End.DX4 | yes | -
 Linux  | H.Encaps | yes | -
@@ -25,13 +25,11 @@ Linux  | H.Inline | untested | -
 
 PDU Session Type | Supported?
 ---|---
-IPv4 | ys
+IPv4 | yes
 IPv6 | no
 IPv4v6 | no
 Ethernet | no
 Unstructured | no
-
-TODO: SR Policy set by [nextmn-srv6-ctrl](https://github.com/nextmn/srv6-ctrl).
 
 
 ## Incoming packet flow
