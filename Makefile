@@ -25,7 +25,7 @@ install:
 	$(INSTALL) bash-completion/completions/srv6 $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6
 	@echo "================================="
 	@echo ">> Now run the following command:"
-	@echo "\tsource $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6"
+	@echo -e "\tsource $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6"
 	@echo "================================="
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/srv6
