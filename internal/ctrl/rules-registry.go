@@ -136,6 +136,10 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 		c.Status(http.StatusNoContent)
 		return
 	}
+	err = rr.db.EnableRule(iduuid)
+	if err != nil {
+		log.Printf("Could not enable rule in the database: %s\n", err)
+	}
 	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
 }
 
@@ -154,6 +158,10 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 		rr.rules[iduuid] = val // rules is not a map of pointers
 		c.Status(http.StatusNoContent)
 		return
+	}
+	err = rr.db.DisableRule(iduuid)
+	if err != nil {
+		log.Printf("Could not disable rule in the database: %s\n", err)
 	}
 	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
 }

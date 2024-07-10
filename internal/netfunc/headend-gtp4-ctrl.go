@@ -66,7 +66,7 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	teid := gtpu.TEID
 
 	var action jsonapi.Action
-	action_uuid, err := h.db.GetAction(teid, srgw_ip, gnb_ip)
+	action_uuid, err := h.db.GetUplinkAction(teid, srgw_ip, gnb_ip)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
