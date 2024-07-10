@@ -35,3 +35,36 @@ BEGIN
 	INSERT INTO rule(uuid, type_uplink, enabled, match_ue_ip_prefix, action_next_hop, action_srh)
 		VALUES(uuid, FALSE, enabled, ue_ip_prefix, next_hop, srh);
 END;$$;
+
+CREATE OR REPLACE PROCEDURE insert_action(
+	IN uplink_teid INTEGER, IN srgw_ip INET, IN gnb_ip INET, IN action_uuid UUID
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	INSERT INTO uplink_gtp4 (uplink_teid, srgw_ip, gnb_ip, action_uuid)
+		VALUES(uplink_teid, srgw_ip, gnb_ip, action_uuid);
+END;$$;
+
+CREATE OR REPLACE PROCEDURE enable_rule(
+	IN rule_id UUID
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	UPDATE rule SET enabled = true WHERE uuid = rule_id;
+END;$$;
+
+CREATE OR REPLACE PROCEDURE disable_rule(
+	IN rule_id UUID
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	UPDATE rule SET enabled = false WHERE uuid = rule_id
+END;$$;
+
+CREATE OR REPLACE PROCEDURE delete_rule(
+	IN rule_id UUID
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	DELETE FROM rule WHERE uuid = rule_id
+END;$$;

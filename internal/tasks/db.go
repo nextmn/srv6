@@ -130,6 +130,7 @@ func (db *DBTask) RunExit() error {
 	if db.db == nil {
 		return fmt.Errorf("No database")
 	}
+	db.db.Exit()
 	db.db.Close()
 	return nil
 }
