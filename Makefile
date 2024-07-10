@@ -32,3 +32,5 @@ uninstall:
 	$(RM) $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6
 	$(RM) $(DESTDIR)$(IPROUTE2_RTPROTOS_D)/nextmn.conf
 	$(RM) $(DESTDIR)$(IPROUTE2_RTTABLES_D)/nextmn.conf
+lint:
+	sqlfluff lint

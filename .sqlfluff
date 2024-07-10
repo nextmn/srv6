@@ -1,0 +1,11 @@
+[sqlfluff]
+dialect = postgres
+max_line_length = 140
+
+[sqlfluff:rules]
+# old configuration, to be compatible with Debian stable
+max_line_length = 140
+indent_unit = tab
+
+[sqlfluff:indentation]
+indent_unit = tab
