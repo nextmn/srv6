@@ -12,7 +12,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/nextmn/json-api/jsonapi"
 	"net/netip"
+	"strings"
 )
+
+//go:generate go run gen.go database.sql
 
 //go:embed database.sql
 var database_sql string
@@ -37,15 +40,18 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 		return nil, fmt.Errorf("Could not initialize database: %s", err)
 	}
 	l := map[string]string{
-		"get_action":           `SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2 AND gnb_ip = $3)`,
-		"insert_action":        `CALL insert_action($1, $2, $3, $4)`,
-		"update_action":        `CALL update_action($1, $2, $3, $4)`,
-		"insert_uplink_rule":   `CALL insert_uplink_rule($1, $2, $3, $4, $5, $6)`,
-		"insert_downlink_rule": `CALL insert_downlink_rule($1, $2, $3, $4, $5)`,
-		"enable_rule":          `CALL enable_rule($1)`,
-		"disable_rule":         `CALL disable_rule($1)`,
-		"delete_rule":          `CALL delete_rule($1)`,
+		"get_action": `SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2 AND gnb_ip = $3)`,
 	}
+	// use generated code
+	for k, v := range procedures {
+		args := []string{}
+		for i := range v {
+			args = append(args, fmt.Sprintf("$%d", i+1))
+		}
+		strargs := strings.Join(args, ", ")
+		l[k] = fmt.Sprintf("CALL %s(%s)", k, strargs)
+	}
+
 	stmt := make(map[string]*sql.Stmt)
 
 	for k, v := range l {

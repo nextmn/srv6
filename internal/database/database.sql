@@ -1,3 +1,6 @@
+-- Copyright 2024 Louis Royer and the NextMN-SRv6 contributors. All rights reserved.
+-- Use of this source code is governed by a MIT-style license that can be
+-- SPDX-License-Identifier: MIT
 CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 	uplink_teid INTEGER,
 	srgw_ip INET,
