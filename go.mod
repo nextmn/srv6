@@ -1,8 +1,7 @@
 module github.com/nextmn/srv6
 
 go 1.21
-
-toolchain go1.21.8
+toolchain go1.22.5
 
 require (
 	github.com/gin-gonic/gin v1.10.0
@@ -11,7 +10,7 @@ require (
 	github.com/google/gopacket v1.1.19
 	github.com/lib/pq v1.10.9
 	github.com/nextmn/gopacket-gtp v0.0.6
-	github.com/nextmn/gopacket-srv6 v0.0.7
+	github.com/nextmn/gopacket-srv6 v0.0.8
 	github.com/nextmn/json-api v0.0.6
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/urfave/cli/v2 v2.27.2
