@@ -34,15 +34,23 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	_ = iduuid
-	c.Status(http.StatusNotImplemented)
+	rule, err := rr.db.GetRule(iduuid)
+	if err != nil {
+		log.Printf("Could not get rule from database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get rule from database"})
+		return
+	}
+	c.JSON(http.StatusOK, rule)
 }
 
 func (rr *RulesRegistry) GetRules(c *gin.Context) {
-	//FIXME
-
-	c.Status(http.StatusNotImplemented)
-	//c.JSON(http.StatusOK, rr.rules)
+	rules, err := rr.db.GetRules()
+	if err != nil {
+		log.Printf("Could not get all rules from database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get all rules from database"})
+		return
+	}
+	c.JSON(http.StatusOK, rules)
 }
 
 func (rr *RulesRegistry) DeleteRule(c *gin.Context) {

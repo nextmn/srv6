@@ -8,7 +8,6 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
-	"net"
 	"net/netip"
 	"strings"
 
@@ -109,8 +108,8 @@ func (db *Database) GetRule(uuid uuid.UUID) (jsonapi.Rule, error) {
 	var type_uplink bool
 	var action_next_hop string
 	var action_srh []string
-	var match_ue_ip_prefix net.Addr
-	var match_gnb_ip_prefix net.Addr
+	var match_ue_ip_prefix string
+	var match_gnb_ip_prefix string
 	if stmt, ok := db.stmt["get_rule"]; ok {
 		err := stmt.QueryRow(uuid.String()).Scan(&enabled, &type_uplink, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
 		if err != nil {
@@ -126,16 +125,102 @@ func (db *Database) GetRule(uuid uuid.UUID) (jsonapi.Rule, error) {
 			Enabled: enabled,
 			Type:    t,
 		}
-		//FIXME
-		if match_ue_ip_prefix != nil {
+		rule.Match = jsonapi.Match{}
+		if match_ue_ip_prefix != "" {
+			p, err := netip.ParsePrefix(match_ue_ip_prefix)
+			if err == nil {
+				rule.Match.UEIpPrefix = p
+			}
+		}
+		if match_gnb_ip_prefix != "" {
+			p, err := netip.ParsePrefix(match_gnb_ip_prefix)
+			if err == nil {
+				rule.Match.GNBIpPrefix = p
+			}
 		}
 
+		srh, err := jsonapi.NewSRH(action_srh)
 		if err != nil {
 			return jsonapi.Rule{}, err
 		}
+		nh, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Rule{}, err
+		}
+
+		rule.Action = jsonapi.Action{
+			NextHop: *nh,
+			SRH:     *srh,
+		}
+
 		return rule, err
 	} else {
 		return jsonapi.Rule{}, fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) GetRules() (jsonapi.RuleMap, error) {
+	var uuid uuid.UUID
+	var enabled bool
+	var type_uplink bool
+	var action_next_hop string
+	var action_srh []string
+	var match_ue_ip_prefix string
+	var match_gnb_ip_prefix string
+	m := jsonapi.RuleMap{}
+	if stmt, ok := db.stmt["get_all_rules"]; ok {
+		rows, err := stmt.Query()
+		if err != nil {
+			return m, nil
+		}
+		for rows.Next() {
+			err := rows.Scan(&uuid, &enabled, &type_uplink, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+			if err != nil {
+				return m, err
+			}
+			var t string
+			if type_uplink {
+				t = "uplink"
+			} else {
+				t = "downlink"
+			}
+			rule := jsonapi.Rule{
+				Enabled: enabled,
+				Type:    t,
+			}
+			rule.Match = jsonapi.Match{}
+			if match_ue_ip_prefix != "" {
+				p, err := netip.ParsePrefix(match_ue_ip_prefix)
+				if err == nil {
+					rule.Match.UEIpPrefix = p
+				}
+			}
+			if match_gnb_ip_prefix != "" {
+				p, err := netip.ParsePrefix(match_gnb_ip_prefix)
+				if err == nil {
+					rule.Match.GNBIpPrefix = p
+				}
+			}
+
+			srh, err := jsonapi.NewSRH(action_srh)
+			if err != nil {
+				return jsonapi.RuleMap{}, err
+			}
+			nh, err := jsonapi.NewNextHop(action_next_hop)
+			if err != nil {
+				return jsonapi.RuleMap{}, err
+			}
+
+			rule.Action = jsonapi.Action{
+				NextHop: *nh,
+				SRH:     *srh,
+			}
+			m[uuid] = rule
+		}
+		return m, nil
+
+	} else {
+		return jsonapi.RuleMap{}, fmt.Errorf("Procedure not registered")
 	}
 }
 

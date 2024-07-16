@@ -125,5 +125,23 @@ BEGIN
 		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
 		FROM rule
 		WHERE (rule.uuid = uuid)
-		INTO (action_next_hop, action_srh);
+		INTO (type_uplink, enabled, action_next_hop, action_srh,
+			match_ue_ip_prefix, match_gnb_ip_prefix);
+END;$$;
+CREATE OR REPLACE PROCEDURE get_all_rules(
+	OUT uuid UUID,
+	OUT type_uplink BOOL,
+	OUT enabled BOOL,
+	OUT action_next_hop INET,
+	OUT action_srh INET ARRAY,
+	OUT match_ue_ip_prefix CIDR,
+	OUT match_gnb_ip_prefix CIDR
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	SELECT uuid, type_uplink, enabled, action_next_hop,
+		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
+		FROM rule
+		INTO (uuid, type_uplink, enabled, action_next_hop, action_srh,
+			match_ue_ip_prefix, match_gnb_ip_prefix);
 END;$$;
