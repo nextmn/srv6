@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 	uplink_teid INTEGER,
 	srgw_ip INET,
 	gnb_ip INET,
-	action_uuid UUID REFERENCES rule(uuid) ON DELETE CASCADE,
+	action_uuid UUID REFERENCES rule (uuid) ON DELETE CASCADE,
 	PRIMARY KEY (uplink_teid, srgw_ip, gnb_ip)
 );
 
