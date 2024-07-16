@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"net/netip"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
@@ -19,65 +17,12 @@ import (
 
 // A RulesRegistry contains rules for an headend
 type RulesRegistry struct {
-	sync.RWMutex
-	rules jsonapi.RuleMap
-	db    *database.Database
+	db *database.Database
 }
 
 func NewRulesRegistry(db *database.Database) *RulesRegistry {
 	return &RulesRegistry{
-		rules: make(jsonapi.RuleMap),
-		db:    db,
-	}
-}
-
-func (rr *RulesRegistry) UplinkAction(UEIp netip.Addr, GnbIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
-	rr.RLock()
-	defer rr.RUnlock()
-	for id, r := range rr.rules {
-		if !r.Enabled {
-			continue
-		}
-		if r.Type != "uplink" {
-			continue
-		}
-		if !r.Match.GNBIpPrefix.Contains(GnbIp) {
-			continue
-		}
-		if r.Match.UEIpPrefix.Contains(UEIp) {
-			return id, r.Action, nil
-		}
-	}
-	return uuid.UUID{}, jsonapi.Action{}, fmt.Errorf("Not found")
-}
-
-func (rr *RulesRegistry) DownlinkAction(UEIp netip.Addr) (uuid.UUID, jsonapi.Action, error) {
-	rr.RLock()
-	defer rr.RUnlock()
-	for id, r := range rr.rules {
-		if !r.Enabled {
-			continue
-		}
-		if r.Type != "downlink" {
-			continue
-		}
-		if r.Match.UEIpPrefix.Contains(UEIp) {
-			return id, r.Action, nil
-		}
-	}
-	return uuid.UUID{}, jsonapi.Action{}, fmt.Errorf("Not found")
-}
-
-func (rr *RulesRegistry) ByUUID(uuid uuid.UUID) (jsonapi.Action, error) {
-	rr.RLock()
-	defer rr.RUnlock()
-	if rule, ok := rr.rules[uuid]; !ok {
-		return jsonapi.Action{}, fmt.Errorf("Not found")
-	} else {
-		if !rule.Enabled {
-			return rule.Action, fmt.Errorf("Disabled")
-		}
-		return rule.Action, nil
+		db: db,
 	}
 }
 
@@ -89,17 +34,15 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rr.Lock()
-	defer rr.Unlock()
-	if val, ok := rr.rules[iduuid]; ok {
-		c.JSON(http.StatusOK, val)
-		return
-	}
-	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
+	_ = iduuid
+	c.Status(http.StatusNotImplemented)
 }
 
 func (rr *RulesRegistry) GetRules(c *gin.Context) {
-	c.JSON(http.StatusOK, rr.rules)
+	//FIXME
+
+	c.Status(http.StatusNotImplemented)
+	//c.JSON(http.StatusOK, rr.rules)
 }
 
 func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
@@ -110,13 +53,12 @@ func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rr.Lock()
-	defer rr.Unlock()
-	if _, exists := rr.rules[iduuid]; !exists {
-		c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
+	err = rr.db.DeleteRule(iduuid)
+	if err != nil {
+		log.Printf("Could not delete rule in the database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not delete rule in the database"})
 		return
 	}
-	delete(rr.rules, iduuid)
 	c.Status(http.StatusNoContent) // successful deletion
 }
 
@@ -128,19 +70,14 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rr.Lock()
-	defer rr.Unlock()
-	if val, ok := rr.rules[iduuid]; ok {
-		val.Enabled = true
-		rr.rules[iduuid] = val // rules is not a map of pointers
-		c.Status(http.StatusNoContent)
-		return
-	}
 	err = rr.db.EnableRule(iduuid)
 	if err != nil {
 		log.Printf("Could not enable rule in the database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not enable rule in the database"})
+		return
+		//TODO: check if rule not found
 	}
-	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
+	c.Status(http.StatusNoContent)
 }
 
 func (rr *RulesRegistry) DisableRule(c *gin.Context) {
@@ -151,19 +88,14 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rr.Lock()
-	defer rr.Unlock()
-	if val, ok := rr.rules[iduuid]; ok {
-		val.Enabled = false
-		rr.rules[iduuid] = val // rules is not a map of pointers
-		c.Status(http.StatusNoContent)
-		return
-	}
 	err = rr.db.DisableRule(iduuid)
 	if err != nil {
 		log.Printf("Could not disable rule in the database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not disable rule in the database"})
+		return
+		//TODO: check if rule not found
 	}
-	c.JSON(http.StatusNotFound, gin.H{"message": "rule not found"})
+	c.Status(http.StatusNoContent)
 }
 
 // Post a new rule
@@ -174,30 +106,11 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rr.Lock()
-	defer rr.Unlock()
-
-	// TODO: perform checks
-
-	id, err := uuid.NewV4()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to generate UUID"})
-	}
-	for {
-		if _, exists := rr.rules[id]; !exists {
-			break
-		} else {
-			id, err = uuid.NewV4()
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to generate UUID"})
-			}
-		}
-	}
-	rr.rules[id] = rule
-	err = rr.db.InsertRule(id, rule)
+	id, err := rr.db.InsertRule(rule)
 	if err != nil {
 		log.Printf("Could not insert rule in the database: %s\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to insert rule"})
 	}
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
-	c.JSON(http.StatusCreated, rr.rules[id])
+	c.JSON(http.StatusCreated, rule)
 }

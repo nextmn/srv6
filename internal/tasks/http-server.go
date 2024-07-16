@@ -23,7 +23,6 @@ type HttpServerTask struct {
 	WithState
 	srv               *http.Server
 	httpAddr          string
-	rulesRegistry     ctrl_api.RulesRegistry
 	rulesRegistryHTTP ctrl_api.RulesRegistryHTTP
 	setupRegistry     app_api.Registry
 }
@@ -35,7 +34,6 @@ func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Regis
 		WithState:         NewState(),
 		srv:               nil,
 		httpAddr:          httpAddr,
-		rulesRegistry:     nil,
 		rulesRegistryHTTP: nil,
 		setupRegistry:     setupRegistry,
 	}
@@ -51,7 +49,6 @@ func (t *HttpServerTask) RunInit() error {
 		return fmt.Errorf("DB is not in Registry")
 	}
 	rr := ctrl.NewRulesRegistry(db)
-	t.rulesRegistry = rr
 	t.rulesRegistryHTTP = rr
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
@@ -69,10 +66,6 @@ func (t *HttpServerTask) RunInit() error {
 		Handler: r,
 	}
 
-	if t.setupRegistry != nil {
-		t.setupRegistry.RegisterRulesRegistry(t.rulesRegistry)
-	}
-
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("listen: %s\n", err)
@@ -85,9 +78,6 @@ func (t *HttpServerTask) RunInit() error {
 // Exit
 func (t *HttpServerTask) RunExit() error {
 	t.state = false
-	if t.setupRegistry != nil {
-		t.setupRegistry.DeleteRulesRegistry()
-	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	if err := t.srv.Shutdown(ctx); err != nil {

@@ -9,3 +9,6 @@ indent_unit = tab
 
 [sqlfluff:indentation]
 indent_unit = tab
+
+[sqlfluff:rules:L057]
+ignore_words = uuid-ossp

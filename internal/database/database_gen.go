@@ -6,11 +6,19 @@
 
 package database
 
-var procedures = map[string]int{
-	"insert_uplink_rule": 6,
-	"insert_downlink_rule": 5,
-	"insert_action": 4,
-	"enable_rule": 1,
-	"disable_rule": 1,
-	"delete_rule": 1,
+type procedure struct {
+	num_in int
+	num_out int
+}
+
+var procedures = map[string]procedure{
+	"insert_uplink_rule": procedure{num_in: 5, num_out: 1},
+	"insert_downlink_rule": procedure{num_in: 4, num_out: 1},
+	"enable_rule": procedure{num_in: 1, num_out: 0},
+	"disable_rule": procedure{num_in: 1, num_out: 0},
+	"delete_rule": procedure{num_in: 1, num_out: 0},
+	"get_uplink_action": procedure{num_in: 3, num_out: 2},
+	"set_uplink_action": procedure{num_in: 3, num_out: 2},
+	"get_downlink_action": procedure{num_in: 1, num_out: 2},
+	"get_rule": procedure{num_in: 1, num_out: 6},
 }

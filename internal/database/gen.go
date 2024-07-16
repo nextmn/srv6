@@ -44,10 +44,13 @@ func main() {
 	if _, err = f.WriteString("package database\n\n"); err != nil {
 		panic(err)
 	}
-	if _, err = f.WriteString("var procedures = map[string]int{\n"); err != nil {
+	if _, err = f.WriteString("type procedure struct {\n\tnum_in int\n\tnum_out int\n}\n\n"); err != nil {
 		panic(err)
 	}
-	fr, err := os.Open(input)
+	if _, err = f.WriteString("var procedures = map[string]procedure{\n"); err != nil {
+		panic(err)
+	}
+	fr, err := os.OpenFile(input, os.O_RDONLY, 0)
 	if err != nil {
 		panic(err)
 	}
@@ -59,7 +62,8 @@ func main() {
 		StatePName
 	)
 	state := StateInit
-	nbargs := 0
+	nb_in := 0
+	nb_out := 0
 	for scanner.Scan() {
 		line := scanner.Text()
 		switch state {
@@ -75,21 +79,25 @@ func main() {
 			}
 			state = StatePName
 			if strings.HasSuffix(line, ")") {
-				cnt := strings.Count(line, "IN ")
-				if _, err = f.WriteString(fmt.Sprintf("%d,\n", cnt)); err != nil {
+				nb_out += strings.Count(line, "OUT")
+				nb_in += strings.Count(line, "IN ")
+				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
 					panic(err)
 				}
 				state = StateInit
+				nb_in = 0
+				nb_out = 0
 			}
 		case StatePName:
-			cnt := strings.Count(line, "IN ")
-			nbargs += cnt
+			nb_out += strings.Count(line, "OUT")
+			nb_in += strings.Count(line, "IN ")
 			if strings.HasSuffix(line, ")") {
-				if _, err = f.WriteString(fmt.Sprintf("%d,\n", nbargs)); err != nil {
+				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
 					panic(err)
 				}
 				state = StateInit
-				nbargs = 0
+				nb_in = 0
+				nb_out = 0
 			}
 
 		default:

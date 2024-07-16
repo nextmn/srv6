@@ -6,24 +6,24 @@ package netfunc
 
 import (
 	"fmt"
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"net"
 	"net/netip"
 
-	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	db_api "github.com/nextmn/srv6/internal/database/api"
 )
 
 type HeadendEncapsWithCtrl struct {
-	RulesRegistry ctrl_api.RulesRegistry
 	BaseHandler
+	db db_api.Downlink
 }
 
-func NewHeadendEncapsWithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8) *HeadendEncapsWithCtrl {
+func NewHeadendEncapsWithCtrl(prefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Downlink) *HeadendEncapsWithCtrl {
 	return &HeadendEncapsWithCtrl{
-		RulesRegistry: rr,
-		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
+		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
+		db:          db,
 	}
 }
 
@@ -36,7 +36,7 @@ func (h HeadendEncapsWithCtrl) Handle(packet []byte) ([]byte, error) {
 	if _, err := h.CheckDAInPrefixRange(pqt); err != nil {
 		return nil, err
 	}
-	_, action, err := pqt.DownlinkAction(h.RulesRegistry)
+	action, err := pqt.DownlinkAction(h.db)
 	if err != nil {
 		return nil, err
 	}

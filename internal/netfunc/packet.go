@@ -9,12 +9,11 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/gofrs/uuid"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	json_api "github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/constants"
-	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	db_api "github.com/nextmn/srv6/internal/database/api"
 )
 
 type Packet struct {
@@ -86,13 +85,13 @@ func (p *Packet) GetSrcAddr() (netip.Addr, error) {
 }
 
 // Returns the DownlinkAction related to this packet
-func (p *Packet) DownlinkAction(rr ctrl_api.RulesRegistry) (uuid.UUID, json_api.Action, error) {
+func (p *Packet) DownlinkAction(db db_api.Downlink) (json_api.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
-		return uuid.UUID{}, json_api.Action{}, fmt.Errorf("Malformed packet")
+		return json_api.Action{}, fmt.Errorf("Malformed packet")
 	}
-	return rr.DownlinkAction(dst)
+	return db.GetDownlinkAction(dst)
 }
 
 // Returns the first gopacket.Layer after IPv6 header / extension headers

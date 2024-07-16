@@ -10,7 +10,6 @@ import (
 	"github.com/nextmn/json-api/jsonapi"
 )
 
-type Uplink interface {
-	GetUplinkAction(UplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr) (jsonapi.Action, error)
-	SetUplinkAction(UplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, UeIpAddress netip.Addr) (jsonapi.Action, error)
+type Downlink interface {
+	GetDownlinkAction(ueIp netip.Addr) (jsonapi.Action, error)
 }
