@@ -7,12 +7,13 @@ package tasks
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
-	app_api "github.com/nextmn/srv6/internal/app/api"
-	"github.com/nextmn/srv6/internal/database"
 	"log"
 	"os"
 	"time"
+
+	_ "github.com/lib/pq"
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	"github.com/nextmn/srv6/internal/database"
 )
 
 // DBTask initializes the database
@@ -94,6 +95,7 @@ func (db *DBTask) RunInit() error {
 	maxAttempts := 16
 	ok = false
 	for errcnt := 0; errcnt < maxAttempts; errcnt++ {
+		//FIXME: use select and time.After
 		if err := postgres.Ping(); err != nil {
 			// Exponential backoff
 			time.Sleep(100 * (1 << errcnt) * time.Millisecond)
