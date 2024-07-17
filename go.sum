@@ -53,8 +53,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/nextmn/gopacket-gtp v0.0.7 h1:O2cuShLTlpVBEXyHn9OIi1Nd+j4QCB66RAwzKBeyscI=
 github.com/nextmn/gopacket-gtp v0.0.7/go.mod h1:94jLjLU04IOVTKBXUP09MXZCgmlizqmflU2ion1ht6E=
-github.com/nextmn/gopacket-srv6 v0.0.7 h1:GXDcb1S91VkC61uEJ6nyIMk34Wu6Wk1LfdoDXyE7nXs=
-github.com/nextmn/gopacket-srv6 v0.0.7/go.mod h1:d00D3jb/joNiUXxCukaeymKdFL35ey7mmb+vr02MPmg=
+github.com/nextmn/gopacket-srv6 v0.0.8 h1:oP4wuJ7dOiV/gWmX3zoFcdp2dKdSWLUaxH2fJ3TYAwA=
+github.com/nextmn/gopacket-srv6 v0.0.8/go.mod h1:2Tyuo9zsG0bP2IhC4tVRgPRuyUqOgrvEEH9seJSZTlU=
 github.com/nextmn/json-api v0.0.6 h1:YvYWarvCSX9pHyexy9uOR2IK8xpnsKkIqAALG3k+XMg=
 github.com/nextmn/json-api v0.0.6/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
