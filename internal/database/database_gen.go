@@ -6,20 +6,21 @@
 
 package database
 
-type procedure struct {
+type procedureOrFunction struct {
 	num_in int
 	num_out int
+	is_procedure bool
 }
 
-var procedures = map[string]procedure{
-	"insert_uplink_rule": procedure{num_in: 5, num_out: 1},
-	"insert_downlink_rule": procedure{num_in: 4, num_out: 1},
-	"enable_rule": procedure{num_in: 1, num_out: 0},
-	"disable_rule": procedure{num_in: 1, num_out: 0},
-	"delete_rule": procedure{num_in: 1, num_out: 0},
-	"get_uplink_action": procedure{num_in: 3, num_out: 2},
-	"set_uplink_action": procedure{num_in: 4, num_out: 2},
-	"get_downlink_action": procedure{num_in: 1, num_out: 2},
-	"get_rule": procedure{num_in: 1, num_out: 6},
-	"get_all_rules": procedure{num_in: 0, num_out: 7},
+var procedures = map[string]procedureOrFunction{
+	"insert_uplink_rule": procedureOrFunction{num_in: 5, num_out: 1, is_procedure: true},
+	"insert_downlink_rule": procedureOrFunction{num_in: 4, num_out: 1, is_procedure: true},
+	"enable_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
+	"disable_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
+	"delete_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
+	"get_uplink_action": procedureOrFunction{num_in: 3, num_out: 2, is_procedure: true},
+	"set_uplink_action": procedureOrFunction{num_in: 4, num_out: 2, is_procedure: true},
+	"get_downlink_action": procedureOrFunction{num_in: 1, num_out: 2, is_procedure: true},
+	"get_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: false},
+	"get_all_rules": procedureOrFunction{num_in: 0, num_out: 0, is_procedure: false},
 }

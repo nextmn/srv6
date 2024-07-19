@@ -111,39 +111,41 @@ BEGIN
 		INTO out_action_next_hop, out_action_srh;
 END;$$;
 
-CREATE OR REPLACE PROCEDURE get_rule(
-	IN in_uuid UUID,
-	OUT out_type_uplink BOOL,
-	OUT out_enabled BOOL,
-	OUT out_action_next_hop INET,
-	OUT out_action_srh INET ARRAY,
-	OUT out_match_ue_ip_prefix CIDR,
-	OUT out_match_gnb_ip_prefix CIDR
+CREATE OR REPLACE FUNCTION get_rule(
+	IN in_uuid UUID
 )
-LANGUAGE plpgsql AS $$
+RETURNS TABLE (
+	t_type_uplink BOOL,
+	t_enabled BOOL,
+	t_action_next_hop INET,
+	t_action_srh INET ARRAY,
+	t_match_ue_ip_prefix CIDR,
+	t_match_gnb_ip_prefix CIDR
+)
+AS $$
 BEGIN
-	SELECT type_uplink, enabled, action_next_hop,
-		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
+	RETURN QUERY SELECT type_uplink AS "t_type_uplink", enabled AS "t_enabled", action_next_hop AS "t_action_next_hop",
+		action_srh AS "t_action_srh", match_ue_ip_prefix AS "t_match_ue_ip_prefix", match_gnb_ip_prefix AS "t_match_gnb_ip_prefix"
 		FROM rule
 		WHERE (rule.uuid = in_uuid)
 		INTO out_type_uplink, out_enabled, out_action_next_hop, out_action_srh,
 			out_match_ue_ip_prefix, out_match_gnb_ip_prefix;
-END;$$;
+END;$$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE get_all_rules(
-	OUT out_uuid UUID,
-	OUT out_type_uplink BOOL,
-	OUT out_enabled BOOL,
-	OUT out_action_next_hop INET,
-	OUT out_action_srh INET ARRAY,
-	OUT out_match_ue_ip_prefix CIDR,
-	OUT out_match_gnb_ip_prefix CIDR
+CREATE OR REPLACE FUNCTION get_all_rules()
+RETURNS TABLE (
+	t_uuid UUID,
+	t_type_uplink BOOL,
+	t_enabled BOOL,
+	t_action_next_hop INET,
+	t_action_srh INET ARRAY,
+	t_match_ue_ip_prefix CIDR,
+	t_match_gnb_ip_prefix CIDR
 )
-LANGUAGE plpgsql AS $$
+AS $$
 BEGIN
-	SELECT uuid, type_uplink, enabled, action_next_hop,
-		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
-		FROM rule
-		INTO out_uuid, out_type_uplink, out_enabled, out_action_next_hop, out_action_srh,
-			out_match_ue_ip_prefix, out_match_gnb_ip_prefix;
-END;$$;
+	RETURN QUERY SELECT uuid AS "t_uuid", type_uplink AS "t_type_uplink",
+		enabled AS "t_enabled", action_next_hop AS "t_action_next_hop",
+		action_srh AS "t_action_srh", match_ue_ip_prefix AS "t_match_ue_ip_prefix", match_gnb_ip_prefix AS "t_match_gnb_ip_prefix"
+		FROM rule;
+END;$$ LANGUAGE plpgsql;

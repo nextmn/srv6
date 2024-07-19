@@ -5,14 +5,6 @@ max_line_length = 140
 [sqlfluff:rules:references.special_chars]
 ignore_words = uuid-ossp
 
-[sqlfluff:rules]
-# old configuration, to be compatible with Debian stable
-max_line_length = 140
-indent_unit = tab
 
 [sqlfluff:indentation]
 indent_unit = tab
-
-[sqlfluff:rules:L057]
-# old configuration, to be compatible with Debian stable
-ignore_words = uuid-ossp

@@ -32,7 +32,11 @@ uninstall:
 	$(RM) $(DESTDIR)$(BASHCOMPLETIONSDIR)/srv6
 	$(RM) $(DESTDIR)$(IPROUTE2_RTPROTOS_D)/nextmn.conf
 	$(RM) $(DESTDIR)$(IPROUTE2_RTTABLES_D)/nextmn.conf
+
+dev-install:
+	python3 -m venv env
+	env/bin/pip install sqlfluff
 lint:
-	sqlfluff lint
+	env/bin/sqlfluff lint
 	@echo Checking generated files
 	@go generate ./... && git status --porcelain=v2 | { ! { grep _gen.go > /dev/null && echo "Generated files were not up to date."; } } && echo "Generated files are up to date"

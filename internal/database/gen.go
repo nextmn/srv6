@@ -44,10 +44,10 @@ func main() {
 	if _, err = f.WriteString("package database\n\n"); err != nil {
 		panic(err)
 	}
-	if _, err = f.WriteString("type procedure struct {\n\tnum_in int\n\tnum_out int\n}\n\n"); err != nil {
+	if _, err = f.WriteString("type procedureOrFunction struct {\n\tnum_in int\n\tnum_out int\n\tis_procedure bool\n}\n\n"); err != nil {
 		panic(err)
 	}
-	if _, err = f.WriteString("var procedures = map[string]procedure{\n"); err != nil {
+	if _, err = f.WriteString("var procedures = map[string]procedureOrFunction{\n"); err != nil {
 		panic(err)
 	}
 	fr, err := os.OpenFile(input, os.O_RDONLY, 0)
@@ -60,6 +60,7 @@ func main() {
 	const (
 		StateInit State = iota
 		StatePName
+		StateFName
 	)
 	state := StateInit
 	nb_in := 0
@@ -70,29 +71,41 @@ func main() {
 		case StateInit:
 			psuffix, ok := strings.CutPrefix(line, "CREATE OR REPLACE PROCEDURE ")
 			if !ok {
-				continue
+				fsuffix, ok := strings.CutPrefix(line, "CREATE OR REPLACE FUNCTION ")
+				if !ok {
+					continue
+				}
+				psplit := strings.Split(fsuffix, "(")
+				pname := psplit[0]
+				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": ", pname)); err != nil {
+					panic(err)
+				}
+				state = StateFName
+			} else {
+				psplit := strings.Split(psuffix, "(")
+				pname := psplit[0]
+				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": ", pname)); err != nil {
+					panic(err)
+				}
+				state = StatePName
 			}
-			psplit := strings.Split(psuffix, "(")
-			pname := psplit[0]
-			if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": ", pname)); err != nil {
-				panic(err)
-			}
-			state = StatePName
 			if strings.HasSuffix(line, ")") {
+				// we assume argmode is always given
 				nb_out += strings.Count(line, "OUT ")
 				nb_in += strings.Count(line, "IN ")
-				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
+				if _, err = f.WriteString(fmt.Sprintf("procedureOrFunction{num_in: %d, num_out: %d, is_procedure: %t},\n", nb_in, nb_out, (state == StatePName))); err != nil {
 					panic(err)
 				}
 				state = StateInit
 				nb_in = 0
 				nb_out = 0
 			}
-		case StatePName:
+		case StatePName, StateFName:
+			// we assume argmode is always given
 			nb_out += strings.Count(line, "OUT ")
 			nb_in += strings.Count(line, "IN ")
 			if strings.HasSuffix(line, ")") {
-				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
+				if _, err = f.WriteString(fmt.Sprintf("procedureOrFunction{num_in: %d, num_out: %d, is_procedure: %t},\n", nb_in, nb_out, (state == StatePName))); err != nil {
 					panic(err)
 				}
 				state = StateInit
@@ -107,5 +120,4 @@ func main() {
 	if _, err = f.WriteString("}\n"); err != nil {
 		panic(err)
 	}
-
 }

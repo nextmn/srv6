@@ -51,7 +51,12 @@ func NewDatabase(db *sql.DB) (*Database, error) {
 			args = append(args, "NULL")
 		}
 		strargs := strings.Join(args, ", ")
-		l[k] = fmt.Sprintf("CALL %s(%s)", k, strargs)
+		if v.is_procedure {
+			l[k] = fmt.Sprintf("CALL %s(%s)", k, strargs)
+		} else {
+			l[k] = fmt.Sprintf("SELECT %s(%s)", k, strargs)
+		}
+
 	}
 
 	stmt := make(map[string]*sql.Stmt)
@@ -166,7 +171,7 @@ func (db *Database) GetRules() (jsonapi.RuleMap, error) {
 	var action_next_hop string
 	var action_srh []string
 	var match_ue_ip_prefix string
-	var match_gnb_ip_prefix string
+	var match_gnb_ip_prefix *string
 	m := jsonapi.RuleMap{}
 	if stmt, ok := db.stmt["get_all_rules"]; ok {
 		rows, err := stmt.Query()
@@ -195,8 +200,8 @@ func (db *Database) GetRules() (jsonapi.RuleMap, error) {
 					rule.Match.UEIpPrefix = p
 				}
 			}
-			if match_gnb_ip_prefix != "" {
-				p, err := netip.ParsePrefix(match_gnb_ip_prefix)
+			if match_gnb_ip_prefix != nil {
+				p, err := netip.ParsePrefix(*match_gnb_ip_prefix)
 				if err == nil {
 					rule.Match.GNBIpPrefix = p
 				}
