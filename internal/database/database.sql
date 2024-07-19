@@ -24,23 +24,23 @@ CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 CREATE OR REPLACE PROCEDURE insert_uplink_rule(
 	IN enabled BOOL, IN ue_ip_prefix CIDR,
 	IN gnb_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY,
-	OUT uuid UUID
+	OUT rule_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, match_gnb_ip_prefix, action_next_hop, action_srh)
-		VALUES(TRUE, enabled, ue_ip_prefix, gnb_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO uuid;
+		VALUES(TRUE, enabled, ue_ip_prefix, gnb_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO rule_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE insert_downlink_rule(
 	IN enabled BOOL, IN ue_ip_prefix CIDR,
 	IN next_hop INET, IN srh INET ARRAY,
-	OUT uuid UUID
+	OUT rule_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, action_next_hop, action_srh)
-		VALUES(FALSE, enabled, ue_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO uuid;
+		VALUES(FALSE, enabled, ue_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO rule_uuid;
 END;$$;
 
 
