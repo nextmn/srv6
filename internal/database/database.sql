@@ -84,7 +84,7 @@ BEGIN
 END;$$;
 
 CREATE OR REPLACE PROCEDURE set_uplink_action(
-	IN uplink_teid INTEGER, IN srgw_ip INET, gnb_ip INET, IN ue_ip_address INET,
+	IN uplink_teid INTEGER, IN srgw_ip INET, IN gnb_ip INET, IN ue_ip_address INET,
 	OUT action_next_hop INET, OUT action_srh INET ARRAY
 )
 LANGUAGE plpgsql AS $$

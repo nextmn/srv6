@@ -79,7 +79,7 @@ func main() {
 			}
 			state = StatePName
 			if strings.HasSuffix(line, ")") {
-				nb_out += strings.Count(line, "OUT")
+				nb_out += strings.Count(line, "OUT ")
 				nb_in += strings.Count(line, "IN ")
 				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
 					panic(err)
@@ -89,7 +89,7 @@ func main() {
 				nb_out = 0
 			}
 		case StatePName:
-			nb_out += strings.Count(line, "OUT")
+			nb_out += strings.Count(line, "OUT ")
 			nb_in += strings.Count(line, "IN ")
 			if strings.HasSuffix(line, ")") {
 				if _, err = f.WriteString(fmt.Sprintf("procedure{num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
