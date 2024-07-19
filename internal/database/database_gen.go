@@ -18,7 +18,7 @@ var procedures = map[string]procedure{
 	"disable_rule": procedure{num_in: 1, num_out: 0},
 	"delete_rule": procedure{num_in: 1, num_out: 0},
 	"get_uplink_action": procedure{num_in: 3, num_out: 2},
-	"set_uplink_action": procedure{num_in: 3, num_out: 2},
+	"set_uplink_action": procedure{num_in: 4, num_out: 2},
 	"get_downlink_action": procedure{num_in: 1, num_out: 2},
 	"get_rule": procedure{num_in: 1, num_out: 6},
 	"get_all_rules": procedure{num_in: 0, num_out: 7},
