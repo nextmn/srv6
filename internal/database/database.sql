@@ -22,128 +22,128 @@ CREATE TABLE IF NOT EXISTS uplink_gtp4 (
 );
 
 CREATE OR REPLACE PROCEDURE insert_uplink_rule(
-	IN enabled BOOL, IN ue_ip_prefix CIDR,
-	IN gnb_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY,
-	OUT rule_uuid UUID
+	IN in_enabled BOOL, IN in_ue_ip_prefix CIDR,
+	IN in_gnb_ip_prefix CIDR, IN in_next_hop INET, IN in_srh INET ARRAY,
+	OUT out_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, match_gnb_ip_prefix, action_next_hop, action_srh)
-		VALUES(TRUE, enabled, ue_ip_prefix, gnb_ip_prefix, next_hop, srh) RETURNING rule.uuid INTO rule_uuid;
+		VALUES(TRUE, in_enabled, in_ue_ip_prefix, in_gnb_ip_prefix, in_next_hop, in_srh) RETURNING rule.uuid INTO out_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE insert_downlink_rule(
-	IN enabled BOOL, IN ue_ip_prefix CIDR,
-	IN next_hop INET, IN srh INET ARRAY,
-	OUT rule_uuid UUID
+	IN in_enabled BOOL, IN in_ue_ip_prefix CIDR,
+	IN in_next_hop INET, IN in_srh INET ARRAY,
+	OUT out_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, action_next_hop, action_srh)
-		VALUES(FALSE, enabled, ue_ip_prefix, next_hop, srh) RETURNING rule.uuid INTO rule_uuid;
+		VALUES(FALSE, in_enabled, in_ue_ip_prefix, in_next_hop, in_srh) RETURNING rule.uuid INTO out_uuid;
 END;$$;
 
 
 CREATE OR REPLACE PROCEDURE enable_rule(
-	IN rule_id UUID
+	IN in_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	UPDATE rule SET enabled = true WHERE uuid = rule_id;
+	UPDATE rule SET enabled = true WHERE rule.uuid = in_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE disable_rule(
-	IN rule_id UUID
+	IN in_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	UPDATE rule SET enabled = false WHERE uuid = rule_id;
-	DELETE FROM uplink_gtp4 WHERE action_uuid = rule_id;
+	UPDATE rule SET enabled = false WHERE rule.uuid = in_uuid;
+	DELETE FROM uplink_gtp4 WHERE uplink_gtp4.action_uuid = in_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE delete_rule(
-	IN rule_id UUID
+	IN in_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	DELETE FROM rule WHERE uuid = rule_id;
+	DELETE FROM rule WHERE uuid = in_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE get_uplink_action(
-	IN uplink_teid INTEGER, IN srgw_ip INET, IN gnb_ip INET,
-	OUT action_next_hop INET, OUT action_srh INET ARRAY
+	IN in_uplink_teid INTEGER, IN in_srgw_ip INET, IN in_gnb_ip INET,
+	OUT out_action_next_hop INET, OUT out_action_srh INET ARRAY
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	SELECT rule.action_next_hop, rule.action_srh FROM uplink_gtp4, rule
-		WHERE (uplink_gtp4.uplink_teid = uplink_teid
-			AND uplink_gtp4.srgw_ip = srgw_ip
-			AND uplink_gtp4.gnb_ip = gnb_ip
+		WHERE (uplink_gtp4.uplink_teid = in_uplink_teid
+			AND uplink_gtp4.srgw_ip = in_srgw_ip
+			AND uplink_gtp4.gnb_ip = in_gnb_ip
 			AND rule.uuid = uplink_gtp4.action_uuid)
-		INTO action_next_hop, action_srh;
+		INTO out_action_next_hop, out_action_srh;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE set_uplink_action(
-	IN uplink_teid INTEGER, IN srgw_ip INET, IN gnb_ip INET, IN ue_ip_address INET,
-	OUT action_next_hop INET, OUT action_srh INET ARRAY
+	IN in_uplink_teid INTEGER, IN in_srgw_ip INET, IN in_gnb_ip INET, IN in_ue_ip_address INET,
+	OUT out_action_next_hop INET, OUT out_action_srh INET ARRAY
 )
 LANGUAGE plpgsql AS $$
 DECLARE
-	action_uuid UUID;
+	var_uuid UUID;
 BEGIN
 	SELECT uuid, action_next_hop, action_srh FROM rule
-		WHERE (type_uplink = TRUE AND enabled = TRUE
-			AND gnb_ip << match_gnb_ip_prefix AND ue_ip << match_ue_ip_prefix)
-		INTO action_uuid, action_next_hop, action_srh;
-	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, action_uuid)
-		VALUES(uplink_teid, srgw_ip, gnb_ip, action_uuid);
+		WHERE (rule.type_uplink = TRUE AND rule.enabled = TRUE
+			AND in_gnb_ip << rule.match_gnb_ip_prefix AND in_ue_ip << rule.match_ue_ip_prefix)
+		INTO var_uuid, out_action_next_hop, out_action_srh;
+	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, var_uuid)
+		VALUES(in_uplink_teid, in_srgw_ip, in_gnb_ip, var_uuid);
 END;$$;
 
 CREATE OR REPLACE PROCEDURE get_downlink_action(
-	IN ue_ip_address INET,
-	OUT action_next_hop INET, OUT action_srh INET ARRAY
+	IN in_ue_ip_address INET,
+	OUT out_action_next_hop INET, OUT out_action_srh INET ARRAY
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	SELECT rule.action_next_hop, rule.action_srh FROM rule
-		WHERE (type_uplink = FALSE AND enabled = TRUE
-			AND ue_ip << match_ue_ip_prefix)
-		INTO action_next_hop, action_srh;
+		WHERE (rule.type_uplink = FALSE AND rule.enabled = TRUE
+			AND in_ue_ip << match_ue_ip_prefix)
+		INTO out_action_next_hop, out_action_srh;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE get_rule(
-	IN uuid UUID,
-	OUT type_uplink BOOL,
-	OUT enabled BOOL,
-	OUT action_next_hop INET,
-	OUT action_srh INET ARRAY,
-	OUT match_ue_ip_prefix CIDR,
-	OUT match_gnb_ip_prefix CIDR
+	IN in_uuid UUID,
+	OUT out_type_uplink BOOL,
+	OUT out_enabled BOOL,
+	OUT out_action_next_hop INET,
+	OUT out_action_srh INET ARRAY,
+	OUT out_match_ue_ip_prefix CIDR,
+	OUT out_match_gnb_ip_prefix CIDR
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	SELECT type_uplink, enabled, action_next_hop,
 		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
 		FROM rule
-		WHERE (rule.uuid = uuid)
-		INTO type_uplink, enabled, action_next_hop, action_srh,
-			match_ue_ip_prefix, match_gnb_ip_prefix;
+		WHERE (rule.uuid = in_uuid)
+		INTO out_type_uplink, out_enabled, out_action_next_hop, out_action_srh,
+			out_match_ue_ip_prefix, out_match_gnb_ip_prefix;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE get_all_rules(
-	OUT uuid UUID,
-	OUT type_uplink BOOL,
-	OUT enabled BOOL,
-	OUT action_next_hop INET,
-	OUT action_srh INET ARRAY,
-	OUT match_ue_ip_prefix CIDR,
-	OUT match_gnb_ip_prefix CIDR
+	OUT out_uuid UUID,
+	OUT out_type_uplink BOOL,
+	OUT out_enabled BOOL,
+	OUT out_action_next_hop INET,
+	OUT out_action_srh INET ARRAY,
+	OUT out_match_ue_ip_prefix CIDR,
+	OUT out_match_gnb_ip_prefix CIDR
 )
 LANGUAGE plpgsql AS $$
 BEGIN
 	SELECT uuid, type_uplink, enabled, action_next_hop,
 		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
 		FROM rule
-		INTO uuid, type_uplink, enabled, action_next_hop, action_srh,
-			match_ue_ip_prefix, match_gnb_ip_prefix;
+		INTO out_uuid, out_type_uplink, out_enabled, out_action_next_hop, out_action_srh,
+			out_match_ue_ip_prefix, out_match_gnb_ip_prefix;
 END;$$;
