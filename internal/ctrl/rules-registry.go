@@ -118,6 +118,7 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 	if err != nil {
 		log.Printf("Could not insert rule in the database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to insert rule"})
+		return
 	}
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
 	c.JSON(http.StatusCreated, rule)

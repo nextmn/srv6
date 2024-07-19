@@ -29,7 +29,7 @@ CREATE OR REPLACE PROCEDURE insert_uplink_rule(
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, match_gnb_ip_prefix, action_next_hop, action_srh)
-		VALUES(TRUE, enabled, ue_ip_prefix, gnb_ip_prefix, next_hop, srh) RETURNING uuid INTO uuid;
+		VALUES(TRUE, enabled, ue_ip_prefix, gnb_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE insert_downlink_rule(
@@ -40,7 +40,7 @@ CREATE OR REPLACE PROCEDURE insert_downlink_rule(
 LANGUAGE plpgsql AS $$
 BEGIN
 	INSERT INTO rule(type_uplink, enabled, match_ue_ip_prefix, action_next_hop, action_srh)
-		VALUES(FALSE, enabled, ue_ip_prefix, next_hop, srh) RETURNING uuid INTO uuid;
+		VALUES(FALSE, enabled, ue_ip_prefix, next_hop, srh) RETURNING rule(uuid) INTO uuid;
 END;$$;
 
 
