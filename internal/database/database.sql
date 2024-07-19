@@ -66,7 +66,7 @@ CREATE OR REPLACE PROCEDURE delete_rule(
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	DELETE FROM rule WHERE uuid = rule_id
+	DELETE FROM rule WHERE uuid = rule_id;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE get_uplink_action(
@@ -79,8 +79,8 @@ BEGIN
 		WHERE (uplink_gtp4.uplink_teid = uplink_teid
 			AND uplink_gtp4.srgw_ip = srgw_ip
 			AND uplink_gtp4.gnb_ip = gnb_ip
-			AND rule.uuid = uplink_gtp4.action_uuid
-		INTO (action_next_hop, action_srh);
+			AND rule.uuid = uplink_gtp4.action_uuid)
+		INTO action_next_hop, action_srh;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE set_uplink_action(
@@ -94,7 +94,7 @@ BEGIN
 	SELECT uuid, action_next_hop, action_srh FROM rule
 		WHERE (type_uplink = TRUE AND enabled = TRUE
 			AND gnb_ip << match_gnb_ip_prefix AND ue_ip << match_ue_ip_prefix)
-		INTO (action_uuid, action_next_hop, action_srh);
+		INTO action_uuid, action_next_hop, action_srh;
 	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, action_uuid)
 		VALUES(uplink_teid, srgw_ip, gnb_ip, action_uuid);
 END;$$;
@@ -108,8 +108,9 @@ BEGIN
 	SELECT rule.action_next_hop, rule.action_srh FROM rule
 		WHERE (type_uplink = FALSE AND enabled = TRUE
 			AND ue_ip << match_ue_ip_prefix)
-		INTO (action_next_hop, action_srh);
+		INTO action_next_hop, action_srh;
 END;$$;
+
 CREATE OR REPLACE PROCEDURE get_rule(
 	IN uuid UUID,
 	OUT type_uplink BOOL,
@@ -125,9 +126,10 @@ BEGIN
 		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
 		FROM rule
 		WHERE (rule.uuid = uuid)
-		INTO (type_uplink, enabled, action_next_hop, action_srh,
-			match_ue_ip_prefix, match_gnb_ip_prefix);
+		INTO type_uplink, enabled, action_next_hop, action_srh,
+			match_ue_ip_prefix, match_gnb_ip_prefix;
 END;$$;
+
 CREATE OR REPLACE PROCEDURE get_all_rules(
 	OUT uuid UUID,
 	OUT type_uplink BOOL,
@@ -142,6 +144,6 @@ BEGIN
 	SELECT uuid, type_uplink, enabled, action_next_hop,
 		action_srh, match_ue_ip_prefix, match_gnb_ip_prefix
 		FROM rule
-		INTO (uuid, type_uplink, enabled, action_next_hop, action_srh,
-			match_ue_ip_prefix, match_gnb_ip_prefix);
+		INTO uuid, type_uplink, enabled, action_next_hop, action_srh,
+			match_ue_ip_prefix, match_gnb_ip_prefix;
 END;$$;
