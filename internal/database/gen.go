@@ -12,6 +12,22 @@ import (
 	"strings"
 )
 
+type StateParser int
+
+const (
+	StateInit StateParser = iota
+	StateCheckProcedure
+	StateCheckFunction
+	StateCheckNbArgs
+)
+
+type StateLine int
+
+const (
+	StateLineRead StateLine = iota
+	StateLineEnd
+)
+
 func main() {
 	if len(os.Args) < 2 {
 		panic(fmt.Errorf("Missing SQL file as argument"))
@@ -56,65 +72,58 @@ func main() {
 	}
 	defer fr.Close()
 	scanner := bufio.NewScanner(fr)
-	type State int
-	const (
-		StateInit State = iota
-		StatePName
-		StateFName
-	)
-	state := StateInit
+	stateParser := StateInit
 	nb_in := 0
 	nb_out := 0
 	for scanner.Scan() {
+		stateLine := StateLineRead
 		line := scanner.Text()
-		switch state {
-		case StateInit:
-			psuffix, ok := strings.CutPrefix(line, "CREATE OR REPLACE PROCEDURE ")
-			if !ok {
+		for stateLine == StateLineRead {
+			switch stateParser {
+			case StateInit:
+				nb_in = 0
+				nb_out = 0
+				stateParser = StateCheckProcedure
+			case StateCheckProcedure:
+				psuffix, ok := strings.CutPrefix(line, "CREATE OR REPLACE PROCEDURE ")
+				if !ok {
+					stateParser = StateCheckFunction
+					continue
+				}
+				psplit := strings.Split(psuffix, "(")
+				pname := psplit[0]
+				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": procedureOrFunction{is_procedure: true, ", pname)); err != nil {
+					panic(err)
+				}
+				stateParser = StateCheckNbArgs
+			case StateCheckFunction:
 				fsuffix, ok := strings.CutPrefix(line, "CREATE OR REPLACE FUNCTION ")
 				if !ok {
+					stateParser = StateInit
+					stateLine = StateLineEnd
 					continue
 				}
 				psplit := strings.Split(fsuffix, "(")
 				pname := psplit[0]
-				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": ", pname)); err != nil {
+				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": procedureOrFunction{is_procedure: false, ", pname)); err != nil {
 					panic(err)
 				}
-				state = StateFName
-			} else {
-				psplit := strings.Split(psuffix, "(")
-				pname := psplit[0]
-				if _, err = f.WriteString(fmt.Sprintf("\t\"%s\": ", pname)); err != nil {
-					panic(err)
-				}
-				state = StatePName
-			}
-			if strings.HasSuffix(line, ")") {
+				stateParser = StateCheckNbArgs
+			case StateCheckNbArgs:
 				// we assume argmode is always given
 				nb_out += strings.Count(line, "OUT ")
 				nb_in += strings.Count(line, "IN ")
-				if _, err = f.WriteString(fmt.Sprintf("procedureOrFunction{num_in: %d, num_out: %d, is_procedure: %t},\n", nb_in, nb_out, (state == StatePName))); err != nil {
-					panic(err)
+				stateLine = StateLineEnd
+				if strings.HasSuffix(line, ")") {
+					if _, err = f.WriteString(fmt.Sprintf("num_in: %d, num_out: %d},\n", nb_in, nb_out)); err != nil {
+						panic(err)
+					}
+					stateParser = StateInit
 				}
-				state = StateInit
-				nb_in = 0
-				nb_out = 0
-			}
-		case StatePName, StateFName:
-			// we assume argmode is always given
-			nb_out += strings.Count(line, "OUT ")
-			nb_in += strings.Count(line, "IN ")
-			if strings.HasSuffix(line, ")") {
-				if _, err = f.WriteString(fmt.Sprintf("procedureOrFunction{num_in: %d, num_out: %d, is_procedure: %t},\n", nb_in, nb_out, (state == StatePName))); err != nil {
-					panic(err)
-				}
-				state = StateInit
-				nb_in = 0
-				nb_out = 0
-			}
 
-		default:
-			panic("Unknown state")
+			default:
+				panic("Unknown state")
+			}
 		}
 	}
 	if _, err = f.WriteString("}\n"); err != nil {

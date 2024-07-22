@@ -13,14 +13,14 @@ type procedureOrFunction struct {
 }
 
 var procedures = map[string]procedureOrFunction{
-	"insert_uplink_rule": procedureOrFunction{num_in: 5, num_out: 1, is_procedure: true},
-	"insert_downlink_rule": procedureOrFunction{num_in: 4, num_out: 1, is_procedure: true},
-	"enable_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
-	"disable_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
-	"delete_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: true},
-	"get_uplink_action": procedureOrFunction{num_in: 3, num_out: 2, is_procedure: true},
-	"set_uplink_action": procedureOrFunction{num_in: 4, num_out: 2, is_procedure: true},
-	"get_downlink_action": procedureOrFunction{num_in: 1, num_out: 2, is_procedure: true},
-	"get_rule": procedureOrFunction{num_in: 1, num_out: 0, is_procedure: false},
-	"get_all_rules": procedureOrFunction{num_in: 0, num_out: 0, is_procedure: false},
+	"insert_uplink_rule": procedureOrFunction{is_procedure: true, num_in: 5, num_out: 1},
+	"insert_downlink_rule": procedureOrFunction{is_procedure: true, num_in: 4, num_out: 1},
+	"enable_rule": procedureOrFunction{is_procedure: true, num_in: 1, num_out: 0},
+	"disable_rule": procedureOrFunction{is_procedure: true, num_in: 1, num_out: 0},
+	"delete_rule": procedureOrFunction{is_procedure: true, num_in: 1, num_out: 0},
+	"get_uplink_action": procedureOrFunction{is_procedure: true, num_in: 3, num_out: 2},
+	"set_uplink_action": procedureOrFunction{is_procedure: true, num_in: 4, num_out: 2},
+	"get_downlink_action": procedureOrFunction{is_procedure: true, num_in: 1, num_out: 2},
+	"get_rule": procedureOrFunction{is_procedure: false, num_in: 1, num_out: 0},
+	"get_all_rules": procedureOrFunction{is_procedure: false, num_in: 0, num_out: 0},
 }
