@@ -5,11 +5,12 @@
 package database_api
 
 import (
+	"context"
 	"net/netip"
 
 	"github.com/nextmn/json-api/jsonapi"
 )
 
 type Downlink interface {
-	GetDownlinkAction(ueIp netip.Addr) (jsonapi.Action, error)
+	GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (jsonapi.Action, error)
 }

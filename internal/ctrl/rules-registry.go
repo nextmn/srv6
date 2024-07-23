@@ -34,7 +34,7 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	rule, err := rr.db.GetRule(iduuid)
+	rule, err := rr.db.GetRule(c, iduuid)
 	if err != nil {
 		log.Printf("Could not get rule from database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get rule from database"})
@@ -44,7 +44,7 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 }
 
 func (rr *RulesRegistry) GetRules(c *gin.Context) {
-	rules, err := rr.db.GetRules()
+	rules, err := rr.db.GetRules(c)
 	if err != nil {
 		log.Printf("Could not get all rules from database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get all rules from database"})
@@ -61,7 +61,7 @@ func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	err = rr.db.DeleteRule(iduuid)
+	err = rr.db.DeleteRule(c, iduuid)
 	if err != nil {
 		log.Printf("Could not delete rule in the database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not delete rule in the database"})
@@ -78,7 +78,7 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	err = rr.db.EnableRule(iduuid)
+	err = rr.db.EnableRule(c, iduuid)
 	if err != nil {
 		log.Printf("Could not enable rule in the database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not enable rule in the database"})
@@ -96,7 +96,7 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	err = rr.db.DisableRule(iduuid)
+	err = rr.db.DisableRule(c, iduuid)
 	if err != nil {
 		log.Printf("Could not disable rule in the database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not disable rule in the database"})
@@ -114,7 +114,7 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
-	id, err := rr.db.InsertRule(rule)
+	id, err := rr.db.InsertRule(c, rule)
 	if err != nil {
 		log.Printf("Could not insert rule in the database: %s\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to insert rule"})

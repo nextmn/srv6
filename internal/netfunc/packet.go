@@ -5,6 +5,7 @@
 package netfunc
 
 import (
+	"context"
 	"encoding/binary"
 	"fmt"
 	"net/netip"
@@ -85,13 +86,13 @@ func (p *Packet) GetSrcAddr() (netip.Addr, error) {
 }
 
 // Returns the DownlinkAction related to this packet
-func (p *Packet) DownlinkAction(db db_api.Downlink) (json_api.Action, error) {
+func (p *Packet) DownlinkAction(ctx context.Context, db db_api.Downlink) (json_api.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
 		return json_api.Action{}, fmt.Errorf("Malformed packet")
 	}
-	return db.GetDownlinkAction(dst)
+	return db.GetDownlinkAction(ctx, dst)
 }
 
 // Returns the first gopacket.Layer after IPv6 header / extension headers

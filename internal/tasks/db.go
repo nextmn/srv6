@@ -114,8 +114,8 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 		return fmt.Errorf("Could not connect to postgres database after %d attempts: %s", maxAttempts, err)
 	}
 
-	db.db, err = database.NewDatabase(postgres)
-	if err != nil {
+	db.db = database.NewDatabase(postgres)
+	if err := db.db.Init(ctx); err != nil {
 		return err
 	}
 
