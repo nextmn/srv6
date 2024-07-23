@@ -5,6 +5,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -29,7 +30,7 @@ func NewSetup(config *config.SRv6Config) *Setup {
 }
 
 // Add tasks to setup
-func (s *Setup) AddTasks() {
+func (s *Setup) AddTasks(ctx context.Context) {
 	debug := false
 	if s.config.Debug != nil {
 		if *s.config.Debug {
@@ -173,24 +174,11 @@ func (s *Setup) AddTasks() {
 	s.tasks.Register(tasks.NewMultiHook("hook.post.init", postInitHook, "hook.pre.exit", preExitHook))
 }
 
-// Init
-func (s *Setup) Init() error {
-	return s.tasks.RunInit()
-}
-
-// Exit
-func (s *Setup) Exit() {
-	// This function may be called at any time,
-	// and a maximum of exit tasks must be run,
-	// even if previous one resulted in errors.
-	s.tasks.RunExit()
-
-}
-
 // Run
-func (s *Setup) Run() error {
-	if err := s.Init(); err != nil {
+func (s *Setup) Run(ctx context.Context) error {
+	s.AddTasks(ctx)
+	if err := s.tasks.Run(ctx); err != nil {
 		return err
 	}
-	select {}
+	return nil
 }

@@ -5,6 +5,7 @@
 package netfunc
 
 import (
+	"context"
 	"fmt"
 	"net/netip"
 
@@ -61,7 +62,7 @@ func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*mup.MGTP4IPv6SrcFields, error)
 }
 
 // Handle a packet
-func (e EndpointMGTP4E) Handle(packet []byte) ([]byte, error) {
+func (e EndpointMGTP4E) Handle(ctx context.Context, packet []byte) ([]byte, error) {
 	pqt, err := NewIPv6Packet(packet)
 	if err != nil {
 		return nil, err

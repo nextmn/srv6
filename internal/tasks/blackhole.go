@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -26,7 +28,7 @@ func NewTaskBlackhole(name string, table_name string) *TaskBlackhole {
 }
 
 // Create blackhole
-func (t *TaskBlackhole) RunInit() error {
+func (t *TaskBlackhole) RunInit(ctx context.Context) error {
 	if err := t.table.AddDefaultRoutesBlackhole(); err != nil {
 		return err
 	}

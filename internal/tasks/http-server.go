@@ -40,7 +40,7 @@ func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Regis
 }
 
 // Init
-func (t *HttpServerTask) RunInit() error {
+func (t *HttpServerTask) RunInit(ctx context.Context) error {
 	if t.setupRegistry == nil {
 		return fmt.Errorf("Registry is nil")
 	}
@@ -78,7 +78,7 @@ func (t *HttpServerTask) RunInit() error {
 // Exit
 func (t *HttpServerTask) RunExit() error {
 	t.state = false
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second) // context.Background() is already Done()
 	defer cancel()
 	if err := t.srv.Shutdown(ctx); err != nil {
 		log.Printf("HTTP Server Shutdown: %s\n", err)

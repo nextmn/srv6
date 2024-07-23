@@ -5,6 +5,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -23,7 +24,6 @@ type TaskNextMNHeadend struct {
 	table      iproute2.Table
 	registry   app_api.Registry
 	iface_name string
-	netfunc    netfunc_api.NetFunc
 	debug      bool
 }
 
@@ -36,13 +36,12 @@ func NewTaskNextMNHeadend(name string, headend *config.Headend, table_name strin
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		iface_name: iface_name,
 		registry:   registry,
-		netfunc:    nil,
 		debug:      debug,
 	}
 }
 
 // Init
-func (t *TaskNextMNHeadend) RunInit() error {
+func (t *TaskNextMNHeadend) RunInit(ctx context.Context) error {
 	// Create and start headend
 	tunIface, ok := t.registry.TunIface(t.iface_name)
 	if !ok {
@@ -56,12 +55,13 @@ func (t *TaskNextMNHeadend) RunInit() error {
 	if err != nil {
 		return err
 	}
+	var n netfunc_api.NetFunc
 	if ep, err := netfunc.NewHeadend(t.headend, ttl, hopLimit, t.debug); err != nil {
 		return err
 	} else {
-		t.netfunc = ep
+		n = ep
 	}
-	t.netfunc.Start(tunIface)
+	go n.Run(ctx, tunIface)
 	// Add route to headend
 	if err := t.table.AddRoute4Tun(t.headend.To, t.iface_name); err != nil {
 		return err
@@ -76,8 +76,6 @@ func (t *TaskNextMNHeadend) RunExit() error {
 	if err := t.table.DelRoute4Tun(t.headend.To, t.iface_name); err != nil {
 		return err
 	}
-	// Stop headend
-	t.netfunc.Stop()
 	t.state = false
 	return nil
 }

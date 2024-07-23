@@ -5,6 +5,7 @@
 package tasks
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -39,7 +40,7 @@ func NewDBTask(name string, registry app_api.Registry) *DBTask {
 }
 
 // Init
-func (db *DBTask) RunInit() error {
+func (db *DBTask) RunInit(ctx context.Context) error {
 	db.state = true
 	// Getting config from environment
 	host, ok := os.LookupEnv("POSTGRES_HOST")
@@ -94,17 +95,19 @@ func (db *DBTask) RunInit() error {
 
 	maxAttempts := 16
 	ok = false
-	for errcnt := 0; errcnt < maxAttempts; errcnt++ {
-		//FIXME: use select and time.After
-		if err := postgres.Ping(); err != nil {
-			// Exponential backoff
-			time.Sleep(100 * (1 << errcnt) * time.Millisecond)
-			if errcnt > 2 {
-				log.Printf("Could not connect to postgres database. Retrying (attempt %d)\n", errcnt)
-			}
-		} else {
+	for errcnt := 0; (errcnt < maxAttempts) && !ok; errcnt++ {
+		if errcnt > 2 {
+			log.Printf("Could not connect to postgres database. Retrying (attempt %d)\n", errcnt)
+		}
+		wait, cancel := context.WithTimeout(ctx, 100*(1<<errcnt*time.Millisecond)) // Exponential backoff
+		if err := postgres.Ping(); err == nil {
 			ok = true
-			break
+			cancel()
+		}
+		select {
+		case <-ctx.Done():
+			break // abort
+		case <-wait.Done():
 		}
 	}
 	if !ok {

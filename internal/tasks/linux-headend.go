@@ -5,6 +5,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/nextmn/srv6/internal/config"
@@ -33,7 +34,7 @@ func NewTaskLinuxHeadend(name string, headend *config.Headend, table_name string
 }
 
 // Init
-func (t *TaskLinuxHeadend) RunInit() error {
+func (t *TaskLinuxHeadend) RunInit(ctx context.Context) error {
 	if t.headend.Policy == nil {
 		return fmt.Errorf("No policy set for this headend")
 	}

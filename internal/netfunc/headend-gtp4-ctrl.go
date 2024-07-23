@@ -5,6 +5,7 @@
 package netfunc
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/netip"
@@ -29,7 +30,7 @@ func NewHeadendGTP4WithCtrl(prefix netip.Prefix, ttl uint8, hopLimit uint8, db d
 }
 
 // Handle a packet
-func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
+func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte, error) {
 	pqt, err := NewIPv4Packet(packet)
 	if err != nil {
 		return nil, err

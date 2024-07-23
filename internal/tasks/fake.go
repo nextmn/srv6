@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 package tasks
 
+import "context"
+
 // FakeTask is a dummy task that do nothing
 type FakeTask struct {
 	WithName
@@ -19,7 +21,7 @@ func NewFakeTask(name string) *FakeTask {
 }
 
 // Init
-func (t *FakeTask) RunInit() error {
+func (t *FakeTask) RunInit(ctx context.Context) error {
 	t.state = true
 	return nil
 }

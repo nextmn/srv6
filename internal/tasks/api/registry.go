@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: MIT
 package tasks_api
 
+import "context"
+
 type Registry interface {
 	Register(task Task)
-	RunInit() error
-	RunExit()
+	Run(ctx context.Context) error
 }
