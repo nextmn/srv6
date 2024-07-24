@@ -83,7 +83,7 @@ BEGIN
 		WHERE (uplink_gtp4.uplink_teid = in_uplink_teid
 			AND uplink_gtp4.srgw_ip = in_srgw_ip
 			AND uplink_gtp4.gnb_ip = in_gnb_ip
-			AND rule.uuid = uplink_gtp4.action_uuid);
+			AND rule.uuid = uplink_gtp4.action_uuid)
 END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE set_uplink_action(
