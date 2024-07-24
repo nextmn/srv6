@@ -29,9 +29,9 @@ func NewRegistry() *Registry {
 // Register a new task
 func (r *Registry) Register(task tasks_api.Task) {
 	logrus.WithFields(logrus.Fields{
-		"name":   task.NameBase(),
-		"status": "registered",
-	}).Info("Task")
+		"task-name":   task.NameBase(),
+		"task-status": "registered",
+	}).Info("Task registration")
 	r.Tasks = append(r.Tasks, task)
 }
 
@@ -48,17 +48,16 @@ func (r *Registry) RunInit(ctx context.Context) error {
 			taskCtx, cancel := context.WithCancel(ctx)
 			r.cancelFuncs = append(r.cancelFuncs, cancel)
 			if err := t.RunInit(taskCtx); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"name":   t.NameInit(),
-					"status": "failure",
-					"error":  err,
-				}).Error("Task")
+				logrus.WithError(err).WithFields(logrus.Fields{
+					"task-name":   t.NameInit(),
+					"task-status": "failure",
+				}).Error("Task runtime failure")
 				return fmt.Errorf("Run init failure")
 			}
 			logrus.WithFields(logrus.Fields{
-				"name":   t.NameInit(),
-				"status": "success",
-			}).Info("Task")
+				"task-name":   t.NameInit(),
+				"task-status": "success",
+			}).Info("Task runtime success")
 		}
 		r.initializedTasks += 1
 	}
@@ -76,16 +75,15 @@ func (r *Registry) RunExit() {
 			continue
 		}
 		if err := t.RunExit(); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"name":   t.NameExit(),
-				"status": "failure",
-				"error":  err,
-			}).Error("Task")
+			logrus.WithError(err).WithFields(logrus.Fields{
+				"task-name":   t.NameExit(),
+				"task-status": "failure",
+			}).Error("Task runtime failure")
 		} else {
 			logrus.WithFields(logrus.Fields{
-				"name":   t.NameExit(),
-				"status": "success",
-			}).Info("Task")
+				"task-name":   t.NameExit(),
+				"task-status": "success",
+			}).Info("Task runtime success")
 		}
 	}
 }

@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
-	"github.com/sirupsen/logrus"
 )
 
 // HookSingle
@@ -41,9 +39,7 @@ func (h SingleHook) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args[0], err)
-		logrus.Error(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args[0], err)
 	}
 	return nil
 }

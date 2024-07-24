@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Run ip command
@@ -19,9 +17,7 @@ func runIP(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		logrus.Error(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
 	}
 	return nil
 }
@@ -33,9 +29,7 @@ func runIPTables(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		logrus.Error(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
 	}
 	return nil
 }
@@ -47,9 +41,7 @@ func runIP6Tables(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		logrus.Error(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
 	}
 	return nil
 }

@@ -71,7 +71,7 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logrus.Error("HTTP Server error: ", err)
+			logrus.WithError(err).Error("HTTP Server error")
 		}
 	}()
 	t.state = true
@@ -84,7 +84,7 @@ func (t *HttpServerTask) RunExit() error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second) // context.Background() is already Done()
 	defer cancel()
 	if err := t.srv.Shutdown(ctx); err != nil {
-		logrus.Info("HTTP Server Shutdown: ", err)
+		logrus.WithError(err).Info("HTTP Server Shutdown")
 	}
 	return nil
 }

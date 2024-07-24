@@ -4,27 +4,51 @@
 // SPDX-License-Identifier: MIT
 package logger
 
-import "github.com/sirupsen/logrus"
+import (
+	"sort"
+	"strings"
+
+	"github.com/sirupsen/logrus"
+)
 
 type logFormatter struct {
 	logrus.TextFormatter
-	prefix []byte
 }
 
 // Customized log formatter
-func NewLogFormatter(prefix string) *logFormatter {
+func newLogFormatter() *logFormatter {
 	return &logFormatter{
 		TextFormatter: logrus.TextFormatter{
 			ForceColors:            true,
 			FullTimestamp:          true,
 			DisableTimestamp:       false,
 			DisableLevelTruncation: true,
+			PadLevelText:           true,
+			SortingFunc: func(keys []string) {
+				sort.Slice(keys, func(i, j int) bool {
+					// returns true if i is before j
+					// error always at the end
+					if keys[j] == "error" {
+						return true
+					}
+					if keys[i] == "error" {
+						return false
+					}
+					// app always at the begin
+					if keys[j] == "app" {
+						return false
+					}
+					if keys[i] == "app" {
+						return true
+					}
+					return strings.Compare(keys[i], keys[j]) == -1
+				})
+			},
 		},
-		prefix: []byte("[" + prefix + "] "),
 	}
 }
 
-func (f *logFormatter) Format(entry *logrus.Entry) ([]byte, error) {
-	l, e := f.TextFormatter.Format(entry)
-	return append(f.prefix, l...), e
+func Init(prefix string) {
+	logrus.SetFormatter(newLogFormatter())
+	logrus.AddHook(newHook(prefix))
 }

@@ -24,11 +24,10 @@ type TaskNextMNHeadendWithCtrl struct {
 	table      iproute2.Table
 	registry   app_api.Registry
 	iface_name string
-	debug      bool
 }
 
 // Create a new TaskNextMNHeadend
-func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadendWithCtrl {
+func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNHeadendWithCtrl {
 	return &TaskNextMNHeadendWithCtrl{
 		WithName:   NewName(name),
 		WithState:  NewState(),
@@ -36,7 +35,6 @@ func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_na
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		iface_name: iface_name,
 		registry:   registry,
-		debug:      debug,
 	}
 }
 
@@ -56,7 +54,7 @@ func (t *TaskNextMNHeadendWithCtrl) RunInit(ctx context.Context) error {
 		return err
 	}
 	var n netfunc_api.NetFunc
-	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, ttl, hopLimit, t.debug, t.registry); err != nil {
+	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, ttl, hopLimit, t.registry); err != nil {
 		return err
 	} else {
 		n = ep

@@ -24,11 +24,10 @@ type TaskNextMNEndpoint struct {
 	table      iproute2.Table
 	registry   app_api.Registry
 	iface_name string
-	debug      bool
 }
 
 // Create a new TaskNextMNEndpoint
-func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNEndpoint {
+func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNEndpoint {
 	return &TaskNextMNEndpoint{
 		WithName:   NewName(name),
 		WithState:  NewState(),
@@ -36,7 +35,6 @@ func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name st
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		iface_name: iface_name,
 		registry:   registry,
-		debug:      debug,
 	}
 }
 
@@ -56,7 +54,7 @@ func (t *TaskNextMNEndpoint) RunInit(ctx context.Context) error {
 		return err
 	}
 	var n netfunc_api.NetFunc
-	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit, t.debug); err != nil {
+	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit); err != nil {
 		return err
 	} else {
 		n = ep

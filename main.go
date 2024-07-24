@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	logrus.SetFormatter(logger.NewLogFormatter("nextmn-SRv6"))
+	logger.Init("NextMN-Srv6")
 	var config_file string
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
@@ -43,12 +43,14 @@ func main() {
 		Action: func(c *cli.Context) error {
 			conf, err := config.ParseConf(config_file)
 			if err != nil {
-				logrus.Fatal("Error loading config, exiting…:", err)
-				os.Exit(1)
+				logrus.WithContext(ctx).WithError(err).Fatal("Error loading config, exiting…")
+			}
+			if conf.Logger != nil {
+				logrus.SetLevel(conf.Logger.Level)
 			}
 
 			if err := app.NewSetup(conf).Run(ctx); err != nil {
-				logrus.Fatal("Error while running, exiting…:", err)
+				logrus.WithError(err).Fatal("Error while running, exiting…")
 			}
 			return nil
 		},

@@ -12,7 +12,7 @@ import (
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
-func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8, debug bool) (netfunc_api.NetFunc, error) {
+func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8) (netfunc_api.NetFunc, error) {
 	p, err := netip.ParsePrefix(he.To)
 	if err != nil {
 		return nil, err
@@ -31,7 +31,7 @@ func NewHeadend(he *config.Headend, ttl uint8, hopLimit uint8, debug bool) (netf
 			return nil, err
 		}
 
-		return NewNetFunc(NewHeadendGTP4(p, srcAddressPrefix, policy, ttl, hopLimit), debug), nil
+		return NewNetFunc(NewHeadendGTP4(p, srcAddressPrefix, policy, ttl, hopLimit)), nil
 	default:
 		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
 	}

@@ -15,19 +15,13 @@ import (
 )
 
 type NetFunc struct {
-	debug   bool
 	handler netfunc_api.Handler
 }
 
-func NewNetFunc(handler netfunc_api.Handler, debug bool) *NetFunc {
+func NewNetFunc(handler netfunc_api.Handler) *NetFunc {
 	return &NetFunc{
-		debug:   debug,
 		handler: handler,
 	}
-}
-
-func (n NetFunc) Debug() bool {
-	return n.debug
 }
 
 // Run the NetFunc goroutine
@@ -50,7 +44,7 @@ func (n *NetFunc) Run(ctx context.Context, tunIface *iproute2.TunIface) error {
 					if out, err := n.handler.Handle(ctx, packet[:nb]); err == nil {
 						iface.Write(out)
 					} else {
-						logrus.Debug(err)
+						logrus.WithError(err).Debug("Packet dropped")
 					}
 				}(ctx, tunIface)
 			}
