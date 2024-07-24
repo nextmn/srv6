@@ -5,6 +5,9 @@ max_line_length = 140
 [sqlfluff:rules:references.special_chars]
 ignore_words = uuid-ossp
 
+[sqlfluff:convention.terminator]
+require_final_semicolor = True
+
 
 [sqlfluff:indentation]
 indent_unit = tab

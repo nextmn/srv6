@@ -33,3 +33,5 @@ jobs:
           run: sudo apt-get install -qy make git && make dev-install
         - name: Run SQL lint and check generated files
           run: make lint
+        - name: Run postgres
+          run: make test-postgres
