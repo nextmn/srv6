@@ -1,0 +1,24 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Postgres
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - '**.sql'
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - '**.sql'
+  workflow_dispatch:
+jobs:
+    sql:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+        - name: Install depends
+          run: sudo apt-get install -qy make docker
+        - name: Run postgres
+          run: make test-postgres
