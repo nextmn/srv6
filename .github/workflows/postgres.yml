@@ -7,10 +7,12 @@ on:
     branches: [ "master" ]
     paths:
       - '**.sql'
+      - 'Makefile'
   pull_request:
     branches: [ "master" ]
     paths:
       - '**.sql'
+      - 'Makefile'
   workflow_dispatch:
 jobs:
     sql:
