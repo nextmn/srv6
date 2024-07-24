@@ -69,19 +69,22 @@ BEGIN
 	DELETE FROM rule WHERE uuid = in_uuid;
 END;$$;
 
-CREATE OR REPLACE PROCEDURE get_uplink_action(
-	IN in_uplink_teid INTEGER, IN in_srgw_ip INET, IN in_gnb_ip INET,
-	OUT out_action_next_hop INET, OUT out_action_srh INET ARRAY
+CREATE OR REPLACE FUNCTION get_uplink_action(
+	IN in_uplink_teid INTEGER, IN in_srgw_ip INET, IN in_gnb_ip INET
 )
-LANGUAGE plpgsql AS $$
+RETURNS TABLE (
+	t_action_next_hop INET,
+	t_action_srh INET ARRAY
+)
+AS $$
 BEGIN
-	SELECT rule.action_next_hop, rule.action_srh FROM uplink_gtp4, rule
+	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
+		FROM uplink_gtp4, rule
 		WHERE (uplink_gtp4.uplink_teid = in_uplink_teid
 			AND uplink_gtp4.srgw_ip = in_srgw_ip
 			AND uplink_gtp4.gnb_ip = in_gnb_ip
 			AND rule.uuid = uplink_gtp4.action_uuid)
-		INTO out_action_next_hop, out_action_srh;
-END;$$;
+END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE PROCEDURE set_uplink_action(
 	IN in_uplink_teid INTEGER, IN in_srgw_ip INET, IN in_gnb_ip INET, IN in_ue_ip_address INET,
@@ -94,22 +97,29 @@ BEGIN
 	SELECT uuid, action_next_hop, action_srh FROM rule
 		WHERE (rule.type_uplink = TRUE AND rule.enabled = TRUE
 			AND in_gnb_ip << rule.match_gnb_ip_prefix AND in_ue_ip << rule.match_ue_ip_prefix)
-		INTO var_uuid, out_action_next_hop, out_action_srh;
+		INTO var_uuid, out_action_next_hop, out_action_srh
+		LIMIT 1;
+	IF not FOUND THEN
+		RAISE EXCEPTION 'No enabled rule could be found for this set of (srgw, gnb, ue)';
+	END IF;
 	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, var_uuid)
 		VALUES(in_uplink_teid, in_srgw_ip, in_gnb_ip, var_uuid);
 END;$$;
 
-CREATE OR REPLACE PROCEDURE get_downlink_action(
-	IN in_ue_ip_address INET,
-	OUT out_action_next_hop INET, OUT out_action_srh INET ARRAY
+CREATE OR REPLACE FUNCTION get_downlink_action(
+	IN in_ue_ip_address INET
 )
-LANGUAGE plpgsql AS $$
+RETURNS TABLE (
+	t_action_next_hop INET,
+	t_action_srh INET ARRAY
+)
+AS $$
 BEGIN
-	SELECT rule.action_next_hop, rule.action_srh FROM rule
+	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
+		FROM rule
 		WHERE (rule.type_uplink = FALSE AND rule.enabled = TRUE
-			AND in_ue_ip << match_ue_ip_prefix)
-		INTO out_action_next_hop, out_action_srh;
-END;$$;
+			AND in_ue_ip << match_ue_ip_prefix);
+END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_rule(
 	IN in_uuid UUID
@@ -127,9 +137,7 @@ BEGIN
 	RETURN QUERY SELECT type_uplink AS "t_type_uplink", enabled AS "t_enabled", action_next_hop AS "t_action_next_hop",
 		action_srh AS "t_action_srh", match_ue_ip_prefix AS "t_match_ue_ip_prefix", match_gnb_ip_prefix AS "t_match_gnb_ip_prefix"
 		FROM rule
-		WHERE (rule.uuid = in_uuid)
-		INTO out_type_uplink, out_enabled, out_action_next_hop, out_action_srh,
-			out_match_ue_ip_prefix, out_match_gnb_ip_prefix;
+		WHERE (rule.uuid = in_uuid);
 END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_all_rules()
