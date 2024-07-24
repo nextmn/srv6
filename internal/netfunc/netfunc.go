@@ -6,10 +6,12 @@ package netfunc
 
 import (
 	"context"
-	"log"
+
+	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 
 	"github.com/nextmn/srv6/internal/iproute2"
-	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
+
+	"github.com/sirupsen/logrus"
 )
 
 type NetFunc struct {
@@ -47,8 +49,8 @@ func (n *NetFunc) Run(ctx context.Context, tunIface *iproute2.TunIface) error {
 				go func(ctx context.Context, iface *iproute2.TunIface) {
 					if out, err := n.handler.Handle(ctx, packet[:nb]); err == nil {
 						iface.Write(out)
-					} else if n.Debug() {
-						log.Println(err)
+					} else {
+						logrus.Debug(err)
 					}
 				}(ctx, tunIface)
 			}

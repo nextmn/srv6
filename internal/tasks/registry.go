@@ -7,9 +7,9 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"log"
 
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
+	"github.com/sirupsen/logrus"
 )
 
 type Registry struct {
@@ -28,7 +28,10 @@ func NewRegistry() *Registry {
 
 // Register a new task
 func (r *Registry) Register(task tasks_api.Task) {
-	log.Printf("Task %s registered\n", task.NameBase())
+	logrus.WithFields(logrus.Fields{
+		"name":   task.NameBase(),
+		"status": "registered",
+	}).Info("Task")
 	r.Tasks = append(r.Tasks, task)
 }
 
@@ -45,10 +48,17 @@ func (r *Registry) RunInit(ctx context.Context) error {
 			taskCtx, cancel := context.WithCancel(ctx)
 			r.cancelFuncs = append(r.cancelFuncs, cancel)
 			if err := t.RunInit(taskCtx); err != nil {
-				log.Printf("[Failed] %s: %s\n", t.NameInit(), err)
+				logrus.WithFields(logrus.Fields{
+					"name":   t.NameInit(),
+					"status": "failure",
+					"error":  err,
+				}).Error("Task")
 				return fmt.Errorf("Run init failure")
 			}
-			log.Printf("[OK] %s\n", t.NameInit())
+			logrus.WithFields(logrus.Fields{
+				"name":   t.NameInit(),
+				"status": "success",
+			}).Info("Task")
 		}
 		r.initializedTasks += 1
 	}
@@ -66,9 +76,16 @@ func (r *Registry) RunExit() {
 			continue
 		}
 		if err := t.RunExit(); err != nil {
-			log.Printf("[Failed] %s: %s\n", t.NameExit(), err)
+			logrus.WithFields(logrus.Fields{
+				"name":   t.NameExit(),
+				"status": "failure",
+				"error":  err,
+			}).Error("Task")
 		} else {
-			log.Printf("[OK] %s\n", t.NameExit())
+			logrus.WithFields(logrus.Fields{
+				"name":   t.NameExit(),
+				"status": "success",
+			}).Info("Task")
 		}
 	}
 }

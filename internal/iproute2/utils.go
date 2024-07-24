@@ -6,9 +6,10 @@ package iproute2
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Run ip command
@@ -19,7 +20,7 @@ func runIP(args ...string) error {
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
+		logrus.Error(errLog)
 		return err
 	}
 	return nil
@@ -33,7 +34,7 @@ func runIPTables(args ...string) error {
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
+		logrus.Error(errLog)
 		return err
 	}
 	return nil
@@ -47,7 +48,7 @@ func runIP6Tables(args ...string) error {
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
+		logrus.Error(errLog)
 		return err
 	}
 	return nil

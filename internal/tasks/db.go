@@ -8,13 +8,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
 	_ "github.com/lib/pq"
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/database"
+	"github.com/sirupsen/logrus"
 )
 
 // DBTask initializes the database
@@ -96,14 +96,12 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 	maxAttempts := 16
 	ok = false
 	for errcnt := 0; (errcnt < maxAttempts) && !ok; errcnt++ {
-		if errcnt > 2 {
-			log.Printf("Could not connect to postgres database. Retrying (attempt %d)\n", errcnt)
-		}
 		wait, cancel := context.WithTimeout(ctx, 100*(1<<errcnt*time.Millisecond)) // Exponential backoff
 		if err := postgres.Ping(); err == nil {
 			ok = true
 			cancel()
 		}
+		logrus.WithFields(logrus.Fields{"attempt": errcnt}).Warn("Could not connect to postgres database. Retrying.")
 		select {
 		case <-ctx.Done():
 			break // abort

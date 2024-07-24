@@ -6,9 +6,10 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
+
+	"github.com/sirupsen/logrus"
 )
 
 // HookSingle
@@ -41,7 +42,7 @@ func (h SingleHook) Run() error {
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
 		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args[0], err)
-		log.Println(errLog)
+		logrus.Error(errLog)
 		return err
 	}
 	return nil

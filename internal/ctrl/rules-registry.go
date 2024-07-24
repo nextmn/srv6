@@ -6,13 +6,13 @@ package ctrl
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/database"
+	"github.com/sirupsen/logrus"
 )
 
 // A RulesRegistry contains rules for an headend
@@ -36,7 +36,7 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	rule, err := rr.db.GetRule(c, iduuid)
 	if err != nil {
-		log.Printf("Could not get rule from database: %s\n", err)
+		logrus.Error("Could not get rule from database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get rule from database"})
 		return
 	}
@@ -46,7 +46,7 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 func (rr *RulesRegistry) GetRules(c *gin.Context) {
 	rules, err := rr.db.GetRules(c)
 	if err != nil {
-		log.Printf("Could not get all rules from database: %s\n", err)
+		logrus.Error("Could not get all rules from database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get all rules from database"})
 		return
 	}
@@ -63,7 +63,7 @@ func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.DeleteRule(c, iduuid)
 	if err != nil {
-		log.Printf("Could not delete rule in the database: %s\n", err)
+		logrus.Error("Could not delete rule in the database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not delete rule in the database"})
 		return
 	}
@@ -80,7 +80,7 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.EnableRule(c, iduuid)
 	if err != nil {
-		log.Printf("Could not enable rule in the database: %s\n", err)
+		logrus.Error("Could not enable rule in the database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not enable rule in the database"})
 		return
 		//TODO: check if rule not found
@@ -98,7 +98,7 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.DisableRule(c, iduuid)
 	if err != nil {
-		log.Printf("Could not disable rule in the database: %s\n", err)
+		logrus.Error("Could not disable rule in the database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not disable rule in the database"})
 		return
 		//TODO: check if rule not found
@@ -116,7 +116,7 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 	c.Header("Cache-Control", "no-cache")
 	id, err := rr.db.InsertRule(c, rule)
 	if err != nil {
-		log.Printf("Could not insert rule in the database: %s\n", err)
+		logrus.Error("Could not insert rule in the database: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to insert rule"})
 		return
 	}

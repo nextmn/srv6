@@ -7,14 +7,16 @@ package tasks
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	app_api "github.com/nextmn/srv6/internal/app/api"
-	ctrl "github.com/nextmn/srv6/internal/ctrl"
 	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
+	"github.com/sirupsen/logrus"
+
+	"github.com/nextmn/srv6/internal/ctrl"
+
+	"github.com/gin-gonic/gin"
 )
 
 // HttpServerTask starts an http server
@@ -50,6 +52,7 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 	}
 	rr := ctrl.NewRulesRegistry(db)
 	t.rulesRegistryHTTP = rr
+	// TODO:  gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.GET("/status", func(c *gin.Context) {
 		c.Header("Cache-Control", "no-cache")
@@ -68,7 +71,7 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 
 	go func() {
 		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Printf("listen: %s\n", err)
+			logrus.Error("HTTP Server error: ", err)
 		}
 	}()
 	t.state = true
@@ -81,7 +84,7 @@ func (t *HttpServerTask) RunExit() error {
 	ctx, cancel := context.WithTimeout(context.TODO(), 1*time.Second) // context.Background() is already Done()
 	defer cancel()
 	if err := t.srv.Shutdown(ctx); err != nil {
-		log.Printf("HTTP Server Shutdown: %s\n", err)
+		logrus.Info("HTTP Server Shutdown: ", err)
 	}
 	return nil
 }

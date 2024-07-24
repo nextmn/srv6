@@ -6,18 +6,20 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	srv6_app "github.com/nextmn/srv6/internal/app"
-	srv6_config "github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/app"
+	"github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/logger"
+
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 )
 
 func main() {
-	log.SetPrefix("[nextmn-SRv6] ")
+	logrus.SetFormatter(logger.NewLogFormatter("nextmn-SRv6"))
 	var config_file string
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 	defer cancel()
@@ -39,20 +41,19 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			conf, err := srv6_config.ParseConf(config_file)
+			conf, err := config.ParseConf(config_file)
 			if err != nil {
-				log.Println("Error loading config, exiting…:", err)
+				logrus.Fatal("Error loading config, exiting…:", err)
 				os.Exit(1)
 			}
 
-			if err := srv6_app.NewSetup(conf).Run(ctx); err != nil {
-				log.Println("Error while running, exiting…:", err)
-				os.Exit(2)
+			if err := app.NewSetup(conf).Run(ctx); err != nil {
+				logrus.Fatal("Error while running, exiting…:", err)
 			}
 			return nil
 		},
 	}
 	if err := app.Run(os.Args); err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 }
