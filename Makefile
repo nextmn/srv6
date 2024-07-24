@@ -43,7 +43,7 @@ lint:
 	@go generate ./... && git status --porcelain=v2 | { ! { grep _gen.go > /dev/null && echo "Generated files were not up to date."; } } && echo "Generated files are up to date"
 
 test-postgres:
-	@docker run --name test-nextmn-srv6 -e POSTGRES_PASSWORD=postgres -v ./internal/database/database.sql:/docker-entrypoint-initdb.d/database.sql:ro postgres 2>/dev/stdout| grep -m 1 'PostgreSQL init process complete' || echo "Could not initialize postgres" && $(MAKE) stop-postgres
+	@docker run --name test-nextmn-srv6 -e POSTGRES_PASSWORD=postgres -v ./internal/database/database.sql:/docker-entrypoint-initdb.d/database.sql:ro postgres 2>/dev/stdout| grep -m 1 'PostgreSQL init process complete' || { echo "Could not initialize postgres" ; $(MAKE) stop-postgres ; exit 1 ; } && $(MAKE) stop-postgres
 stop-postgres:
 	@echo "Shutting down postgres"
 	@docker stop test-nextmn-srv6 >/dev/null
