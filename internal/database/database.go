@@ -62,7 +62,7 @@ func (db *Database) Init(ctx context.Context) error {
 		if v.is_procedure {
 			l[k] = fmt.Sprintf("CALL %s(%s)", k, strargs)
 		} else {
-			l[k] = fmt.Sprintf("SELECT %s(%s)", k, strargs)
+			l[k] = fmt.Sprintf("SELECT * FROM %s(%s)", k, strargs)
 		}
 
 	}
