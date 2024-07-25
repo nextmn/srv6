@@ -6,12 +6,12 @@ on:
   push:
     branches: [ "master" ]
     paths:
-      - '**.sql'
+      - '**/*.sql'
       - 'Makefile'
   pull_request:
     branches: [ "master" ]
     paths:
-      - '**.sql'
+      - '**/*.sql'
       - 'Makefile'
   workflow_dispatch:
 jobs:

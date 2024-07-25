@@ -30,14 +30,15 @@ func (rr *RulesRegistry) GetRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "bad uuid", "error": fmt.Sprintf("%v", err)})
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
 	rule, err := rr.db.GetRule(c, iduuid)
 	if err != nil {
 		logrus.WithError(err).Error("Could not get rule from database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get rule from database"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not get rule from database", Error: err})
 		return
 	}
 	c.JSON(http.StatusOK, rule)
@@ -47,7 +48,7 @@ func (rr *RulesRegistry) GetRules(c *gin.Context) {
 	rules, err := rr.db.GetRules(c)
 	if err != nil {
 		logrus.WithError(err).Error("Could not get all rules from database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not get all rules from database"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not get all rules from database", Error: err})
 		return
 	}
 	c.JSON(http.StatusOK, rules)
@@ -57,14 +58,15 @@ func (rr *RulesRegistry) DeleteRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "bad uuid", "error": fmt.Sprintf("%v", err)})
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.DeleteRule(c, iduuid)
 	if err != nil {
 		logrus.WithError(err).Error("Could not delete rule in the database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not delete rule in the database"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not delete rule in the database", Error: err})
 		return
 	}
 	c.Status(http.StatusNoContent) // successful deletion
@@ -74,14 +76,15 @@ func (rr *RulesRegistry) EnableRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "bad uuid", "error": fmt.Sprintf("%v", err)})
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.EnableRule(c, iduuid)
 	if err != nil {
 		logrus.WithError(err).Error("Could not enable rule in the database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not enable rule in the database"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not enable rule in the database", Error: err})
 		return
 		//TODO: check if rule not found
 	}
@@ -92,14 +95,15 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 	id := c.Param("uuid")
 	iduuid, err := uuid.FromString(id)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "bad uuid", "error": fmt.Sprintf("%v", err)})
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
 	err = rr.db.DisableRule(c, iduuid)
 	if err != nil {
 		logrus.WithError(err).Error("Could not disable rule in the database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "could not disable rule in the database"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not disable rule in the database", Error: err})
 		return
 		//TODO: check if rule not found
 	}
@@ -110,14 +114,15 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 func (rr *RulesRegistry) PostRule(c *gin.Context) {
 	var rule jsonapi.Rule
 	if err := c.BindJSON(&rule); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "could not deserialize", "error": fmt.Sprintf("%v", err)})
+		logrus.WithError(err).Error("could not deserialize")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "could not deserialize", Error: err})
 		return
 	}
 	c.Header("Cache-Control", "no-cache")
 	id, err := rr.db.InsertRule(c, rule)
 	if err != nil {
 		logrus.WithError(err).Error("Could not insert rule in the database")
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to insert rule"})
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "failed to insert rule", Error: err})
 		return
 	}
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
