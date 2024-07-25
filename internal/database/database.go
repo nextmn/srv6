@@ -110,14 +110,14 @@ func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID,
 }
 
 func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, error) {
-	var enabled bool
 	var type_uplink bool
+	var enabled bool
 	var action_next_hop string
 	var action_srh []string
 	var match_ue_ip_prefix string
 	var match_gnb_ip_prefix string
 	if stmt, ok := db.stmt["get_rule"]; ok {
-		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&enabled, &type_uplink, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
 		if err != nil {
 			return jsonapi.Rule{}, err
 		}
@@ -167,8 +167,8 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, 
 
 func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 	var uuid uuid.UUID
-	var enabled bool
 	var type_uplink bool
+	var enabled bool
 	var action_next_hop string
 	var action_srh []string
 	var match_ue_ip_prefix string
@@ -185,7 +185,7 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 				// avoid looping if no longer necessary
 				return jsonapi.RuleMap{}, ctx.Err()
 			default:
-				err := rows.Scan(&uuid, &enabled, &type_uplink, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+				err := rows.Scan(&uuid, &type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
 				if err != nil {
 					return m, err
 				}
