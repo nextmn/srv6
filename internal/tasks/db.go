@@ -97,6 +97,7 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 	ok = false
 	for errcnt := 0; (errcnt < maxAttempts) && !ok; errcnt++ {
 		wait, cancel := context.WithTimeout(ctx, 100*(1<<errcnt*time.Millisecond)) // Exponential backoff
+		defer cancel()
 		if err := postgres.Ping(); err == nil {
 			ok = true
 			cancel()

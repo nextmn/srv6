@@ -6,7 +6,6 @@ package netfunc
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/netip"
 
@@ -88,6 +87,4 @@ func (h HeadendEncapsWithCtrl) Handle(ctx context.Context, packet []byte) ([]byt
 		// Forward along the shortest path to B
 		return buf.Bytes(), nil
 	}
-
-	return nil, fmt.Errorf("Not yet implemented")
 }
