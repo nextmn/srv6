@@ -1,3 +1,4 @@
 nextmn-srv6
 srv6
 !bash-completion/completions/nextmn-srv6
+env

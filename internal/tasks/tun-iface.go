@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -28,7 +30,7 @@ func NewTaskTunIface(name string, iface_name string, registry app_api.Registry) 
 }
 
 // Create and set up the Iface
-func (t *TaskTunIface) RunInit() error {
+func (t *TaskTunIface) RunInit(ctx context.Context) error {
 	if err := t.iface.CreateAndUp(); err != nil {
 		return err
 	}

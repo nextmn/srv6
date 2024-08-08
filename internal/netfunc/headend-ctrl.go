@@ -13,33 +13,29 @@ import (
 	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 )
 
-func NewHeadendWithCtrl(he *config.Headend, ttl uint8, hopLimit uint8, debug bool, setup_registry app_api.Registry) (netfunc_api.NetFunc, error) {
+func NewHeadendWithCtrl(he *config.Headend, ttl uint8, hopLimit uint8, setup_registry app_api.Registry) (netfunc_api.NetFunc, error) {
 	p, err := netip.ParsePrefix(he.To)
 	if err != nil {
 		return nil, err
 	}
 	switch he.Behavior {
 	case config.H_Encaps:
-		rr, ok := setup_registry.RulesRegistry()
+		db, ok := setup_registry.DB()
 		if !ok {
-			return nil, fmt.Errorf("No RulesRegistry in the registry")
+			return nil, fmt.Errorf("No database in the registry")
 		}
-		return NewNetFunc(NewHeadendEncapsWithCtrl(p, rr, ttl, hopLimit), debug), nil
+		return NewNetFunc(NewHeadendEncapsWithCtrl(p, ttl, hopLimit, db)), nil
 	case config.H_M_GTP4_D:
 		db, ok := setup_registry.DB()
 		if !ok {
 			return nil, fmt.Errorf("No database in the registry")
 		}
-		rr, ok := setup_registry.RulesRegistry()
-		if !ok {
-			return nil, fmt.Errorf("No RulesRegistry in the registry")
-		}
 
-		g, err := NewHeadendGTP4WithCtrl(p, rr, ttl, hopLimit, db)
+		g, err := NewHeadendGTP4WithCtrl(p, ttl, hopLimit, db)
 		if err != nil {
 			return nil, err
 		}
-		return NewNetFunc(g, debug), nil
+		return NewNetFunc(g), nil
 	default:
 		return nil, fmt.Errorf("Unsupported headend behavior (%s) with this provider (%s)", he.Behavior, he.Provider)
 	}

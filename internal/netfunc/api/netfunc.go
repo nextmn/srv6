@@ -5,10 +5,11 @@
 package netfunc
 
 import (
+	"context"
+
 	"github.com/nextmn/srv6/internal/iproute2"
 )
 
 type NetFunc interface {
-	Start(tunIface *iproute2.TunIface)
-	Stop()
+	Run(ctx context.Context, tunIface *iproute2.TunIface) error
 }

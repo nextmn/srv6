@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -41,7 +43,7 @@ func NewTaskIP4Rule(name string, prefix string, table_name string) *TaskIPRule {
 }
 
 // Setup ip rules
-func (t *TaskIPRule) RunInit() error {
+func (t *TaskIPRule) RunInit(ctx context.Context) error {
 	if t.family4 {
 		if err := t.table.AddRule4(t.prefix); err != nil {
 			return err

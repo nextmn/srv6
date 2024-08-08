@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	"github.com/nextmn/srv6/internal/config"
 	"github.com/nextmn/srv6/internal/constants"
 	"github.com/nextmn/srv6/internal/iproute2"
@@ -31,7 +33,7 @@ func NewTaskLinuxEndpoint(name string, endpoint *config.Endpoint, table_name str
 }
 
 // Init
-func (t *TaskLinuxEndpoint) RunInit() error {
+func (t *TaskLinuxEndpoint) RunInit(ctx context.Context) error {
 	if err := t.table.AddSeg6Local(t.endpoint.Prefix, t.endpoint.Behavior, t.iface_name); err != nil {
 		return err
 	}

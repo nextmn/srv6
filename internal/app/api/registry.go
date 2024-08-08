@@ -6,7 +6,6 @@ package app_api
 
 import (
 	"github.com/nextmn/srv6/internal/ctrl"
-	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 	"github.com/nextmn/srv6/internal/database"
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -22,7 +21,4 @@ type Registry interface {
 	RegisterDB(*database.Database)
 	DB() (*database.Database, bool)
 	DeleteDB()
-	RegisterRulesRegistry(rr ctrl_api.RulesRegistry)
-	RulesRegistry() (ctrl_api.RulesRegistry, bool)
-	DeleteRulesRegistry()
 }

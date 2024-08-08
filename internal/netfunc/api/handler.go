@@ -4,6 +4,8 @@
 // SPDX-License-Identifier: MIT
 package netfunc
 
+import "context"
+
 type Handler interface {
-	Handle(packet []byte) ([]byte, error)
+	Handle(ctx context.Context, packet []byte) ([]byte, error)
 }

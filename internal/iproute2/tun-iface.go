@@ -38,7 +38,24 @@ func (t *TunIface) CreateAndUp() error {
 		return fmt.Errorf("Unable to allocate TUN interface: %s", err)
 	}
 	t.iface = iface
+	if err := t.DropIcmpRedirect(); err != nil {
+		return err
+	}
 	if err := runIP("link", "set", "dev", t.iface.Name(), "up"); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Stop TunIface related goroutines and delete the interface
+func (t *TunIface) Delete() error {
+	if t.iface == nil {
+		return nil
+	}
+	if err := runIP("link", "del", t.iface.Name()); err != nil {
+		return fmt.Errorf("Unable to delete interface %s: %s", t.iface.Name(), err)
+	}
+	if err := t.CancelDropIcmpRedirect(); err != nil {
 		return err
 	}
 	return nil
@@ -88,13 +105,30 @@ func (t *TunIface) IPv4TTL() (uint8, error) {
 	return uint8(ret), nil
 }
 
-// Stop TunIface related goroutines and delete the interface
-func (t *TunIface) Delete() error {
+// Drop ICMP/ICMPv6 redirects on the interface
+func (t *TunIface) DropIcmpRedirect() error {
 	if t.iface == nil {
 		return nil
 	}
-	if err := runIP("link", "del", t.iface.Name()); err != nil {
-		return fmt.Errorf("Unable to delete interface %s: %s", t.iface.Name(), err)
+	if err := runIPTables("-A", "OUTPUT", "-o", t.iface.Name(), "-p", "icmp", "--icmp-type", "redirect", "-j", "DROP"); err != nil {
+		return fmt.Errorf("Unable to drop icmp redirect on interface %s: %s", t.iface.Name(), err)
+	}
+	if err := runIP6Tables("-A", "OUTPUT", "-o", t.iface.Name(), "-p", "icmpv6", "--icmpv6-type", "redirect", "-j", "DROP"); err != nil {
+		return fmt.Errorf("Unable to drop icmpv6 redirect on interface %s: %s", t.iface.Name(), err)
+	}
+	return nil
+}
+
+// Cancel Drop ICMP/ICMPv6 redirects on the interface
+func (t *TunIface) CancelDropIcmpRedirect() error {
+	if t.iface == nil {
+		return nil
+	}
+	if err := runIP6Tables("-D", "OUTPUT", "-o", t.iface.Name(), "-p", "icmpv6", "--icmpv6-type", "redirect", "-j", "DROP"); err != nil {
+		return fmt.Errorf("Unable to drop icmpv6 redirect on interface %s: %s", t.iface.Name(), err)
+	}
+	if err := runIPTables("-D", "OUTPUT", "-o", t.iface.Name(), "-p", "icmp", "--icmp-type", "redirect", "-j", "DROP"); err != nil {
+		return fmt.Errorf("Unable to drop icmp redirect on interface %s: %s", t.iface.Name(), err)
 	}
 	return nil
 }

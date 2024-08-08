@@ -5,6 +5,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -23,12 +24,10 @@ type TaskNextMNEndpoint struct {
 	table      iproute2.Table
 	registry   app_api.Registry
 	iface_name string
-	netfunc    netfunc_api.NetFunc
-	debug      bool
 }
 
 // Create a new TaskNextMNEndpoint
-func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNEndpoint {
+func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNEndpoint {
 	return &TaskNextMNEndpoint{
 		WithName:   NewName(name),
 		WithState:  NewState(),
@@ -36,13 +35,11 @@ func NewTaskNextMNEndpoint(name string, endpoint *config.Endpoint, table_name st
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		iface_name: iface_name,
 		registry:   registry,
-		netfunc:    nil,
-		debug:      debug,
 	}
 }
 
 // Init
-func (t *TaskNextMNEndpoint) RunInit() error {
+func (t *TaskNextMNEndpoint) RunInit(ctx context.Context) error {
 	// Create and start endpoint
 	tunIface, ok := t.registry.TunIface(t.iface_name)
 	if !ok {
@@ -56,12 +53,13 @@ func (t *TaskNextMNEndpoint) RunInit() error {
 	if err != nil {
 		return err
 	}
-	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit, t.debug); err != nil {
+	var n netfunc_api.NetFunc
+	if ep, err := netfunc.NewEndpoint(t.endpoint, ttl, hopLimit); err != nil {
 		return err
 	} else {
-		t.netfunc = ep
+		n = ep
 	}
-	t.netfunc.Start(tunIface)
+	go n.Run(ctx, tunIface)
 	// Add route to endpoint
 	if err := t.table.AddRoute6Tun(t.endpoint.Prefix, t.iface_name); err != nil {
 		return err
@@ -76,8 +74,6 @@ func (t *TaskNextMNEndpoint) RunExit() error {
 	if err := t.table.DelRoute6Tun(t.endpoint.Prefix, t.iface_name); err != nil {
 		return err
 	}
-	// Stop endpoint
-	t.netfunc.Stop()
 	t.state = false
 	return nil
 }

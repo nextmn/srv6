@@ -43,3 +43,5 @@ endpoints:
   - prefix: "fd00:51D5:0000:1:1::/80"
     behavior: "End"
     provider: "Linux"
+logger:
+  level: "info" # trace, debug, info, warning, error, fatal, or panic

@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	iproute2 "github.com/nextmn/srv6/internal/iproute2"
 )
 
@@ -25,7 +27,7 @@ func NewTaskDummyIface(name string, iface_name string) *TaskDummyIface {
 }
 
 // Create and set up the Iface
-func (t *TaskDummyIface) RunInit() error {
+func (t *TaskDummyIface) RunInit(ctx context.Context) error {
 	if err := t.iface.CreateAndUp(); err != nil {
 		return err
 	}

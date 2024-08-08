@@ -6,7 +6,6 @@ package iproute2
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 )
@@ -18,9 +17,31 @@ func runIP(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args, err)
-		log.Println(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
+	}
+	return nil
+}
+
+// Run iptables command
+func runIPTables(args ...string) error {
+	cmd := exec.Command("iptables", args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
+	}
+	return nil
+}
+
+// Run ip6tables command
+func runIP6Tables(args ...string) error {
+	cmd := exec.Command("ip6tables", args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("Error running %s: %s", cmd.Args, err)
 	}
 	return nil
 }
