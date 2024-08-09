@@ -110,7 +110,7 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 		// check if wait.Done() is a result of ctx.Done()
 		select {
 		case <-ctx.Done():
-			break // abort
+			return ctx.Err()
 		default:
 		}
 	}
