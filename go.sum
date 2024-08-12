@@ -55,8 +55,6 @@ github.com/nextmn/gopacket-gtp v0.0.6 h1:lgcl7pdMCgXFiQgs//zFLArejUJr7Kush4ks3cc
 github.com/nextmn/gopacket-gtp v0.0.6/go.mod h1:FxOFEYhJLTQR/z0xW2N8nBj2tjJRHmeKxH4mgdzg5zk=
 github.com/nextmn/gopacket-srv6 v0.0.7 h1:GXDcb1S91VkC61uEJ6nyIMk34Wu6Wk1LfdoDXyE7nXs=
 github.com/nextmn/gopacket-srv6 v0.0.7/go.mod h1:d00D3jb/joNiUXxCukaeymKdFL35ey7mmb+vr02MPmg=
-github.com/nextmn/json-api v0.0.5 h1:DvuzpikNrwUYh9EPjgCm1d1yDbFGb2a6ZgsNU9neFRQ=
-github.com/nextmn/json-api v0.0.5/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
 github.com/nextmn/json-api v0.0.6 h1:YvYWarvCSX9pHyexy9uOR2IK8xpnsKkIqAALG3k+XMg=
 github.com/nextmn/json-api v0.0.6/go.mod h1:gi9IhsD+FFg7iEnJaZtEaY1WlZkQ75KBBk0z5FmSJBU=
 github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6Wq+LM=
@@ -83,8 +81,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/ugorji/go/codec v1.2.12 h1:9LC83zGrHhuUA9l16C9AHXAqEV/2wBQ4nkvumAE65EE=
 github.com/ugorji/go/codec v1.2.12/go.mod h1:UNopzCgEMSXjBc6AOMqYvWC1ktqTAfzJZUZgYf6w6lg=
-github.com/urfave/cli/v2 v2.27.2 h1:6e0H+AkS+zDckwPCUrZkKX38mRaau4nL2uipkJpbkcI=
-github.com/urfave/cli/v2 v2.27.2/go.mod h1:g0+79LmHHATl7DAcHO99smiR/T7uGLw84w8Y42x+4eM=
+github.com/urfave/cli/v2 v2.27.4 h1:o1owoI+02Eb+K107p27wEX9Bb8eqIoZCfLXloLUSWJ8=
+github.com/urfave/cli/v2 v2.27.4/go.mod h1:m4QzxcD2qpra4z7WhzEGn74WZLViBnMpb1ToCAKdGRQ=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 h1:gEOO8jv9F4OT7lGCjxCBTO/36wtF6j2nSip77qHd4x4=
 github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1/go.mod h1:Ohn+xnUBiLI6FVj/9LpzZWtj1/D6lUovWYBkxHVV3aM=
 golang.org/x/arch v0.0.0-20210923205945-b76863e36670/go.mod h1:5om86z9Hs0C8fWVUuoMHwpExlXzs5Tkyp9hOrfG7pp8=
