@@ -96,7 +96,7 @@ DECLARE
 BEGIN
 	SELECT uuid, action_next_hop, action_srh FROM rule
 		WHERE (rule.type_uplink = TRUE AND rule.enabled = TRUE
-			AND in_gnb_ip << rule.match_gnb_ip_prefix AND in_ue_ip << rule.match_ue_ip_prefix)
+			AND in_gnb_ip << rule.match_gnb_ip_prefix AND in_ue_ip_address << rule.match_ue_ip_prefix)
 		INTO var_uuid, out_action_next_hop, out_action_srh
 		LIMIT 1;
 	IF not FOUND THEN
@@ -118,7 +118,7 @@ BEGIN
 	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
 		FROM rule
 		WHERE (rule.type_uplink = FALSE AND rule.enabled = TRUE
-			AND in_ue_ip << match_ue_ip_prefix);
+			AND in_ue_ip_address << match_ue_ip_prefix);
 END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_rule(
