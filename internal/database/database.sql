@@ -102,7 +102,7 @@ BEGIN
 	IF not FOUND THEN
 		RAISE EXCEPTION 'No enabled rule could be found for this set of (srgw, gnb, ue)';
 	END IF;
-	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, var_uuid)
+	INSERT INTO uplink_gtp4(uplink_teid, srgw_ip, gnb_ip, action_uuid)
 		VALUES(in_uplink_teid, in_srgw_ip, in_gnb_ip, var_uuid);
 END;$$;
 
