@@ -282,7 +282,7 @@ func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, srgw
 }
 
 func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (jsonapi.Action, error) {
-	var action_next_hop jsonapi.NextHop
+	var action_next_hop string
 	var action_srh []string
 	if stmt, ok := db.stmt["get_downlink_action"]; ok {
 		err := stmt.QueryRowContext(ctx, ueIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
@@ -293,14 +293,18 @@ func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (jso
 		if err != nil {
 			return jsonapi.Action{}, err
 		}
-		return jsonapi.Action{NextHop: action_next_hop, SRH: *srh}, err
+		action, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		return jsonapi.Action{NextHop: *action, SRH: *srh}, err
 	} else {
 		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
 	}
 }
 
 func (db *Database) SetUplinkAction(ctx context.Context, uplinkTeid uint32, srgwIp netip.Addr, gnbIp netip.Addr, ueIp netip.Addr) (jsonapi.Action, error) {
-	var action_next_hop jsonapi.NextHop
+	var action_next_hop string
 	var action_srh []string
 	if stmt, ok := db.stmt["set_uplink_action"]; ok {
 		err := stmt.QueryRowContext(ctx, uplinkTeid, srgwIp.String(), gnbIp.String(), ueIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
@@ -311,7 +315,11 @@ func (db *Database) SetUplinkAction(ctx context.Context, uplinkTeid uint32, srgw
 		if err != nil {
 			return jsonapi.Action{}, err
 		}
-		return jsonapi.Action{NextHop: action_next_hop, SRH: *srh}, err
+		action, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		return jsonapi.Action{NextHop: *action, SRH: *srh}, err
 	} else {
 		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
 	}
