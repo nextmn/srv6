@@ -118,7 +118,7 @@ BEGIN
 	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
 		FROM rule
 		WHERE (rule.type_uplink = FALSE AND rule.enabled = TRUE
-			AND match_ue_ip_prefix in_ue_ip_address);
+			AND match_ue_ip_prefix && in_ue_ip_address);
 END;$$ LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION get_rule(
