@@ -71,6 +71,9 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 			return nil, ctx.Err()
 		default:
 			action, err = h.db.SetUplinkAction(ctx, teid, srgw_ip, gnb_ip, ue_ip_address)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 	}
