@@ -5,6 +5,7 @@
 package tasks
 
 import (
+	"context"
 	"fmt"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -23,12 +24,10 @@ type TaskNextMNHeadendWithCtrl struct {
 	table      iproute2.Table
 	registry   app_api.Registry
 	iface_name string
-	netfunc    netfunc_api.NetFunc
-	debug      bool
 }
 
 // Create a new TaskNextMNHeadend
-func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_name string, iface_name string, registry app_api.Registry, debug bool) *TaskNextMNHeadendWithCtrl {
+func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_name string, iface_name string, registry app_api.Registry) *TaskNextMNHeadendWithCtrl {
 	return &TaskNextMNHeadendWithCtrl{
 		WithName:   NewName(name),
 		WithState:  NewState(),
@@ -36,13 +35,11 @@ func NewTaskNextMNHeadendWithCtrl(name string, headend *config.Headend, table_na
 		table:      iproute2.NewTable(table_name, constants.RT_PROTO_NEXTMN),
 		iface_name: iface_name,
 		registry:   registry,
-		netfunc:    nil,
-		debug:      debug,
 	}
 }
 
 // Init
-func (t *TaskNextMNHeadendWithCtrl) RunInit() error {
+func (t *TaskNextMNHeadendWithCtrl) RunInit(ctx context.Context) error {
 	// Create and start headend
 	tunIface, ok := t.registry.TunIface(t.iface_name)
 	if !ok {
@@ -56,12 +53,13 @@ func (t *TaskNextMNHeadendWithCtrl) RunInit() error {
 	if err != nil {
 		return err
 	}
-	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, ttl, hopLimit, t.debug, t.registry); err != nil {
+	var n netfunc_api.NetFunc
+	if ep, err := netfunc.NewHeadendWithCtrl(t.headend, ttl, hopLimit, t.registry); err != nil {
 		return err
 	} else {
-		t.netfunc = ep
+		n = ep
 	}
-	t.netfunc.Start(tunIface)
+	go n.Run(ctx, tunIface)
 	// Add route to headend
 	if err := t.table.AddRoute4Tun(t.headend.To, t.iface_name); err != nil {
 		return err
@@ -76,8 +74,6 @@ func (t *TaskNextMNHeadendWithCtrl) RunExit() error {
 	if err := t.table.DelRoute4Tun(t.headend.To, t.iface_name); err != nil {
 		return err
 	}
-	// Stop headend
-	t.netfunc.Stop()
 	t.state = false
 	return nil
 }

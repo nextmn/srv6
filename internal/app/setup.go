@@ -5,6 +5,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -29,13 +30,7 @@ func NewSetup(config *config.SRv6Config) *Setup {
 }
 
 // Add tasks to setup
-func (s *Setup) AddTasks() {
-	debug := false
-	if s.config.Debug != nil {
-		if *s.config.Debug {
-			debug = true
-		}
-	}
+func (s *Setup) AddTasks(ctx context.Context) {
 	// user hooks
 	var preInitHook, preExitHook *string
 	var postInitHook, postExitHook *string
@@ -128,31 +123,31 @@ func (s *Setup) AddTasks() {
 	for i, e := range s.config.Endpoints.Filter(config.ProviderNextMN) {
 		t_name := fmt.Sprintf("nextmn.endpoint/%s", e.Prefix)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_SRV6_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNEndpoint(t_name, e, constants.RT_TABLE_NEXTMN_IPV6, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNEndpoint(t_name, e, constants.RT_TABLE_NEXTMN_IPV6, iface_name, s.registry))
 	}
 	// 3.3 nextmn ipv4 headends
 	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.headend.ipv4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadend(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadend(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry))
 	}
 	// 3.4 nextmn gtp4 headends
 	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMN, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn.headend.gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadend(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadend(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry))
 	}
 	// 3.5 nextmn-ctrl ipv4 headends
 	for i, h := range s.config.Headends.FilterWithoutBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn-ctrl.headend.ipv4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_IPV4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry))
 	}
 	// 3.6 nextmn-ctrl gtp4 headends
 	for i, h := range s.config.Headends.FilterWithBehavior(config.ProviderNextMNWithController, config.H_M_GTP4_D) {
 		t_name := fmt.Sprintf("nextmn-ctrl.headend.gtp4/%s", h.Name)
 		iface_name := fmt.Sprintf("%s%d", constants.IFACE_GOLANG_GTP4_PREFIX, i)
-		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry, debug))
+		s.tasks.Register(tasks.NewTaskNextMNHeadendWithCtrl(t_name, h, constants.RT_TABLE_NEXTMN_IPV4, iface_name, s.registry))
 	}
 
 	// 4.  ip rules
@@ -173,24 +168,11 @@ func (s *Setup) AddTasks() {
 	s.tasks.Register(tasks.NewMultiHook("hook.post.init", postInitHook, "hook.pre.exit", preExitHook))
 }
 
-// Init
-func (s *Setup) Init() error {
-	return s.tasks.RunInit()
-}
-
-// Exit
-func (s *Setup) Exit() {
-	// This function may be called at any time,
-	// and a maximum of exit tasks must be run,
-	// even if previous one resulted in errors.
-	s.tasks.RunExit()
-
-}
-
 // Run
-func (s *Setup) Run() error {
-	if err := s.Init(); err != nil {
+func (s *Setup) Run(ctx context.Context) error {
+	s.AddTasks(ctx)
+	if err := s.tasks.Run(ctx); err != nil {
 		return err
 	}
-	select {}
+	return nil
 }

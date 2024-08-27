@@ -29,7 +29,6 @@ func ParseConf(file string) (*SRv6Config, error) {
 }
 
 type SRv6Config struct {
-	Debug *bool  `yaml:"debug,omitempty"`
 	Hooks *Hooks `yaml:"hooks"`
 
 	// interface with controller
@@ -51,4 +50,5 @@ type SRv6Config struct {
 	// endpoints
 	Locator   *string   `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64
 	Endpoints Endpoints `yaml:"endpoints"`
+	Logger    *Logger   `yaml:"logger,omitempty"`
 }

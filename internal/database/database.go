@@ -5,163 +5,326 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	_ "embed"
 	"fmt"
+	"net/netip"
+	"strings"
+
 	"github.com/gofrs/uuid"
 	"github.com/lib/pq"
 	"github.com/nextmn/json-api/jsonapi"
-	"net/netip"
 )
+
+//go:generate go run gen.go database.sql
+
+//go:embed database.sql
+var database_sql string
 
 type Database struct {
 	*sql.DB
-	get_action           *sql.Stmt
-	insert_action        *sql.Stmt
-	update_action        *sql.Stmt
-	insert_uplink_rule   *sql.Stmt
-	insert_downlink_rule *sql.Stmt
+	stmt map[string]*sql.Stmt
 }
 
-func NewDatabase(db *sql.DB) (*Database, error) {
-	// UplinkGTP4
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS uplink_gtp4 (
-		uplink_teid INTEGER,
-		srgw_ip INET,
-		gnb_ip INET,
-		action_uuid UUID NOT NULL,
-		PRIMARY KEY(uplink_teid, srgw_ip, gnb_ip)
-		);
-	`)
+func (db *Database) prepare(ctx context.Context, name string, query string) error {
+	s, err := db.PrepareContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("Could not create table uplink_gtp4 in database: %s", err)
+		return fmt.Errorf("Could not prepare statement %s: %s", name, err)
 	}
+	db.stmt[name] = s
+	return nil
+}
 
-	// Rules - Actions
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS action (
-		id SERIAL PRIMARY KEY,
-		next_hop INET NOT NULL,
-		srh INET ARRAY NOT NULL
-		);
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create table action in database: %s", err)
-	}
-
-	// Rules - Match
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS match (
-		id SERIAL PRIMARY KEY,
-		ue_ip_prefix CIDR NOT NULL,
-		gnb_ip_prefix CIDR
-		);
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create table match in database: %s", err)
-	}
-
-	// Rules
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS rule (
-		uuid UUID PRIMARY KEY,
-		type_uplink BOOL NOT NULL,
-		enabled BOOL NOT NULL,
-		match_id INTEGER NOT NULL REFERENCES match(id),
-		action_id INTEGER NOT NULL REFERENCES action(id)
-		);
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create table rule in database: %s", err)
-	}
-
-	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_uplink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN gnb_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
-		LANGUAGE plpgsql AS $$
-		DECLARE
-			match_id INT;
-			action_id INT;
-		BEGIN
-			INSERT INTO match(ue_ip_prefix, gnb_ip_prefix) VALUES (ue_ip_prefix, gnb_ip_prefix) RETURNING id INTO match_id;
-			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id INTO action_id;
-			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, TRUE, enabled, match_id, action_id);
-		END;$$;
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create procedure insert_uplink_rule in database: %s", err)
-	}
-
-	_, err = db.Exec(`CREATE OR REPLACE PROCEDURE insert_downlink_rule(IN uuid UUID, IN enabled BOOL, IN ue_ip_prefix CIDR, IN next_hop INET, IN srh INET ARRAY)
-		LANGUAGE plpgsql AS $$
-		DECLARE
-			match_id INT;
-			action_id INT;
-		BEGIN
-			INSERT INTO match(ue_ip_prefix) VALUES (ue_ip_prefix) RETURNING id INTO match_id;
-			INSERT INTO action(next_hop, srh) VALUES (next_hop, srh) RETURNING id INTO action_id;
-			INSERT INTO rule(uuid, type_uplink, enabled, match_id, action_id) VALUES(uuid, FALSE, enabled, match_id, action_id);
-		END;$$;
-	`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not create procedure insert_downlink_rule in database: %s", err)
-	}
-
-	get_action, err := db.Prepare(`SELECT action_uuid FROM uplink_gtp4 WHERE (uplink_teid = $1 AND srgw_ip = $2 AND gnb_ip = $3)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for get_action: %s", err)
-	}
-	insert_action, err := db.Prepare(`INSERT INTO uplink_gtp4 (uplink_teid, srgw_ip, gnb_ip, action_uuid) VALUES($1, $2, $3, $4)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for insert: %s", err)
-	}
-
-	update_action, err := db.Prepare(`UPDATE uplink_gtp4 SET action_uuid = $4 WHERE (uplink_teid =$1 AND srgw_ip = $2 AND gnb_ip = $3)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for update: %s", err)
-	}
-
-	insert_uplink_rule, err := db.Prepare(`CALL insert_uplink_rule($1, $2, $3, $4, $5, $6)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for insert_uplink_rule: %s", err)
-	}
-	insert_downlink_rule, err := db.Prepare(`CALL insert_downlink_rule($1, $2, $3, $4, $5)`)
-	if err != nil {
-		return nil, fmt.Errorf("Could not prepare statement for insert_downlink_rule: %s", err)
-	}
-
+func NewDatabase(db *sql.DB) *Database {
 	return &Database{
-		DB:                   db,
-		get_action:           get_action,
-		insert_action:        insert_action,
-		update_action:        update_action,
-		insert_uplink_rule:   insert_uplink_rule,
-		insert_downlink_rule: insert_downlink_rule,
-	}, nil
+		DB:   db,
+		stmt: make(map[string]*sql.Stmt, 0),
+	}
 }
 
-func (db *Database) InsertRule(uuid uuid.UUID, r jsonapi.Rule) error {
+func (db *Database) Init(ctx context.Context) error {
+	_, err := db.Exec(database_sql)
+	if err != nil {
+		return fmt.Errorf("Could not initialize database: %s", err)
+	}
+	l := map[string]string{}
+	// use generated code
+	for k, v := range procedures {
+		args := []string{}
+		for i := range v.num_in {
+			args = append(args, fmt.Sprintf("$%d", i+1))
+		}
+		for _ = range v.num_out {
+			args = append(args, "NULL")
+		}
+		strargs := strings.Join(args, ", ")
+		if v.is_procedure {
+			l[k] = fmt.Sprintf("CALL %s(%s)", k, strargs)
+		} else {
+			l[k] = fmt.Sprintf("SELECT * FROM %s(%s)", k, strargs)
+		}
+
+	}
+
+	for k, v := range l {
+		if err := db.prepare(ctx, k, v); err != nil {
+			return fmt.Errorf("Could not prepare statement %s: %s", k, err)
+		}
+	}
+	return nil
+}
+
+func (db *Database) Exit() {
+	for k, v := range db.stmt {
+		v.Close()
+		delete(db.stmt, k)
+	}
+}
+
+func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID, error) {
 	srh := []string{}
 	for _, ip := range r.Action.SRH {
 		srh = append(srh, ip.String())
 	}
 	switch r.Type {
 	case "uplink":
-		_, err := db.insert_uplink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh))
-		return err
+		if stmt, ok := db.stmt["insert_uplink_rule"]; ok {
+			var id uuid.UUID
+			err := stmt.QueryRowContext(ctx, r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
+			return &id, err
+		} else {
+			return nil, fmt.Errorf("Procedure not registered")
+		}
 	case "downlink":
-		_, err := db.insert_downlink_rule.Exec(uuid.String(), r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh))
-		return err
+		if stmt, ok := db.stmt["insert_downlink_rule"]; ok {
+			var id uuid.UUID
+			err := stmt.QueryRowContext(ctx, r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
+			return &id, err
+		} else {
+			return nil, fmt.Errorf("Procedure not registered")
+		}
 	default:
-		return fmt.Errorf("Wrong type for the rule")
+		return nil, fmt.Errorf("Wrong type for the rule")
 	}
 }
-func (db *Database) InsertAction(uplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, actionUuid uuid.UUID) error {
-	_, err := db.insert_action.Exec(uplinkTeid, SrgwIp.String(), GnbIp.String(), actionUuid.String())
-	return err
+
+func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, error) {
+	var type_uplink bool
+	var enabled bool
+	var action_next_hop string
+	var action_srh []string
+	var match_ue_ip_prefix string
+	var match_gnb_ip_prefix string
+	if stmt, ok := db.stmt["get_rule"]; ok {
+		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+		if err != nil {
+			return jsonapi.Rule{}, err
+		}
+		var t string
+		if type_uplink {
+			t = "uplink"
+		} else {
+			t = "downlink"
+		}
+		rule := jsonapi.Rule{
+			Enabled: enabled,
+			Type:    t,
+		}
+		rule.Match = jsonapi.Match{}
+		if match_ue_ip_prefix != "" {
+			p, err := netip.ParsePrefix(match_ue_ip_prefix)
+			if err == nil {
+				rule.Match.UEIpPrefix = p
+			}
+		}
+		if match_gnb_ip_prefix != "" {
+			p, err := netip.ParsePrefix(match_gnb_ip_prefix)
+			if err == nil {
+				rule.Match.GNBIpPrefix = p
+			}
+		}
+
+		srh, err := jsonapi.NewSRH(action_srh)
+		if err != nil {
+			return jsonapi.Rule{}, err
+		}
+		nh, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Rule{}, err
+		}
+
+		rule.Action = jsonapi.Action{
+			NextHop: *nh,
+			SRH:     *srh,
+		}
+
+		return rule, err
+	} else {
+		return jsonapi.Rule{}, fmt.Errorf("Procedure not registered")
+	}
 }
 
-func (db *Database) UpdateAction(uplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr, actionUuid uuid.UUID) error {
-	_, err := db.update_action.Exec(uplinkTeid, SrgwIp.String(), GnbIp.String(), actionUuid.String())
-	return err
+func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
+	var uuid uuid.UUID
+	var type_uplink bool
+	var enabled bool
+	var action_next_hop string
+	var action_srh []string
+	var match_ue_ip_prefix string
+	var match_gnb_ip_prefix *string
+	m := jsonapi.RuleMap{}
+	if stmt, ok := db.stmt["get_all_rules"]; ok {
+		rows, err := stmt.QueryContext(ctx)
+		if err != nil {
+			return m, nil
+		}
+		for rows.Next() {
+			select {
+			case <-ctx.Done():
+				// avoid looping if no longer necessary
+				return jsonapi.RuleMap{}, ctx.Err()
+			default:
+				err := rows.Scan(&uuid, &type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+				if err != nil {
+					return m, err
+				}
+				var t string
+				if type_uplink {
+					t = "uplink"
+				} else {
+					t = "downlink"
+				}
+				rule := jsonapi.Rule{
+					Enabled: enabled,
+					Type:    t,
+				}
+				rule.Match = jsonapi.Match{}
+				if match_ue_ip_prefix != "" {
+					p, err := netip.ParsePrefix(match_ue_ip_prefix)
+					if err == nil {
+						rule.Match.UEIpPrefix = p
+					}
+				}
+				if match_gnb_ip_prefix != nil {
+					p, err := netip.ParsePrefix(*match_gnb_ip_prefix)
+					if err == nil {
+						rule.Match.GNBIpPrefix = p
+					}
+				}
+
+				srh, err := jsonapi.NewSRH(action_srh)
+				if err != nil {
+					return jsonapi.RuleMap{}, err
+				}
+				nh, err := jsonapi.NewNextHop(action_next_hop)
+				if err != nil {
+					return jsonapi.RuleMap{}, err
+				}
+
+				rule.Action = jsonapi.Action{
+					NextHop: *nh,
+					SRH:     *srh,
+				}
+				m[uuid] = rule
+			}
+		}
+		return m, nil
+
+	} else {
+		return jsonapi.RuleMap{}, fmt.Errorf("Procedure not registered")
+	}
 }
 
-func (db *Database) GetAction(UplinkTeid uint32, SrgwIp netip.Addr, GnbIp netip.Addr) (uuid.UUID, error) {
-	actionUuid := uuid.UUID{}
-	err := db.get_action.QueryRow(UplinkTeid, SrgwIp.String(), GnbIp.String()).Scan(&actionUuid)
-	return actionUuid, err
+func (db *Database) EnableRule(ctx context.Context, uuid uuid.UUID) error {
+	if stmt, ok := db.stmt["enable_rule"]; ok {
+		_, err := stmt.ExecContext(ctx, uuid.String())
+		return err
+	} else {
+		return fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) DisableRule(ctx context.Context, uuid uuid.UUID) error {
+	if stmt, ok := db.stmt["disable_rule"]; ok {
+		_, err := stmt.ExecContext(ctx, uuid.String())
+		return err
+	} else {
+		return fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) DeleteRule(ctx context.Context, uuid uuid.UUID) error {
+	if stmt, ok := db.stmt["delete_rule"]; ok {
+		_, err := stmt.ExecContext(ctx, uuid.String())
+		return err
+	} else {
+		return fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, srgwIp netip.Addr, gnbIp netip.Addr) (jsonapi.Action, error) {
+	var action_next_hop string
+	var action_srh []string
+	if stmt, ok := db.stmt["get_uplink_action"]; ok {
+		err := stmt.QueryRowContext(ctx, uplinkTeid, srgwIp.String(), gnbIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		srh, err := jsonapi.NewSRH(action_srh)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		nh, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		return jsonapi.Action{NextHop: *nh, SRH: *srh}, err
+	} else {
+		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (jsonapi.Action, error) {
+	var action_next_hop string
+	var action_srh []string
+	if stmt, ok := db.stmt["get_downlink_action"]; ok {
+		err := stmt.QueryRowContext(ctx, ueIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		srh, err := jsonapi.NewSRH(action_srh)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		nh, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		return jsonapi.Action{NextHop: *nh, SRH: *srh}, err
+	} else {
+		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
+	}
+}
+
+func (db *Database) SetUplinkAction(ctx context.Context, uplinkTeid uint32, srgwIp netip.Addr, gnbIp netip.Addr, ueIp netip.Addr) (jsonapi.Action, error) {
+	var action_next_hop string
+	var action_srh []string
+	if stmt, ok := db.stmt["set_uplink_action"]; ok {
+		err := stmt.QueryRowContext(ctx, uplinkTeid, srgwIp.String(), gnbIp.String(), ueIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		srh, err := jsonapi.NewSRH(action_srh)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		nh, err := jsonapi.NewNextHop(action_next_hop)
+		if err != nil {
+			return jsonapi.Action{}, err
+		}
+		return jsonapi.Action{NextHop: *nh, SRH: *srh}, err
+	} else {
+		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
+	}
 }

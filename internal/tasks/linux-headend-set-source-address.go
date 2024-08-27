@@ -5,6 +5,8 @@
 package tasks
 
 import (
+	"context"
+
 	"github.com/nextmn/srv6/internal/iproute2"
 )
 
@@ -25,7 +27,7 @@ func NewTaskLinuxHeadendSetSourceAddress(name string, address string) *TaskLinux
 }
 
 // Init
-func (t *TaskLinuxHeadendSetSourceAddress) RunInit() error {
+func (t *TaskLinuxHeadendSetSourceAddress) RunInit(ctx context.Context) error {
 	if err := iproute2.IPSrSetSourceAddress(t.address); err != nil {
 		return err
 	}

@@ -6,7 +6,6 @@ package tasks
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 )
@@ -40,9 +39,7 @@ func (h SingleHook) Run() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 	if err := cmd.Run(); err != nil {
-		errLog := fmt.Sprintf("Error running %s: %s", cmd.Args[0], err)
-		log.Println(errLog)
-		return err
+		return fmt.Errorf("Error running %s: %s", cmd.Args[0], err)
 	}
 	return nil
 }

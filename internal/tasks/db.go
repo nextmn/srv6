@@ -5,14 +5,16 @@
 package tasks
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"os"
+	"time"
+
 	_ "github.com/lib/pq"
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/database"
-	"log"
-	"os"
-	"time"
+	"github.com/sirupsen/logrus"
 )
 
 // DBTask initializes the database
@@ -38,7 +40,7 @@ func NewDBTask(name string, registry app_api.Registry) *DBTask {
 }
 
 // Init
-func (db *DBTask) RunInit() error {
+func (db *DBTask) RunInit(ctx context.Context) error {
 	db.state = true
 	// Getting config from environment
 	host, ok := os.LookupEnv("POSTGRES_HOST")
@@ -93,24 +95,31 @@ func (db *DBTask) RunInit() error {
 
 	maxAttempts := 16
 	ok = false
-	for errcnt := 0; errcnt < maxAttempts; errcnt++ {
-		if err := postgres.Ping(); err != nil {
-			// Exponential backoff
-			time.Sleep(100 * (1 << errcnt) * time.Millisecond)
-			if errcnt > 2 {
-				log.Printf("Could not connect to postgres database. Retrying (attempt %d)\n", errcnt)
-			}
-		} else {
+	for errcnt := 0; (errcnt < maxAttempts) && !ok; errcnt++ {
+		wait, cancel := context.WithTimeout(ctx, 100*(1<<errcnt*time.Millisecond)) // Exponential backoff
+		defer cancel()
+		if err := postgres.Ping(); err == nil {
 			ok = true
-			break
+			cancel()
+		}
+		logrus.WithFields(logrus.Fields{"attempt": errcnt}).Warn("Could not connect to postgres database. Retrying.")
+		// blocks until success, timeout, or ctx.Done()
+		select {
+		case <-wait.Done():
+		}
+		// check if wait.Done() is a result of ctx.Done()
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
 		}
 	}
 	if !ok {
 		return fmt.Errorf("Could not connect to postgres database after %d attempts: %s", maxAttempts, err)
 	}
 
-	db.db, err = database.NewDatabase(postgres)
-	if err != nil {
+	db.db = database.NewDatabase(postgres)
+	if err := db.db.Init(ctx); err != nil {
 		return err
 	}
 
@@ -130,6 +139,7 @@ func (db *DBTask) RunExit() error {
 	if db.db == nil {
 		return fmt.Errorf("No database")
 	}
+	db.db.Exit()
 	db.db.Close()
 	return nil
 }

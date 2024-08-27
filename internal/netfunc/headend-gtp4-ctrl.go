@@ -5,37 +5,32 @@
 package netfunc
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/netip"
 
-	"database/sql"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
-	"github.com/nextmn/json-api/jsonapi"
-	ctrl_api "github.com/nextmn/srv6/internal/ctrl/api"
 	db_api "github.com/nextmn/srv6/internal/database/api"
 	"github.com/nextmn/srv6/internal/mup"
 )
 
 type HeadendGTP4WithCtrl struct {
-	RulesRegistry ctrl_api.RulesRegistry
 	BaseHandler
 	db db_api.Uplink
 }
 
-func NewHeadendGTP4WithCtrl(prefix netip.Prefix, rr ctrl_api.RulesRegistry, ttl uint8, hopLimit uint8, db db_api.Uplink) (*HeadendGTP4WithCtrl, error) {
+func NewHeadendGTP4WithCtrl(prefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Uplink) (*HeadendGTP4WithCtrl, error) {
 	return &HeadendGTP4WithCtrl{
-		RulesRegistry: rr,
-		BaseHandler:   NewBaseHandler(prefix, ttl, hopLimit),
-		db:            db,
+		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
+		db:          db,
 	}, nil
 }
 
 // Handle a packet
-func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
+func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte, error) {
 	pqt, err := NewIPv4Packet(packet)
 	if err != nil {
 		return nil, err
@@ -65,43 +60,23 @@ func (h HeadendGTP4WithCtrl) Handle(packet []byte) ([]byte, error) {
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
 
-	var action jsonapi.Action
-	action_uuid, err := h.db.GetAction(teid, srgw_ip, gnb_ip)
+	action, err := h.db.GetUplinkAction(ctx, teid, srgw_ip, gnb_ip)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
-			if !ok {
-				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
-			}
-			action_uuid, action, err = h.RulesRegistry.UplinkAction(ue_ip_address, gnb_ip)
+		ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
+		if !ok {
+			return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
+		}
+		select {
+		case <-ctx.Done(): // TODO: check if err is no row instead of checking ctx
+			return nil, ctx.Err()
+		default:
+			action, err = h.db.SetUplinkAction(ctx, teid, srgw_ip, gnb_ip, ue_ip_address)
 			if err != nil {
 				return nil, err
 			}
-			err := h.db.InsertAction(teid, srgw_ip, gnb_ip, action_uuid)
-			if err != nil {
-				log.Println("Warning: could not perform insert in headend gtp4 ctrl")
-			}
-		} else {
-			return nil, err
 		}
-	} else {
-		action, err = h.RulesRegistry.ByUUID(action_uuid)
-		if err != nil {
-			ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
-			if !ok {
-				return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
-			}
-			action_uuid, action, err = h.RulesRegistry.UplinkAction(ue_ip_address, gnb_ip)
-			if err != nil {
-				return nil, err
-			}
-			err := h.db.UpdateAction(teid, srgw_ip, gnb_ip, action_uuid)
-			if err != nil {
-				log.Println("Warning: could not perform update in headend gtp4 ctrl")
-			}
-		}
-	}
 
+	}
 	// S04. Copy IPv4 SA to form IPv6 SA B'
 	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()

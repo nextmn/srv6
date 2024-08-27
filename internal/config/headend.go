@@ -11,7 +11,7 @@ type Headend struct {
 	Behavior            HeadendBehavior `yaml:"behavior"`
 	Policy              *[]Policy       `yaml:"policy,omitempty"`
 	SourceAddressPrefix *string         `yaml:"source-address-prefix"`
-	MTU                 *string         `yaml:mtu,omitempty"` // suggested value is 1400 (same as UERANSIM) if the path includes a End.M.GTP4.E
+	MTU                 *string         `yaml:"mtu,omitempty"` // suggested value is 1400 (same as UERANSIM) if the path includes a End.M.GTP4.E
 }
 
 type Headends []*Headend

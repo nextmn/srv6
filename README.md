@@ -42,6 +42,7 @@ Unstructured | no
 
 ### Runtime dependencies
 - iproute2
+- iptables
 
 ### Build and install
 Simply run `make build` and `make install`.

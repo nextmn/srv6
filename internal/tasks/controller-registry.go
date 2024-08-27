@@ -6,12 +6,14 @@ package tasks
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	app_api "github.com/nextmn/srv6/internal/app/api"
-	"github.com/nextmn/srv6/internal/ctrl"
 	"net/http"
 	"net/netip"
+
+	app_api "github.com/nextmn/srv6/internal/app/api"
+	"github.com/nextmn/srv6/internal/ctrl"
 )
 
 // ControllerRegistry registers and unregisters into controller
@@ -39,7 +41,7 @@ func NewControllerRegistryTask(name string, remoteControlURI string, backbone ne
 }
 
 // Init
-func (t *ControllerRegistryTask) RunInit() error {
+func (t *ControllerRegistryTask) RunInit(ctx context.Context) error {
 	if t.SetupRegistry != nil {
 		t.SetupRegistry.RegisterControllerRegistry(t.ControllerRegistry)
 	} else {

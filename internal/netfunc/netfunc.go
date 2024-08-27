@@ -5,32 +5,27 @@
 package netfunc
 
 import (
-	"log"
+	"context"
+
+	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
 
 	"github.com/nextmn/srv6/internal/iproute2"
-	netfunc_api "github.com/nextmn/srv6/internal/netfunc/api"
+
+	"github.com/sirupsen/logrus"
 )
 
 type NetFunc struct {
-	debug   bool
-	stop    chan bool
 	handler netfunc_api.Handler
 }
 
-func NewNetFunc(handler netfunc_api.Handler, debug bool) *NetFunc {
+func NewNetFunc(handler netfunc_api.Handler) *NetFunc {
 	return &NetFunc{
-		debug:   debug,
-		stop:    make(chan bool, 1),
 		handler: handler,
 	}
 }
 
-func (n NetFunc) Debug() bool {
-	return n.debug
-}
-
-// Handle packet continuously
-func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
+// Run the NetFunc goroutine
+func (n *NetFunc) Run(ctx context.Context, tunIface *iproute2.TunIface) error {
 	// Get MTU
 	mtu, err := tunIface.MTU()
 	if err != nil {
@@ -39,32 +34,20 @@ func (n NetFunc) loop(tunIface *iproute2.TunIface) error {
 	// Read packets while no stop signal
 	for {
 		select {
-		case <-n.stop:
+		case <-ctx.Done():
 			// Stop signal received
 			return nil
 		default:
 			packet := make([]byte, mtu)
 			if nb, err := tunIface.Read(packet); err == nil {
-				go func(iface *iproute2.TunIface) {
-					if out, err := n.handler.Handle(packet[:nb]); err == nil {
+				go func(ctx context.Context, iface *iproute2.TunIface) {
+					if out, err := n.handler.Handle(ctx, packet[:nb]); err == nil {
 						iface.Write(out)
-					} else if n.Debug() {
-						log.Println(err)
+					} else {
+						logrus.WithError(err).Debug("Packet dropped")
 					}
-				}(tunIface)
+				}(ctx, tunIface)
 			}
 		}
 	}
-}
-
-// Start the NetFunc goroutine
-func (n *NetFunc) Start(tunIface *iproute2.TunIface) {
-	go n.loop(tunIface)
-}
-
-// Stop the NetFunc goroutine
-func (n *NetFunc) Stop() {
-	go func(ch chan bool) {
-		ch <- true
-	}(n.stop)
 }
