@@ -16,12 +16,15 @@ import (
 	"github.com/nextmn/srv6/internal/ctrl"
 )
 
+const UserAgent = "go-github-nextmn-srv6"
+
 // ControllerRegistry registers and unregisters into controller
 type ControllerRegistryTask struct {
 	WithName
 	WithState
 	ControllerRegistry *ctrl.ControllerRegistry
 	SetupRegistry      app_api.Registry
+	httpClient         http.Client
 }
 
 // Create a new ControllerRegistry
@@ -37,6 +40,7 @@ func NewControllerRegistryTask(name string, remoteControlURI string, backbone ne
 			Resource:         "",
 		},
 		SetupRegistry: setup_registry,
+		httpClient:    http.Client{},
 	}
 }
 
@@ -56,8 +60,14 @@ func (t *ControllerRegistryTask) RunInit(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	// TODO: retry on timeout failure
-	resp, err := http.Post(t.ControllerRegistry.RemoteControlURI+"/routers", "application/json", bytes.NewBuffer(json_data))
+	// TODO: retry on timeout failure (use a new ctx)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.ControllerRegistry.RemoteControlURI+"/routers", bytes.NewBuffer(json_data))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("User-Agent", UserAgent)
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	resp, err := t.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -89,12 +99,13 @@ func (t *ControllerRegistryTask) RunExit() error {
 		t.state = false
 		return nil
 	}
-	req, err := http.NewRequest("DELETE", t.ControllerRegistry.RemoteControlURI+t.ControllerRegistry.Resource, nil)
+	// no context since Background Context is already Done
+	req, err := http.NewRequest(http.MethodDelete, t.ControllerRegistry.RemoteControlURI+t.ControllerRegistry.Resource, nil)
 	if err != nil {
 		return err
 	}
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	req.Header.Add("User-Agent", UserAgent)
+	resp, err := t.httpClient.Do(req)
 	if err != nil {
 		return err
 	}
