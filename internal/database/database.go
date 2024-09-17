@@ -55,7 +55,7 @@ func (db *Database) Init(ctx context.Context) error {
 		for i := range v.num_in {
 			args = append(args, fmt.Sprintf("$%d", i+1))
 		}
-		for _ = range v.num_out {
+		for range v.num_out {
 			args = append(args, "NULL")
 		}
 		strargs := strings.Join(args, ", ")

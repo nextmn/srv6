@@ -192,7 +192,7 @@ func (e EndpointMGTP4E) Handle(ctx context.Context, packet []byte) ([]byte, erro
 		// message type: G-PDU
 		MessageType: constants.GTPU_MESSAGE_TYPE_GPDU,
 		TEID:        ipv6DA.PDUSessionID(),
-		// Unfortunatelly, gopacket is not able to compute length at serialization for GTP…
+		// Unfortunately, gopacket is not able to compute length at serialization for GTP…
 		// We need to do it manually :(
 		// TS 128281:
 		// > This field indicates the length in octets of the payload, i.e. the rest of the packet following the mandatory
