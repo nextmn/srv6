@@ -85,7 +85,7 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 
 	var bsid *config.Bsid
 
-	// find a policy matching criterias
+	// find a policy matching criteria
 	for _, p := range h.policy {
 		// catch-all policy (should be last policy in list)
 		if p.Match == nil {
@@ -131,7 +131,7 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 		}
 	}
 	if bsid == nil {
-		return nil, fmt.Errorf("Could not found policy matching criterias")
+		return nil, fmt.Errorf("Could not found policy matching criteria")
 	}
 
 	if bsid.BsidPrefix == nil {
