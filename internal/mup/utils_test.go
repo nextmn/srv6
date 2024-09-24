@@ -2,30 +2,32 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
+
 package mup
 
 import (
+	"net/netip"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestFromSlice(t *testing.T) {
-	res, err := fromSlice([]byte{0xFF, 192, 168, 0, 1}, 8, 4)
+func TestFromIPv6(t *testing.T) {
+	res, err := fromIPv6(netip.MustParseAddr("::ff:192.168.0.1").As16(), 128-8*4, 4)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(res, []byte{192, 168, 0, 1}); diff != "" {
 		t.Error(diff)
 	}
-	res, err = fromSlice([]byte{0xFF}, 1, 1)
+	res, err = fromIPv6(netip.MustParseAddr("ff00::").As16(), 1, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if diff := cmp.Diff(res, []byte{0xFE}); diff != "" {
 		t.Error(diff)
 	}
-	res, err = fromSlice([]byte{0xFF, 0x55}, 2, 2)
+	res, err = fromIPv6(netip.MustParseAddr("ff55::").As16(), 2, 2)
 	if err != nil {
 		t.Fatal(err)
 	}

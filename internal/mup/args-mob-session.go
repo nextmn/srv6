@@ -2,11 +2,21 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
+
 package mup
 
 import "encoding/binary"
 
-// Args.Mob.Session as defined in draft-ietf-dmm-srv6-mobile-uplane-24, section 6.1
+// Args.Mob.Session as defined in RFC 9433, section 6.1:
+//
+//	 0                   1                   2                   3
+//	 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|   QFI     |R|U|                PDU Session ID                 |
+//	+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//	|PDU Sess(cont')|
+//	+-+-+-+-+-+-+-+-+
+//	Figure 8: Args.Mob.Session Format
 type ArgsMobSession struct {
 	qfi          uint8  // QoS Flow Identifier (6 bits)
 	r            uint8  // Reflective QoS Indication (1 bit)
@@ -67,7 +77,7 @@ func (a *ArgsMobSession) PDUSessionID() uint32 {
 	return a.pduSessionID
 }
 
-// MarshalLen returns the serial length of Args.Mob.Session.
+// MarshalLen returns the serial length of ArgsMobSession.
 func (a *ArgsMobSession) MarshalLen() int {
 	return ARGS_MOB_SESSION_SIZE_BYTE
 }

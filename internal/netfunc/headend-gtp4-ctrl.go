@@ -69,10 +69,7 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
 	srcPrefix := netip.MustParsePrefix("fc00:1:1::/48") // FIXME: dont hardcode
-	ipv6SA, err := mup.NewMGTP4IPv6SrcFieldsFromFields(srcPrefix, ipv4SA, udpSP)
-	if err != nil {
-		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
-	}
+	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), [2]byte(udpSP))
 
 	src, err := ipv6SA.Marshal()
 	if err != nil {

@@ -2,29 +2,33 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
+
 package mup
 
-// slice: input slice
+// ipv6: Address to extract bits from
 // startBit: offset in bits
 // length: length of result in Bytes
-func fromSlice(slice []byte, startBit uint, length uint) ([]byte, error) {
-	if uint(len(slice)) < length {
+func fromIPv6(ipv6 [IPV6_ADDR_SIZE_BYTE]byte, startBit uint, length uint) ([]byte, error) {
+	if uint(len(ipv6)) < length {
 		return nil, ErrTooShortToParse
+	}
+	if startBit > IPV6_ADDR_SIZE_BIT {
+		return nil, ErrOutOfRange
 	}
 	startByte := startBit / 8
 	offset := startBit % 8
 	ret := make([]byte, length)
 	if offset == 0 {
-		copy(ret, slice[startByte:startByte+length])
+		copy(ret, ipv6[startByte:startByte+length])
 		return ret, nil
 	}
 
 	// init left
-	for i, b := range slice[startByte : startByte+length] {
+	for i, b := range ipv6[startByte : startByte+length] {
 		ret[i] = (b << offset)
 	}
 	// init right
-	for i, b := range slice[startByte+1 : startByte+length] {
+	for i, b := range ipv6[startByte+1 : startByte+length] {
 		ret[i] |= b >> (8 - offset)
 	}
 	return ret, nil

@@ -141,17 +141,14 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	ipv6DA, err := mup.NewMGTP4IPv6DstFieldsFromFields(dstPrefix, ipv4DA, argsMobSession)
-	if err != nil {
-		return nil, fmt.Errorf("Error during creation of IPv6 DA: %s", err)
-	}
+	ipv6DA := mup.NewMGTP4IPv6Dst(dstPrefix, [4]byte(ipv4DA), argsMobSession)
 
 	// S04. Copy IPv4 SA to form IPv6 SA B'
 	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
 	srcPrefix := h.sourceAddressPrefix
-	ipv6SA, err := mup.NewMGTP4IPv6SrcFieldsFromFields(srcPrefix, ipv4SA, udpSP)
+	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), [2]byte(udpSP))
 	if err != nil {
 		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
 	}

@@ -28,7 +28,7 @@ func NewEndpointMGTP4E(prefix netip.Prefix, ttl uint8, hopLimit uint8) *Endpoint
 }
 
 // Get IPv6 Destination Address Fields from Packet
-func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6DstFields, error) {
+func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6Dst, error) {
 	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
 	if layerIPv6 == nil {
 		return nil, fmt.Errorf("Malformed IPv6 packet")
@@ -39,7 +39,7 @@ func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6DstFields, error)
 	if prefix < 0 {
 		return nil, fmt.Errorf("Wrong prefix")
 	}
-	if dst, err := mup.NewMGTP4IPv6DstFields(dstSlice, uint(prefix)); err != nil {
+	if dst, err := mup.ParseMGTP4IPv6Dst([16]byte(dstSlice), uint(prefix)); err != nil {
 		return nil, err
 	} else {
 		return dst, nil
@@ -47,14 +47,14 @@ func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6DstFields, error)
 }
 
 // Get IPv6 Source Address Fields from Packet
-func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*mup.MGTP4IPv6SrcFields, error) {
+func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*mup.MGTP4IPv6Src, error) {
 	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
 	if layerIPv6 == nil {
 		return nil, fmt.Errorf("Malformed IPv6 packet")
 	}
 	// get destination address
 	srcSlice := layerIPv6.(*layers.IPv6).NetworkFlow().Src().Raw()
-	if src, err := mup.NewMGTP4IPv6SrcFields(srcSlice); err != nil {
+	if src, err := mup.ParseMGTP4IPv6SrcNextMN([16]byte(srcSlice)); err != nil {
 		return nil, err
 	} else {
 		return src, nil
@@ -121,9 +121,9 @@ func (e EndpointMGTP4E) Handle(ctx context.Context, packet []byte) ([]byte, erro
 		// It is recommended to set the default inner MTU size instead.
 		Flags: layers.IPv4DontFragment,
 		// Destination IP from buffer
-		SrcIP: ipv6SA.IPv4(),
+		SrcIP: ipv6SA.IPv4().AsSlice(),
 		// Source IP from buffer
-		DstIP: ipv6DA.IPv4(),
+		DstIP: ipv6DA.IPv4().AsSlice(),
 		// TOS = DSCP + ECN
 		// We copy the QFI into the DSCP Field
 		TOS: ipv6DA.QFI() << 2,
