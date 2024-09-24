@@ -35,7 +35,7 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	if err != nil {
 		return nil, err
 	}
-	srgw_ip, err := h.CheckDAInPrefixRange(pqt)
+	_, err = h.CheckDAInPrefixRange(pqt)
 	if err != nil {
 		return nil, err
 	}
@@ -60,22 +60,9 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
 
-	action, err := h.db.GetUplinkAction(ctx, teid, srgw_ip, gnb_ip)
+	action, err := h.db.GetUplinkAction(ctx, teid, gnb_ip)
 	if err != nil {
-		ue_ip_address, ok := netip.AddrFromSlice(gopacket.NewPacket(payload.LayerContents(), layers.LayerTypeIPv4, gopacket.Default).NetworkLayer().NetworkFlow().Src().Raw())
-		if !ok {
-			return nil, fmt.Errorf("Could not extract ue ip address (not IPv4 in payload?)")
-		}
-		select {
-		case <-ctx.Done(): // TODO: check if err is no row instead of checking ctx
-			return nil, ctx.Err()
-		default:
-			action, err = h.db.SetUplinkAction(ctx, teid, srgw_ip, gnb_ip, ue_ip_address)
-			if err != nil {
-				return nil, err
-			}
-		}
-
+		return nil, err
 	}
 	// S04. Copy IPv4 SA to form IPv6 SA B'
 	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
