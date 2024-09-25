@@ -13,9 +13,11 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	"github.com/nextmn/rfc9433/encoding"
+
 	db_api "github.com/nextmn/srv6/internal/database/api"
-	"github.com/nextmn/srv6/internal/mup"
 )
 
 type HeadendGTP4WithCtrl struct {
@@ -70,7 +72,7 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
 	srcPrefix := netip.MustParsePrefix("fc00:1:1::/48") // FIXME: dont hardcode
-	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
+	ipv6SA := encoding.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
 
 	src, err := ipv6SA.Marshal()
 	if err != nil {

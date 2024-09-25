@@ -1,17 +1,17 @@
 module github.com/nextmn/srv6
 
-go 1.22.1
+go 1.22.7
 
 require (
 	github.com/adrg/xdg v0.5.0
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofrs/uuid v4.4.0+incompatible
-	github.com/google/go-cmp v0.6.0
 	github.com/google/gopacket v1.1.19
 	github.com/lib/pq v1.10.9
 	github.com/nextmn/gopacket-gtp v0.0.7
 	github.com/nextmn/gopacket-srv6 v0.0.8
 	github.com/nextmn/json-api v0.0.7
+	github.com/nextmn/rfc9433 v0.0.2
 	github.com/sirupsen/logrus v1.9.3
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
 	github.com/urfave/cli/v2 v2.27.4

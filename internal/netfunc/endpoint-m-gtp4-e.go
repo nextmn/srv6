@@ -11,10 +11,12 @@ import (
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
 	gopacket_gtp "github.com/nextmn/gopacket-gtp"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	"github.com/nextmn/rfc9433/encoding"
+
 	"github.com/nextmn/srv6/internal/constants"
-	"github.com/nextmn/srv6/internal/mup"
 )
 
 type EndpointMGTP4E struct {
@@ -28,7 +30,7 @@ func NewEndpointMGTP4E(prefix netip.Prefix, ttl uint8, hopLimit uint8) *Endpoint
 }
 
 // Get IPv6 Destination Address Fields from Packet
-func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6Dst, error) {
+func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*encoding.MGTP4IPv6Dst, error) {
 	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
 	if layerIPv6 == nil {
 		return nil, fmt.Errorf("Malformed IPv6 packet")
@@ -39,7 +41,7 @@ func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6Dst, error) {
 	if prefix < 0 {
 		return nil, fmt.Errorf("Wrong prefix")
 	}
-	if dst, err := mup.ParseMGTP4IPv6Dst([16]byte(dstSlice), uint(prefix)); err != nil {
+	if dst, err := encoding.ParseMGTP4IPv6Dst([16]byte(dstSlice), uint(prefix)); err != nil {
 		return nil, err
 	} else {
 		return dst, nil
@@ -47,14 +49,14 @@ func (e EndpointMGTP4E) ipv6DAFields(p *Packet) (*mup.MGTP4IPv6Dst, error) {
 }
 
 // Get IPv6 Source Address Fields from Packet
-func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*mup.MGTP4IPv6Src, error) {
+func (e EndpointMGTP4E) ipv6SAFields(p *Packet) (*encoding.MGTP4IPv6Src, error) {
 	layerIPv6 := p.Layer(layers.LayerTypeIPv6)
 	if layerIPv6 == nil {
 		return nil, fmt.Errorf("Malformed IPv6 packet")
 	}
 	// get destination address
 	srcSlice := layerIPv6.(*layers.IPv6).NetworkFlow().Src().Raw()
-	if src, err := mup.ParseMGTP4IPv6SrcNextMN([16]byte(srcSlice)); err != nil {
+	if src, err := encoding.ParseMGTP4IPv6SrcNextMN([16]byte(srcSlice)); err != nil {
 		return nil, err
 	} else {
 		return src, nil
