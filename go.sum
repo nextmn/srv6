@@ -60,6 +60,8 @@ github.com/nextmn/gopacket-srv6 v0.0.8 h1:oP4wuJ7dOiV/gWmX3zoFcdp2dKdSWLUaxH2fJ3
 github.com/nextmn/gopacket-srv6 v0.0.8/go.mod h1:2Tyuo9zsG0bP2IhC4tVRgPRuyUqOgrvEEH9seJSZTlU=
 github.com/nextmn/json-api v0.0.7 h1:cM1DJhOTleeESDQIGn8Ahuo3szCW9YEiymbsng+aFws=
 github.com/nextmn/json-api v0.0.7/go.mod h1:0py63IYCOBp1ZtLkMjNCNnOwbwhOmkh+ymJ0/OrxYx8=
+github.com/nextmn/logrus-formatter v0.0.1 h1:Bsf78jjiEESc+rV8xE6IyKj4frDPGMwXFNrLQzm6A1E=
+github.com/nextmn/logrus-formatter v0.0.1/go.mod h1:vdSZ+sIcSna8vjbXkSFxsnsKHqRwaUEed4JCPcXoGyM=
 github.com/nextmn/rfc9433 v0.0.2 h1:6FjMY+Qy8MNXQ0PPxezUsyXDxJiCbTp5j3OcXQgIQh8=
 github.com/nextmn/rfc9433 v0.0.2/go.mod h1:uVEEXunVOe3dMDV8eHr8ViPT/RnJ5WxjeQhycgaqFh4=
 github.com/pelletier/go-toml/v2 v2.2.3 h1:YmeHyLY8mFWbdkNWwpr+qIL2bEqT0o95WSdkNHvL12M=
