@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -21,13 +22,14 @@ import (
 type DBTask struct {
 	WithName
 	WithState
-	db       *database.Database
-	user     string
-	port     string
-	password string
-	host     string
-	dbname   string
-	registry app_api.Registry
+	db             *database.Database
+	user           string
+	port           string
+	password       string
+	host           string
+	dbname         string
+	unixSocketPath string
+	registry       app_api.Registry
 }
 
 // Create a new DBTask
@@ -72,22 +74,33 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 	if !ok {
 		db.dbname = db.user
 	}
-	password, ok := os.LookupEnv("POSTGRES_PASSWORD")
-	db.password = password
+
+	var psqlconn string
+	unixSocket, ok := os.LookupEnv("POSTGRES_UNIX_SOCKET_PATH")
 	if !ok {
-		password_file, ok := os.LookupEnv("POSTGRES_PASSWORD_FILE")
+		password, ok := os.LookupEnv("POSTGRES_PASSWORD")
+		db.password = password
 		if !ok {
-			return fmt.Errorf("No password provided for postgres")
+			password_file, ok := os.LookupEnv("POSTGRES_PASSWORD_FILE")
+			if !ok {
+				return fmt.Errorf("No password provided for postgres")
+			}
+			b, err := os.ReadFile(password_file)
+			if err != nil {
+				return fmt.Errorf("Could not read file %s to get postgres password", password_file)
+			}
+			db.password = string(b)
 		}
-		b, err := os.ReadFile(password_file)
-		if err != nil {
-			return fmt.Errorf("Could not read file %s to get postgres password", password_file)
+		// Create a conn for this database
+		psqlconn = fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' dbname='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
+	} else {
+		db.unixSocketPath = path.Clean(unixSocket)
+		if db.unixSocketPath != "/" {
+			db.unixSocketPath += "/"
 		}
-		db.password = string(b)
+		psqlconn = fmt.Sprintf("postgres:///%s?host=%s&user=%s", db.dbname, db.unixSocketPath, db.user)
 	}
 
-	// Create a conn for this database
-	psqlconn := fmt.Sprintf("host='%s' port='%s' user='%s' password='%s' dbname='%s' sslmode='disable'", db.host, db.port, db.user, db.password, db.dbname)
 	postgres, err := sql.Open("postgres", psqlconn)
 	if err != nil {
 		return fmt.Errorf("Error while openning postgres database: %s", err)
