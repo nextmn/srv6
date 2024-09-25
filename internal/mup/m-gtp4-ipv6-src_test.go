@@ -14,7 +14,7 @@ import (
 )
 
 func ExampleMGTP4IPv6Src() {
-	src := NewMGTP4IPv6Src(netip.MustParsePrefix("3fff::/20"), netip.MustParseAddr("203.0.113.1").As4(), [2]byte{0x13, 0x37})
+	src := NewMGTP4IPv6Src(netip.MustParsePrefix("3fff::/20"), netip.MustParseAddr("203.0.113.1").As4(), 1337)
 	src.Marshal()
 }
 
@@ -37,7 +37,7 @@ func TestMGTP4IPv6Src(t *testing.T) {
 	if e.UDPPortNumber() != 0x0123 {
 		t.Fatalf("Cannot extract udp port number correctly: %x", e.UDPPortNumber())
 	}
-	ip_addr2 := NewMGTP4IPv6Src(netip.MustParsePrefix("fd00:1:1::/48"), [4]byte{10, 0, 4, 1}, [2]byte{0x12, 0x34})
+	ip_addr2 := NewMGTP4IPv6Src(netip.MustParsePrefix("fd00:1:1::/48"), [4]byte{10, 0, 4, 1}, 0x1234)
 	b, err := ip_addr2.Marshal()
 	if err != nil {
 		t.Fatal(err)

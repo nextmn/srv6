@@ -8,8 +8,6 @@ package mup
 import (
 	"encoding/binary"
 	"net/netip"
-
-	"github.com/google/gopacket/layers"
 )
 
 // RFC 9433, section 6.6 (End.M.GTP4.E):
@@ -61,15 +59,15 @@ import (
 type MGTP4IPv6Src struct {
 	prefix netip.Prefix // prefix in canonical form
 	ipv4   [IPV4_ADDR_SIZE_BYTE]byte
-	udp    [UDP_PORT_SIZE_BYTE]byte
+	udp    uint16
 }
 
 // NewMGTP4IPv6Src creates a nw MGTP4IPv6Src
-func NewMGTP4IPv6Src(prefix netip.Prefix, ipv4 [IPV4_ADDR_SIZE_BYTE]byte, port [UDP_PORT_SIZE_BYTE]byte) *MGTP4IPv6Src {
+func NewMGTP4IPv6Src(prefix netip.Prefix, ipv4 [IPV4_ADDR_SIZE_BYTE]byte, udpPortNumber uint16) *MGTP4IPv6Src {
 	return &MGTP4IPv6Src{
 		prefix: prefix.Masked(),
 		ipv4:   ipv4,
-		udp:    port,
+		udp:    udpPortNumber,
 	}
 }
 
@@ -98,7 +96,7 @@ func ParseMGTP4IPv6SrcNextMN(addr [IPV6_ADDR_SIZE_BYTE]byte) (*MGTP4IPv6Src, err
 	if r, err := ParseMGTP4IPv6Src(addr, prefixLen); err != nil {
 		return nil, err
 	} else {
-		r.udp = udp
+		r.udp = binary.BigEndian.Uint16([]byte{udp[0], udp[1]})
 		return r, nil
 	}
 }
@@ -129,8 +127,8 @@ func (e *MGTP4IPv6Src) IPv4() netip.Addr {
 }
 
 // UDPPortNumber returns the UDP Port Number encoded in the MGTP4IPv6Src (0 if not set).
-func (e *MGTP4IPv6Src) UDPPortNumber() layers.UDPPort {
-	return (layers.UDPPort)(binary.BigEndian.Uint16([]byte{e.udp[0], e.udp[1]}))
+func (e *MGTP4IPv6Src) UDPPortNumber() uint16 {
+	return e.udp
 }
 
 // MarshalLen returns the serial length of MGTP4IPv6Src.
@@ -158,7 +156,8 @@ func (a *MGTP4IPv6Src) MarshalTo(b []byte) error {
 	copy(b, prefix[:])
 
 	ipv4 := netip.AddrFrom4(a.ipv4).AsSlice()
-	udp := []byte{a.udp[0], a.udp[1]}
+	udp := make([]byte, 2)
+	binary.BigEndian.PutUint16(udp, a.udp)
 	bits := a.prefix.Bits()
 	if bits == -1 {
 		return ErrPrefixLength

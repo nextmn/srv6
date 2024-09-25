@@ -6,6 +6,7 @@ package netfunc
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"net"
 	"net/netip"
@@ -148,7 +149,7 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
 	srcPrefix := h.sourceAddressPrefix
-	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), [2]byte(udpSP))
+	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
 	if err != nil {
 		return nil, fmt.Errorf("Error during creation of IPv6 SA: %s", err)
 	}

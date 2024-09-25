@@ -136,7 +136,7 @@ func (e EndpointMGTP4E) Handle(ctx context.Context, packet []byte) ([]byte, erro
 
 	udp := layers.UDP{
 		// Source Port
-		SrcPort: ipv6SA.UDPPortNumber(),
+		SrcPort: (layers.UDPPort)(ipv6SA.UDPPortNumber()),
 		DstPort: constants.GTPU_PORT_INT,
 		// cheksum, and length are computed at serialization
 	}

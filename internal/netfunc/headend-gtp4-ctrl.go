@@ -6,6 +6,7 @@ package netfunc
 
 import (
 	"context"
+	"encoding/binary"
 	"fmt"
 	"net"
 	"net/netip"
@@ -69,7 +70,7 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
 	srcPrefix := netip.MustParsePrefix("fc00:1:1::/48") // FIXME: dont hardcode
-	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), [2]byte(udpSP))
+	ipv6SA := mup.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
 
 	src, err := ipv6SA.Marshal()
 	if err != nil {
