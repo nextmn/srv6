@@ -258,6 +258,15 @@ func (db *Database) DisableRule(ctx context.Context, uuid uuid.UUID) error {
 	}
 }
 
+func (db *Database) SwitchRule(ctx context.Context, uuidEnable uuid.UUID, uuidDisable uuid.UUID) error {
+	if stmt, ok := db.stmt["switch_rule"]; ok {
+		_, err := stmt.ExecContext(ctx, uuidEnable.String(), uuidDisable.String())
+		return err
+	} else {
+		return fmt.Errorf("Procedure not registered")
+	}
+}
+
 func (db *Database) DeleteRule(ctx context.Context, uuid uuid.UUID) error {
 	if stmt, ok := db.stmt["delete_rule"]; ok {
 		_, err := stmt.ExecContext(ctx, uuid.String())

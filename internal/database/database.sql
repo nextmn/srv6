@@ -55,6 +55,16 @@ BEGIN
 	UPDATE rule SET enabled = false WHERE rule.uuid = in_uuid;
 END;$$;
 
+CREATE OR REPLACE PROCEDURE switch_rule(
+	IN in_uuid_enable UUID,
+	IN in_uuid_disable UUID
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	UPDATE rule SET enabled = true WHERE rule.uuid = in_uuid_enable;
+	UPDATE rule SET enabled = false WHERE rule.uuid = in_uuid_disable;
+END;$$;
+
 CREATE OR REPLACE PROCEDURE delete_rule(
 	IN in_uuid UUID
 )

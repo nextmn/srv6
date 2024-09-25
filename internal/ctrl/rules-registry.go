@@ -110,6 +110,32 @@ func (rr *RulesRegistry) DisableRule(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
+func (rr *RulesRegistry) SwitchRule(c *gin.Context) {
+	idEnable := c.Param("enable_uuid")
+	idDisable := c.Param("disable_uuid")
+	iduuidEnable, err := uuid.FromString(idEnable)
+	if err != nil {
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
+		return
+	}
+	iduuidDisable, err := uuid.FromString(idDisable)
+	if err != nil {
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
+		return
+	}
+	c.Header("Cache-Control", "no-cache")
+	err = rr.db.SwitchRule(c, iduuidEnable, iduuidDisable)
+	if err != nil {
+		logrus.WithError(err).Error("Could not Switch rule in the database")
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not switch rule in the database", Error: err})
+		return
+		//TODO: check if rule not found
+	}
+	c.Status(http.StatusNoContent)
+}
+
 // Post a new rule
 func (rr *RulesRegistry) PostRule(c *gin.Context) {
 	var rule jsonapi.Rule
