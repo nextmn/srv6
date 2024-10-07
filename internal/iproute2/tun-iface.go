@@ -31,8 +31,11 @@ func NewTunIface(name string) *TunIface {
 func (t *TunIface) CreateAndUp() error {
 	config := water.Config{
 		DeviceType: water.TUN,
+		PlatformSpecificParams: water.PlatformSpecificParams{
+			Name:       t.name,
+			MultiQueue: true,
+		},
 	}
-	config.Name = t.name
 	iface, err := water.New(config)
 	if err != nil {
 		return fmt.Errorf("Unable to allocate TUN interface: %s", err)
