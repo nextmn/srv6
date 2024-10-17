@@ -63,7 +63,19 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
 
-	action, err := h.db.GetUplinkAction(ctx, teid, gnb_ip)
+	// Check payload is IPv4
+	inner, ok := payload.(*layers.IPv4)
+	if !ok {
+		return nil, fmt.Errorf("Payload is not IPv4")
+	}
+	if inner.Version != 4 {
+		return nil, fmt.Errorf("Payload is IPv%d instead of IPv4", inner.Version)
+	}
+	// Get Inner IPv4 Header Addresses
+	innerHeaderSrcIPv4 := netip.AddrFrom4([4]byte{inner.SrcIP[0], inner.SrcIP[1], inner.SrcIP[2], inner.SrcIP[3]})
+	innerHeaderDstIPv4 := netip.AddrFrom4([4]byte{inner.DstIP[0], inner.DstIP[1], inner.DstIP[2], inner.DstIP[3]})
+
+	action, err := h.db.GetUplinkAction(ctx, teid, gnb_ip, innerHeaderSrcIPv4, innerHeaderDstIPv4)
 	if err != nil {
 		return nil, err
 	}

@@ -12,5 +12,5 @@ import (
 )
 
 type Uplink interface {
-	GetUplinkAction(ctx context.Context, UplinkTeid uint32, GnbIp netip.Addr) (jsonapi.Action, error)
+	GetUplinkAction(ctx context.Context, UplinkTeid uint32, GnbIp netip.Addr, UeIp netip.Addr, ServiceIp netip.Addr) (jsonapi.Action, error)
 }

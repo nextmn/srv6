@@ -89,9 +89,24 @@ func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID,
 	}
 	switch r.Type {
 	case "uplink":
+		var inneripsrc string
+		var inneripdst string
+		var outeripsrc string
+		if r.Match.Header.InnerIpSrc == nil {
+			inneripsrc = "0.0.0.0/0"
+		} else {
+			inneripsrc = r.Match.Header.InnerIpSrc.String() + "/32"
+		}
+		if r.Match.Payload == nil {
+			inneripdst = "0.0.0.0/0"
+		} else {
+			inneripdst = r.Match.Payload.Dst.String() + "/32"
+		}
+		outeripsrc = r.Match.Header.OuterIpSrc.String() + "/32"
+
 		if stmt, ok := db.stmt["insert_uplink_rule"]; ok {
 			var id uuid.UUID
-			err := stmt.QueryRowContext(ctx, r.Enabled, r.Match.UEIpPrefix.String(), r.Match.GNBIpPrefix.String(), r.Match.Teid, r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
+			err := stmt.QueryRowContext(ctx, r.Enabled, inneripsrc, outeripsrc, r.Match.Header.Teid, inneripdst, r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
 			return &id, err
 		} else {
 			return nil, fmt.Errorf("Procedure not registered")
@@ -99,7 +114,13 @@ func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID,
 	case "downlink":
 		if stmt, ok := db.stmt["insert_downlink_rule"]; ok {
 			var id uuid.UUID
-			err := stmt.QueryRowContext(ctx, r.Enabled, r.Match.UEIpPrefix.String(), r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
+			var dst string
+			if r.Match.Payload == nil {
+				dst = "0.0.0.0/0"
+			} else {
+				dst = r.Match.Payload.Dst.String() + "/32"
+			}
+			err := stmt.QueryRowContext(ctx, r.Enabled, dst, r.Action.NextHop.String(), pq.Array(srh)).Scan(&id)
 			return &id, err
 		} else {
 			return nil, fmt.Errorf("Procedure not registered")
@@ -114,37 +135,53 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, 
 	var enabled bool
 	var action_next_hop string
 	var action_srh []string
-	var match_ue_ip_prefix string
-	var match_gnb_ip_prefix string
+	var match_ue_ip string
+	var match_gnb_ip *string
+	var match_service_ip *string
+	var match_uplink_teid *uint32
 	if stmt, ok := db.stmt["get_rule"]; ok {
-		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix)
+		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
 		if err != nil {
 			return jsonapi.Rule{}, err
 		}
-		var t string
-		if type_uplink {
-			t = "uplink"
-		} else {
-			t = "downlink"
-		}
 		rule := jsonapi.Rule{
 			Enabled: enabled,
-			Type:    t,
+			Match:   jsonapi.Match{},
 		}
-		rule.Match = jsonapi.Match{}
-		if match_ue_ip_prefix != "" {
-			p, err := netip.ParsePrefix(match_ue_ip_prefix)
-			if err == nil {
-				rule.Match.UEIpPrefix = p
+		if type_uplink {
+			rule.Type = "uplink"
+			rule.Match.Header = &jsonapi.GtpHeader{}
+			if match_gnb_ip != nil {
+				p, err := netip.ParsePrefix(*match_gnb_ip)
+				if err == nil && p.Bits() == 32 {
+					rule.Match.Header.OuterIpSrc = p.Addr()
+				}
+			}
+			if match_uplink_teid != nil {
+				rule.Match.Header.Teid = *match_uplink_teid
+			}
+			if match_service_ip != nil {
+				p, err := netip.ParsePrefix(*match_service_ip)
+				if err == nil && p.Bits() == 32 {
+					rule.Match.Payload = &jsonapi.Payload{
+						Dst: p.Addr(),
+					}
+				}
+			}
+		} else {
+			rule.Type = "downlink"
+		}
+		p, err := netip.ParsePrefix(match_ue_ip)
+		if err == nil && p.Bits() == 32 {
+			if type_uplink {
+				a := p.Addr()
+				rule.Match.Header.InnerIpSrc = &a
+			} else {
+				rule.Match.Payload = &jsonapi.Payload{
+					Dst: p.Addr(),
+				}
 			}
 		}
-		if match_gnb_ip_prefix != "" {
-			p, err := netip.ParsePrefix(match_gnb_ip_prefix)
-			if err == nil {
-				rule.Match.GNBIpPrefix = p
-			}
-		}
-
 		srh, err := jsonapi.NewSRH(action_srh)
 		if err != nil {
 			return jsonapi.Rule{}, err
@@ -171,9 +208,10 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 	var enabled bool
 	var action_next_hop string
 	var action_srh []string
-	var match_ue_ip_prefix string
-	var match_gnb_ip_prefix *string
+	var match_ue_ip string
+	var match_gnb_ip *string
 	var match_uplink_teid *uint32
+	var match_service_ip *string
 	m := jsonapi.RuleMap{}
 	if stmt, ok := db.stmt["get_all_rules"]; ok {
 		rows, err := stmt.QueryContext(ctx)
@@ -186,35 +224,47 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 				// avoid looping if no longer necessary
 				return jsonapi.RuleMap{}, ctx.Err()
 			default:
-				err := rows.Scan(&uuid, &type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip_prefix, &match_gnb_ip_prefix, &match_uplink_teid)
+				err := rows.Scan(&uuid, &type_uplink, &enabled, &action_next_hop, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
 				if err != nil {
 					return m, err
 				}
-				var t string
-				if type_uplink {
-					t = "uplink"
-				} else {
-					t = "downlink"
-				}
 				rule := jsonapi.Rule{
 					Enabled: enabled,
-					Type:    t,
+					Match:   jsonapi.Match{},
 				}
-				rule.Match = jsonapi.Match{}
-				if match_ue_ip_prefix != "" {
-					p, err := netip.ParsePrefix(match_ue_ip_prefix)
-					if err == nil {
-						rule.Match.UEIpPrefix = p
+				if type_uplink {
+					rule.Type = "uplink"
+					rule.Match.Header = &jsonapi.GtpHeader{}
+					if match_gnb_ip != nil {
+						p, err := netip.ParsePrefix(*match_gnb_ip)
+						if err == nil && p.Bits() == 32 {
+							rule.Match.Header.OuterIpSrc = p.Addr()
+						}
 					}
-				}
-				if match_gnb_ip_prefix != nil {
-					p, err := netip.ParsePrefix(*match_gnb_ip_prefix)
-					if err == nil {
-						rule.Match.GNBIpPrefix = p
+					if match_uplink_teid != nil {
+						rule.Match.Header.Teid = *match_uplink_teid
 					}
+					if match_service_ip != nil {
+						p, err := netip.ParsePrefix(*match_service_ip)
+						if err == nil && p.Bits() == 32 {
+							rule.Match.Payload = &jsonapi.Payload{
+								Dst: p.Addr(),
+							}
+						}
+					}
+				} else {
+					rule.Type = "downlink"
 				}
-				if match_uplink_teid != nil {
-					rule.Match.Teid = *match_uplink_teid
+				p, err := netip.ParsePrefix(match_ue_ip)
+				if err == nil && p.Bits() == 32 {
+					if type_uplink {
+						a := p.Addr()
+						rule.Match.Header.InnerIpSrc = &a
+					} else {
+						rule.Match.Payload = &jsonapi.Payload{
+							Dst: p.Addr(),
+						}
+					}
 				}
 
 				srh, err := jsonapi.NewSRH(action_srh)
@@ -276,11 +326,11 @@ func (db *Database) DeleteRule(ctx context.Context, uuid uuid.UUID) error {
 	}
 }
 
-func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, gnbIp netip.Addr) (jsonapi.Action, error) {
+func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, gnbIp netip.Addr, ueIp netip.Addr, serviceIp netip.Addr) (jsonapi.Action, error) {
 	var action_next_hop string
 	var action_srh []string
 	if stmt, ok := db.stmt["get_uplink_action"]; ok {
-		err := stmt.QueryRowContext(ctx, uplinkTeid, gnbIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
+		err := stmt.QueryRowContext(ctx, uplinkTeid, gnbIp.String(), ueIp.String(), serviceIp.String()).Scan(&action_next_hop, pq.Array(&action_srh))
 		if err != nil {
 			return jsonapi.Action{}, err
 		}
