@@ -14,6 +14,7 @@ import (
 
 	"github.com/nextmn/srv6/internal/app"
 	"github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/healthcheck"
 
 	"github.com/adrg/xdg"
 	"github.com/sirupsen/logrus"
@@ -41,7 +42,7 @@ func main() {
 				EnvVars:     []string{"CONFIG_FILE"},
 			},
 		},
-		Action: func(ctx *cli.Context) error {
+		Before: func(ctx *cli.Context) error {
 			if ctx.Path("config") == "" {
 				if xdgPath, err := xdg.SearchConfigFile("nextmn-srv6/config.yaml"); err != nil {
 					cli.ShowAppHelp(ctx)
@@ -50,6 +51,9 @@ func main() {
 					ctx.Set("config", xdgPath)
 				}
 			}
+			return nil
+		},
+		Action: func(ctx *cli.Context) error {
 			conf, err := config.ParseConf(ctx.Path("config"))
 			if err != nil {
 				logrus.WithContext(ctx.Context).WithError(err).Fatal("Error loading config, exiting…")
@@ -57,11 +61,29 @@ func main() {
 			if conf.Logger != nil {
 				logrus.SetLevel(conf.Logger.Level)
 			}
-
 			if err := app.NewSetup(conf).Run(ctx.Context); err != nil {
 				logrus.WithError(err).Fatal("Error while running, exiting…")
 			}
 			return nil
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "healthcheck",
+				Usage: "check status of the node",
+				Action: func(ctx *cli.Context) error {
+					conf, err := config.ParseConf(ctx.Path("config"))
+					if err != nil {
+						logrus.WithContext(ctx.Context).WithError(err).Fatal("Error loading config, exiting…")
+					}
+					if conf.Logger != nil {
+						logrus.SetLevel(conf.Logger.Level)
+					}
+					if err := healthcheck.NewHealthcheck(conf).Run(ctx.Context); err != nil {
+						os.Exit(1)
+					}
+					return nil
+				},
+			},
 		},
 	}
 	if err := app.RunContext(ctx, os.Args); err != nil {

@@ -8,10 +8,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/nextmn/srv6/internal/database"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
 	"github.com/nextmn/json-api/jsonapi"
-	"github.com/nextmn/srv6/internal/database"
 	"github.com/sirupsen/logrus"
 )
 
