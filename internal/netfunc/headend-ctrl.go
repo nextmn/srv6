@@ -24,14 +24,22 @@ func NewHeadendWithCtrl(he *config.Headend, ttl uint8, hopLimit uint8, setup_reg
 		if !ok {
 			return nil, fmt.Errorf("No database in the registry")
 		}
-		return NewNetFunc(NewHeadendEncapsWithCtrl(p, ttl, hopLimit, db)), nil
+		srcAddressPrefix, err := netip.ParsePrefix(*he.SourceAddressPrefix)
+		if err != nil {
+			return nil, err
+		}
+		return NewNetFunc(NewHeadendEncapsWithCtrl(p, srcAddressPrefix, ttl, hopLimit, db)), nil
 	case config.H_M_GTP4_D:
 		db, ok := setup_registry.DB()
 		if !ok {
 			return nil, fmt.Errorf("No database in the registry")
 		}
+		srcAddressPrefix, err := netip.ParsePrefix(*he.SourceAddressPrefix)
+		if err != nil {
+			return nil, err
+		}
 
-		g, err := NewHeadendGTP4WithCtrl(p, ttl, hopLimit, db)
+		g, err := NewHeadendGTP4WithCtrl(p, srcAddressPrefix, ttl, hopLimit, db)
 		if err != nil {
 			return nil, err
 		}

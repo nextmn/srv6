@@ -16,19 +16,20 @@ import (
 
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/rfc9433/encoding"
-
 	db_api "github.com/nextmn/srv6/internal/database/api"
 )
 
 type HeadendGTP4WithCtrl struct {
 	BaseHandler
-	db db_api.Uplink
+	db        db_api.Uplink
+	srcPrefix netip.Prefix
 }
 
-func NewHeadendGTP4WithCtrl(prefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Uplink) (*HeadendGTP4WithCtrl, error) {
+func NewHeadendGTP4WithCtrl(prefix netip.Prefix, srcPrefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Uplink) (*HeadendGTP4WithCtrl, error) {
 	return &HeadendGTP4WithCtrl{
 		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
 		db:          db,
+		srcPrefix:   srcPrefix,
 	}, nil
 }
 
@@ -83,12 +84,11 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	ipv4SA := pqt.NetworkLayer().NetworkFlow().Src().Raw()
 	udpSP := pqt.TransportLayer().TransportFlow().Src().Raw()
 
-	srcPrefix := netip.MustParsePrefix("fc00:1:1::/48") // FIXME: dont hardcode
-	ipv6SA := encoding.NewMGTP4IPv6Src(srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
+	ipv6SA := encoding.NewMGTP4IPv6Src(h.srcPrefix, [4]byte(ipv4SA), binary.BigEndian.Uint16(udpSP))
 
 	src, err := ipv6SA.Marshal()
 	if err != nil {
-		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %s", err)
+		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %w", err)
 	}
 	nextHop := action.NextHop.AsSlice()
 

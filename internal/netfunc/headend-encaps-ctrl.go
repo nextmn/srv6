@@ -6,24 +6,29 @@ package netfunc
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/netip"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
+
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	"github.com/nextmn/rfc9433/encoding"
 	db_api "github.com/nextmn/srv6/internal/database/api"
 )
 
 type HeadendEncapsWithCtrl struct {
 	BaseHandler
-	db db_api.Downlink
+	db        db_api.Downlink
+	srcPrefix netip.Prefix
 }
 
-func NewHeadendEncapsWithCtrl(prefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Downlink) *HeadendEncapsWithCtrl {
+func NewHeadendEncapsWithCtrl(prefix netip.Prefix, srcPrefix netip.Prefix, ttl uint8, hopLimit uint8, db db_api.Downlink) *HeadendEncapsWithCtrl {
 	return &HeadendEncapsWithCtrl{
 		BaseHandler: NewBaseHandler(prefix, ttl, hopLimit),
 		db:          db,
+		srcPrefix:   srcPrefix,
 	}
 }
 
@@ -40,7 +45,13 @@ func (h HeadendEncapsWithCtrl) Handle(ctx context.Context, packet []byte) ([]byt
 	if err != nil {
 		return nil, err
 	}
-	src := net.ParseIP("fc00:3:1:0A03:0001:0868::30") // FIXME: dont hardcode
+	srgw_gtp_ip := netip.MustParseAddr("10.3.0.1")                            // FIXME: dont hardcode
+	ipv6Src := encoding.NewMGTP4IPv6Src(h.srcPrefix, srgw_gtp_ip.As4(), 2152) // FIXME:dont hardcode udp port number to 2152
+	src, err := ipv6Src.Marshal()
+	if err != nil {
+		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %w", err)
+	}
+
 	nextHop := action.NextHop.AsSlice()
 	ipheader := &layers.IPv6{
 		SrcIP: src,
