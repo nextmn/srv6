@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS rule (
 	uuid UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 	type_uplink BOOL NOT NULL,
 	enabled BOOL NOT NULL,
-	action_next_hop INET NOT NULL,
 	action_srh INET ARRAY NOT NULL,
 	match_ue_ip CIDR NOT NULL,
 	match_gnb_ip CIDR,
@@ -20,24 +19,24 @@ CREATE OR REPLACE PROCEDURE insert_uplink_rule(
 	IN in_enabled BOOL, IN in_ue_ip CIDR,
 	IN in_gnb_ip CIDR, IN in_uplink_teid INTEGER,
 	IN in_service_ip CIDR,
-	IN in_next_hop INET, IN in_srh INET ARRAY,
+	IN in_srh INET ARRAY,
 	OUT out_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	INSERT INTO rule(type_uplink, enabled, match_ue_ip, match_gnb_ip, match_uplink_teid, match_service_ip, action_next_hop, action_srh)
-		VALUES(TRUE, in_enabled, in_ue_ip, in_gnb_ip, in_uplink_teid, in_service_ip, in_next_hop, in_srh) RETURNING rule.uuid INTO out_uuid;
+	INSERT INTO rule(type_uplink, enabled, match_ue_ip, match_gnb_ip, match_uplink_teid, match_service_ip, action_srh)
+		VALUES(TRUE, in_enabled, in_ue_ip, in_gnb_ip, in_uplink_teid, in_service_ip, in_srh) RETURNING rule.uuid INTO out_uuid;
 END;$$;
 
 CREATE OR REPLACE PROCEDURE insert_downlink_rule(
 	IN in_enabled BOOL, IN in_ue_ip CIDR,
-	IN in_next_hop INET, IN in_srh INET ARRAY,
+	IN in_srh INET ARRAY,
 	OUT out_uuid UUID
 )
 LANGUAGE plpgsql AS $$
 BEGIN
-	INSERT INTO rule(type_uplink, enabled, match_ue_ip, action_next_hop, action_srh)
-		VALUES(FALSE, in_enabled, in_ue_ip, in_next_hop, in_srh) RETURNING rule.uuid INTO out_uuid;
+	INSERT INTO rule(type_uplink, enabled, match_ue_ip, action_srh)
+		VALUES(FALSE, in_enabled, in_ue_ip, in_srh) RETURNING rule.uuid INTO out_uuid;
 END;$$;
 
 
@@ -80,12 +79,11 @@ CREATE OR REPLACE FUNCTION get_uplink_action(
 	IN in_ue_ip INET, IN in_service_ip INET
 )
 RETURNS TABLE (
-	t_action_next_hop INET,
 	t_action_srh INET ARRAY
 )
 AS $$
 BEGIN
-	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
+	RETURN QUERY SELECT rule.action_srh AS "t_action_srh"
 		FROM rule
 		WHERE (rule.match_uplink_teid = in_uplink_teid
 			AND rule.match_gnb_ip && in_gnb_ip
@@ -98,12 +96,11 @@ CREATE OR REPLACE FUNCTION get_downlink_action(
 	IN in_ue_ip_address INET
 )
 RETURNS TABLE (
-	t_action_next_hop INET,
 	t_action_srh INET ARRAY
 )
 AS $$
 BEGIN
-	RETURN QUERY SELECT rule.action_next_hop AS "t_action_next_hop", rule.action_srh AS "t_action_srh"
+	RETURN QUERY SELECT rule.action_srh AS "t_action_srh"
 		FROM rule
 		WHERE (rule.type_uplink = FALSE AND rule.enabled = TRUE
 			AND match_ue_ip && in_ue_ip_address);
@@ -115,7 +112,6 @@ CREATE OR REPLACE FUNCTION get_rule(
 RETURNS TABLE (
 	t_type_uplink BOOL,
 	t_enabled BOOL,
-	t_action_next_hop INET,
 	t_action_srh INET ARRAY,
 	t_match_ue_ip CIDR,
 	t_match_gnb_ip CIDR,
@@ -124,7 +120,7 @@ RETURNS TABLE (
 )
 AS $$
 BEGIN
-	RETURN QUERY SELECT type_uplink AS "t_type_uplink", enabled AS "t_enabled", action_next_hop AS "t_action_next_hop",
+	RETURN QUERY SELECT type_uplink AS "t_type_uplink", enabled AS "t_enabled",
 		action_srh AS "t_action_srh", match_ue_ip AS "t_match_ue_ip", match_gnb_ip AS "t_match_gnb_ip",
 		match_uplink_teid AS "t_match_uplink_teid", match_service_ip AS "t_match_service_ip"
 		FROM rule
@@ -136,7 +132,6 @@ RETURNS TABLE (
 	t_uuid UUID,
 	t_type_uplink BOOL,
 	t_enabled BOOL,
-	t_action_next_hop INET,
 	t_action_srh INET ARRAY,
 	t_match_ue_ip CIDR,
 	t_match_gnb_ip CIDR,
@@ -146,7 +141,7 @@ RETURNS TABLE (
 AS $$
 BEGIN
 	RETURN QUERY SELECT uuid AS "t_uuid", type_uplink AS "t_type_uplink",
-		enabled AS "t_enabled", action_next_hop AS "t_action_next_hop",
+		enabled AS "t_enabled",
 		action_srh AS "t_action_srh", match_ue_ip AS "t_match_ue_ip", match_gnb_ip AS "t_match_gnb_ip",
 		match_uplink_teid AS "t_match_uplink_teid", match_service_ip AS "t_match_service_ip"
 		FROM rule;

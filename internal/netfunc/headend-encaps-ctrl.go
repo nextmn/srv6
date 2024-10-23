@@ -7,7 +7,6 @@ package netfunc
 import (
 	"context"
 	"fmt"
-	"net"
 	"net/netip"
 
 	"github.com/google/gopacket"
@@ -52,28 +51,23 @@ func (h HeadendEncapsWithCtrl) Handle(ctx context.Context, packet []byte) ([]byt
 		return nil, fmt.Errorf("Error during serialization of IPv6 SA: %w", err)
 	}
 
-	nextHop := action.NextHop.AsSlice()
+	segs := action.SRH.AsSlice()
 	ipheader := &layers.IPv6{
 		SrcIP: src,
 		// S06. Set the IPv6 DA = B
-		DstIP:      nextHop,
+		DstIP:      segs[len(segs)-1],
 		Version:    6,
 		NextHeader: layers.IPProtocolIPv6Routing, // IPv6-Route
 		HopLimit:   h.HopLimit(),
 		// TODO: Generate a FlowLabel with hash(IPv6SA + IPv6DA + policy)
 		TrafficClass: 0, // FIXME: put this in Action
 	}
-	segList := []net.IP{}
-	for _, seg := range action.SRH {
-		segList = append(segList, seg.AsSlice())
-	}
-	segList = append(segList, nextHop)
 
 	srh := &gopacket_srv6.IPv6Routing{
 		RoutingType: 4,
 		// the first item on segments list is the next endpoint
-		SegmentsLeft:     uint8(len(segList) - 1), // pointer to next segment
-		SourceRoutingIPs: segList,
+		SegmentsLeft:     uint8(len(segs) - 1), // pointer to next segment
+		SourceRoutingIPs: segs,
 		Tag:              0, // not used
 		Flags:            0, // no flag defined
 		GopacketIpv6ExtensionBase: gopacket_srv6.GopacketIpv6ExtensionBase{
