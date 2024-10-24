@@ -87,8 +87,10 @@ BEGIN
 		FROM rule
 		WHERE (rule.match_uplink_teid = in_uplink_teid
 			AND rule.match_gnb_ip && in_gnb_ip
-			AND (rule.match_ue_ip && in_ue_ip)
-			AND (rule.match_service_ip && in_service_ip)
+			AND rule.match_ue_ip && in_ue_ip
+			AND rule.match_service_ip && in_service_ip
+			AND rule.enabled = TRUE
+			AND rule.type_uplink = TRUE
 		);
 END;$$ LANGUAGE plpgsql;
 
