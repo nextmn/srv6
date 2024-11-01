@@ -3,7 +3,7 @@ module github.com/nextmn/srv6
 go 1.22.7
 
 require (
-	github.com/adrg/xdg v0.5.2
+	github.com/adrg/xdg v0.5.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/gopacket v1.1.19
