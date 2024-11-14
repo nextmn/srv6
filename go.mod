@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/nextmn/gopacket-gtp v0.0.7
 	github.com/nextmn/gopacket-srv6 v0.0.8
-	github.com/nextmn/json-api v0.0.11
+	github.com/nextmn/json-api v0.0.12
 	github.com/nextmn/logrus-formatter v0.0.1
 	github.com/nextmn/rfc9433 v0.0.2
 	github.com/sirupsen/logrus v1.9.3
@@ -45,7 +45,7 @@ require (
 	golang.org/x/arch v0.11.0 // indirect
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/net v0.30.0 // indirect
-	golang.org/x/sys v0.26.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/protobuf v1.35.1 // indirect
 )

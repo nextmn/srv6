@@ -10,11 +10,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/nextmn/json-api/healthcheck"
 	"github.com/nextmn/logrus-formatter/logger"
 
 	"github.com/nextmn/srv6/internal/app"
 	"github.com/nextmn/srv6/internal/config"
-	"github.com/nextmn/srv6/internal/healthcheck"
 
 	"github.com/adrg/xdg"
 	"github.com/sirupsen/logrus"
@@ -78,7 +78,18 @@ func main() {
 					if conf.Logger != nil {
 						logrus.SetLevel(conf.Logger.Level)
 					}
-					if err := healthcheck.NewHealthcheck(conf).Run(ctx.Context); err != nil {
+					// TODO: use directly URI in config
+					httpPort := "80" // default http port
+					if conf.HTTPPort != nil {
+						httpPort = *conf.HTTPPort
+					}
+					httpURI := "http://"
+					if conf.HTTPAddress.Is6() {
+						httpURI = httpURI + "[" + conf.HTTPAddress.String() + "]:" + httpPort
+					} else {
+						httpURI = httpURI + conf.HTTPAddress.String() + ":" + httpPort
+					}
+					if err := healthcheck.NewHealthcheck(httpURI, "go-github-nextmn-srv6").Run(ctx.Context); err != nil {
 						os.Exit(1)
 					}
 					return nil
