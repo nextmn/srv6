@@ -6,6 +6,7 @@ package tasks
 
 import (
 	"context"
+	"net/netip"
 
 	"github.com/nextmn/srv6/internal/iproute2"
 )
@@ -14,11 +15,11 @@ import (
 type TaskLinuxHeadendSetSourceAddress struct {
 	WithName
 	WithState
-	address string
+	address netip.Addr
 }
 
 // Create a new TaskLinuxHeadendSetSourceAddress
-func NewTaskLinuxHeadendSetSourceAddress(name string, address string) *TaskLinuxHeadendSetSourceAddress {
+func NewTaskLinuxHeadendSetSourceAddress(name string, address netip.Addr) *TaskLinuxHeadendSetSourceAddress {
 	return &TaskLinuxHeadendSetSourceAddress{
 		WithName:  NewName(name),
 		WithState: NewState(),
@@ -38,7 +39,7 @@ func (t *TaskLinuxHeadendSetSourceAddress) RunInit(ctx context.Context) error {
 // Exit
 func (t *TaskLinuxHeadendSetSourceAddress) RunExit() error {
 	// :: resets to default behavior
-	if err := iproute2.IPSrSetSourceAddress("::"); err != nil {
+	if err := iproute2.IPSrSetSourceAddress(netip.MustParseAddr("::")); err != nil {
 		return err
 	}
 	t.state = false

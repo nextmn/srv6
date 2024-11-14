@@ -10,10 +10,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/netip"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/ctrl"
+
+	"github.com/nextmn/json-api/jsonapi"
 )
 
 const UserAgent = "go-github-nextmn-srv6"
@@ -28,7 +29,7 @@ type ControllerRegistryTask struct {
 }
 
 // Create a new ControllerRegistry
-func NewControllerRegistryTask(name string, remoteControlURI string, backbone netip.Addr, locator string, localControlURI string, setup_registry app_api.Registry) *ControllerRegistryTask {
+func NewControllerRegistryTask(name string, remoteControlURI jsonapi.ControlURI, backbone jsonapi.BackboneIP, locator jsonapi.Locator, localControlURI jsonapi.ControlURI, setup_registry app_api.Registry) *ControllerRegistryTask {
 	return &ControllerRegistryTask{
 		WithName:  NewName(name),
 		WithState: NewState(),
@@ -49,19 +50,19 @@ func (t *ControllerRegistryTask) RunInit(ctx context.Context) error {
 	if t.SetupRegistry != nil {
 		t.SetupRegistry.RegisterControllerRegistry(t.ControllerRegistry)
 	} else {
-		return fmt.Errorf("could not register ControllerRegistry")
+		return fmt.Errorf("could not register controllerregistry")
 	}
-	data := map[string]string{
-		"locator":  t.ControllerRegistry.Locator,
-		"backbone": t.ControllerRegistry.Backbone.String(),
-		"control":  t.ControllerRegistry.LocalControlURI,
+	data := jsonapi.Router{
+		Locator:  t.ControllerRegistry.Locator,
+		Backbone: t.ControllerRegistry.Backbone,
+		Control:  t.ControllerRegistry.LocalControlURI,
 	}
-	json_data, err := json.Marshal(data)
+	reqBody, err := json.Marshal(data)
 	if err != nil {
 		return err
 	}
 	// TODO: retry on timeout failure (use a new ctx)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.ControllerRegistry.RemoteControlURI+"/routers", bytes.NewBuffer(json_data))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, t.ControllerRegistry.RemoteControlURI.JoinPath("routers").String(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return err
 	}
@@ -100,7 +101,7 @@ func (t *ControllerRegistryTask) RunExit() error {
 		return nil
 	}
 	// no context since Background Context is already Done
-	req, err := http.NewRequest(http.MethodDelete, t.ControllerRegistry.RemoteControlURI+t.ControllerRegistry.Resource, nil)
+	req, err := http.NewRequest(http.MethodDelete, t.ControllerRegistry.RemoteControlURI.JoinPath(t.ControllerRegistry.Resource).String(), nil)
 	if err != nil {
 		return err
 	}

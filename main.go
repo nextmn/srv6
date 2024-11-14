@@ -78,18 +78,7 @@ func main() {
 					if conf.Logger != nil {
 						logrus.SetLevel(conf.Logger.Level)
 					}
-					// TODO: use directly URI in config
-					httpPort := "80" // default http port
-					if conf.HTTPPort != nil {
-						httpPort = *conf.HTTPPort
-					}
-					httpURI := "http://"
-					if conf.HTTPAddress.Is6() {
-						httpURI = httpURI + "[" + conf.HTTPAddress.String() + "]:" + httpPort
-					} else {
-						httpURI = httpURI + conf.HTTPAddress.String() + ":" + httpPort
-					}
-					if err := healthcheck.NewHealthcheck(httpURI, "go-github-nextmn-srv6").Run(ctx.Context); err != nil {
+					if err := healthcheck.NewHealthcheck(*conf.Control.Uri.JoinPath("status"), "go-github-nextmn-srv6").Run(ctx.Context); err != nil {
 						os.Exit(1)
 					}
 					return nil

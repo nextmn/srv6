@@ -43,28 +43,16 @@ func (s *Setup) AddTasks(ctx context.Context) {
 	// 0.1 pre-hooks
 	s.tasks.Register(tasks.NewMultiHook("hook.pre.init", preInitHook, "hook.post.exit", postExitHook))
 
-	httpPort := "80" // default http port
-	if s.config.HTTPPort != nil {
-		httpPort = *s.config.HTTPPort
-	}
-	httpURI := "http://"
-	if s.config.HTTPAddress.Is6() {
-		httpURI = httpURI + "[" + s.config.HTTPAddress.String() + "]:" + httpPort
-	} else {
-		httpURI = httpURI + s.config.HTTPAddress.String() + ":" + httpPort
-	}
-	httpAddr := fmt.Sprintf("[%s]:%s", s.config.HTTPAddress, httpPort)
-
 	// 0.2 database
 	s.tasks.Register(tasks.NewDBTask("database", s.registry))
 
 	// 0.3 http server
 
-	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", httpAddr, s.registry))
+	s.tasks.Register(tasks.NewHttpServerTask("ctrl.rest-api", s.config.Control.BindAddr, s.registry))
 
 	// 0.4 controller registry
 	if s.config.Locator != nil {
-		s.tasks.Register(tasks.NewControllerRegistryTask("ctrl.registry", s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, httpURI, s.registry))
+		s.tasks.Register(tasks.NewControllerRegistryTask("ctrl.registry", s.config.ControllerURI, s.config.BackboneIP, *s.config.Locator, s.config.Control.Uri, s.registry))
 	}
 
 	// 1.  ifaces
@@ -153,7 +141,7 @@ func (s *Setup) AddTasks(ctx context.Context) {
 	// 4.  ip rules
 	// 4.1 rule to rttable nextmn-srv6
 	if s.config.Locator != nil {
-		s.tasks.Register(tasks.NewTaskIP6Rule("iproute2.rule.nextmn-srv6", *s.config.Locator, constants.RT_TABLE_NEXTMN_IPV6))
+		s.tasks.Register(tasks.NewTaskIP6Rule("iproute2.rule.nextmn-srv6", s.config.Locator.Prefix, constants.RT_TABLE_NEXTMN_IPV6))
 	}
 	// 4.2 rule to rttable nextmn-gtp4
 	if s.config.GTP4HeadendPrefix != nil {

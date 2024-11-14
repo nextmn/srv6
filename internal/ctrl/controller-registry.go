@@ -5,13 +5,13 @@
 package ctrl
 
 import (
-	"net/netip"
+	"github.com/nextmn/json-api/jsonapi"
 )
 
 type ControllerRegistry struct {
-	RemoteControlURI string // URI of the controller
-	LocalControlURI  string // URI of the router, used to control it
-	Locator          string
-	Backbone         netip.Addr
+	RemoteControlURI jsonapi.ControlURI // URI of the controller
+	LocalControlURI  jsonapi.ControlURI // URI of the router, used to control it
+	Locator          jsonapi.Locator
+	Backbone         jsonapi.BackboneIP
 	Resource         string
 }

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
+
 package config
 
 import (
@@ -9,6 +10,7 @@ import (
 	"net/netip"
 	"path/filepath"
 
+	"github.com/nextmn/json-api/jsonapi"
 	"gopkg.in/yaml.v3"
 )
 
@@ -32,23 +34,21 @@ type SRv6Config struct {
 	Hooks *Hooks `yaml:"hooks"`
 
 	// interface with controller
-	HTTPAddress netip.Addr `yaml:"http-address"`
-	HTTPPort    *string    `yaml:"http-port,omitempty"` // default: 80
+	Control Control `yaml:"control"`
 	// TODO: use a better type for this information
-	ControllerURI string `yaml:"controller-uri"` // example: http://192.0.2.2/8080
+	ControllerURI jsonapi.ControlURI `yaml:"controller-uri"` // example: http://192.0.2.2/8080
 
 	// Backbone IPv6 address
-	// TODO: use a better type for this information
-	BackboneIP netip.Addr `yaml:"backbone-ip"`
+	BackboneIP jsonapi.BackboneIP `yaml:"backbone-ip"`
 
 	// headends
-	LinuxHeadendSetSourceAddress *string  `yaml:"linux-headend-set-source-address,omitempty"`
-	GTP4HeadendPrefix            *string  `yaml:"gtp4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single GTP4 headend) or 10.0.1.0/24 (with more headends)
-	IPV4HeadendPrefix            *string  `yaml:"ipv4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single IPV4 headend) or 10.0.1.0/24 (with more headends)
-	Headends                     Headends `yaml:"headends"`
+	LinuxHeadendSetSourceAddress *netip.Addr   `yaml:"linux-headend-set-source-address,omitempty"`
+	GTP4HeadendPrefix            *netip.Prefix `yaml:"gtp4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single GTP4 headend) or 10.0.1.0/24 (with more headends)
+	IPV4HeadendPrefix            *netip.Prefix `yaml:"ipv4-headend-prefix,omitempty"` // example of prefix: 10.0.0.1/32 (if you use a single IPV4 headend) or 10.0.1.0/24 (with more headends)
+	Headends                     Headends      `yaml:"headends"`
 
 	// endpoints
-	Locator   *string   `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64
-	Endpoints Endpoints `yaml:"endpoints"`
-	Logger    *Logger   `yaml:"logger,omitempty"`
+	Locator   *jsonapi.Locator `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64
+	Endpoints Endpoints        `yaml:"endpoints"`
+	Logger    *Logger          `yaml:"logger,omitempty"`
 }

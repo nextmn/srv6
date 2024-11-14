@@ -6,6 +6,7 @@ package iproute2
 
 import (
 	"fmt"
+	"net/netip"
 	"os"
 	"os/exec"
 )
@@ -46,6 +47,6 @@ func runIP6Tables(args ...string) error {
 	return nil
 }
 
-func IPSrSetSourceAddress(address string) error {
-	return runIP("sr", "tunsrc", "set", address)
+func IPSrSetSourceAddress(address netip.Addr) error {
+	return runIP("sr", "tunsrc", "set", address.String())
 }
