@@ -113,9 +113,13 @@ func (db *DBTask) RunInit(ctx context.Context) error {
 		defer cancel()
 		if err := postgres.Ping(); err == nil {
 			ok = true
+			logrus.WithFields(logrus.Fields{"attempt": errcnt}).Info("Connected to postgres database.")
 			cancel()
+		} else if errcnt < maxAttempts-1 {
+			logrus.WithFields(logrus.Fields{"attempt": errcnt}).Warn("Could not connect to postgres database. Another attempt is scheduled.")
+		} else {
+			logrus.WithFields(logrus.Fields{"attempt": errcnt}).Warn("Could not connect to postgres database.")
 		}
-		logrus.WithFields(logrus.Fields{"attempt": errcnt}).Warn("Could not connect to postgres database. Retrying.")
 		// blocks until success, timeout, or ctx.Done()
 		select {
 		case <-wait.Done():
