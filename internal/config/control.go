@@ -11,5 +11,5 @@ import (
 
 type Control struct {
 	Uri      jsonapi.ControlURI `yaml:"uri"`       // may contain domain name instead of ip address
-	BindAddr string             `yaml:"bind-addr"` // in the form `ip` or `ip:port` (with default port being 80)
+	BindAddr string             `yaml:"bind-addr"` // in the form `ip:port`
 }

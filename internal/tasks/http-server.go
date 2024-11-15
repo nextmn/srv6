@@ -7,6 +7,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"net"
 	"net/http"
 	"time"
 
@@ -70,11 +71,15 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 		Handler: r,
 	}
 
-	go func() {
-		if err := t.srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	l, err := net.Listen("tcp", t.srv.Addr)
+	if err != nil {
+		return err
+	}
+	go func(ln net.Listener) {
+		if err := t.srv.Serve(ln); err != nil && err != http.ErrServerClosed {
 			logrus.WithError(err).Error("HTTP Server error")
 		}
-	}()
+	}(l)
 	t.state = true
 	return nil
 }
