@@ -11,13 +11,13 @@ CREATE TABLE IF NOT EXISTS rule (
 	match_ue_ip CIDR NOT NULL,
 	match_gnb_ip CIDR,
 	match_service_ip CIDR,
-	match_uplink_teid INTEGER
+	match_uplink_teid BIGINT
 );
 
 
 CREATE OR REPLACE PROCEDURE insert_uplink_rule(
 	IN in_enabled BOOL, IN in_ue_ip CIDR,
-	IN in_gnb_ip CIDR, IN in_uplink_teid INTEGER,
+	IN in_gnb_ip CIDR, IN in_uplink_teid BIGINT,
 	IN in_service_ip CIDR,
 	IN in_srh INET ARRAY,
 	OUT out_uuid UUID
@@ -75,7 +75,7 @@ BEGIN
 END;$$;
 
 CREATE OR REPLACE FUNCTION get_uplink_action(
-	IN in_uplink_teid INTEGER, IN in_gnb_ip INET,
+	IN in_uplink_teid BIGINT, IN in_gnb_ip INET,
 	IN in_ue_ip INET, IN in_service_ip INET
 )
 RETURNS TABLE (
@@ -117,7 +117,7 @@ RETURNS TABLE (
 	t_action_srh INET ARRAY,
 	t_match_ue_ip CIDR,
 	t_match_gnb_ip CIDR,
-	t_match_uplink_teid INTEGER,
+	t_match_uplink_teid BIGINT,
 	t_match_service_ip CIDR
 )
 AS $$
@@ -137,7 +137,7 @@ RETURNS TABLE (
 	t_action_srh INET ARRAY,
 	t_match_ue_ip CIDR,
 	t_match_gnb_ip CIDR,
-	t_match_uplink_teid INTEGER,
+	t_match_uplink_teid BIGINT,
 	t_match_service_ip CIDR
 )
 AS $$
