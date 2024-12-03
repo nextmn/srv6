@@ -8,7 +8,7 @@ require (
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/gopacket v1.1.19
 	github.com/lib/pq v1.10.9
-	github.com/nextmn/gopacket-gtp v0.0.7
+	github.com/nextmn/gopacket-gtp v0.0.8
 	github.com/nextmn/gopacket-srv6 v0.0.8
 	github.com/nextmn/json-api v0.0.13
 	github.com/nextmn/logrus-formatter v0.0.1

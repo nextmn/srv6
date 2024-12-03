@@ -54,8 +54,8 @@ github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w
 github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
 github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
-github.com/nextmn/gopacket-gtp v0.0.7 h1:O2cuShLTlpVBEXyHn9OIi1Nd+j4QCB66RAwzKBeyscI=
-github.com/nextmn/gopacket-gtp v0.0.7/go.mod h1:94jLjLU04IOVTKBXUP09MXZCgmlizqmflU2ion1ht6E=
+github.com/nextmn/gopacket-gtp v0.0.8 h1:NF3GRPSdDjmoTeyN584NwbJJJ3tHwPZysZE2ma/fYvY=
+github.com/nextmn/gopacket-gtp v0.0.8/go.mod h1:94jLjLU04IOVTKBXUP09MXZCgmlizqmflU2ion1ht6E=
 github.com/nextmn/gopacket-srv6 v0.0.8 h1:oP4wuJ7dOiV/gWmX3zoFcdp2dKdSWLUaxH2fJ3TYAwA=
 github.com/nextmn/gopacket-srv6 v0.0.8/go.mod h1:2Tyuo9zsG0bP2IhC4tVRgPRuyUqOgrvEEH9seJSZTlU=
 github.com/nextmn/json-api v0.0.13 h1:k8Z0Oo9et5PvdCa4wUmJE9TAHJp1zTkoAmvy1LQcoyQ=

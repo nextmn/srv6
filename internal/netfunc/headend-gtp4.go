@@ -11,13 +11,15 @@ import (
 	"net"
 	"net/netip"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
+	"github.com/nextmn/srv6/internal/config"
+	"github.com/nextmn/srv6/internal/constants"
 
+	gopacket_gtp "github.com/nextmn/gopacket-gtp"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
 	"github.com/nextmn/rfc9433/encoding"
 
-	"github.com/nextmn/srv6/internal/config"
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 type HeadendGTP4 struct {
@@ -40,7 +42,12 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	if _, err := h.CheckDAInPrefixRange(pqt); err != nil {
+	dest_addr, err := h.CheckDAInPrefixRange(pqt)
+	if err != nil {
+		return nil, err
+	}
+	gnb_ip, err := h.GetSrcAddr(pqt)
+	if err != nil {
 		return nil, err
 	}
 
@@ -59,6 +66,69 @@ func (h HeadendGTP4) Handle(ctx context.Context, packet []byte) ([]byte, error) 
 	}
 	gtpu := layerGTPU.(*layers.GTPv1U)
 	teid := gtpu.TEID
+
+	// handle echo request
+	if gtpu.MessageType == constants.GTPU_MESSAGE_TYPE_ECHO_REQUEST {
+		if !gtpu.SequenceNumberFlag {
+			return nil, fmt.Errorf("No sequence number flag in GTP Echo Request")
+		}
+		ipv4resp := layers.IPv4{
+			// IPv4
+			Version: 4,
+			// Next Header: UDP
+			Protocol: layers.IPProtocolUDP,
+			// Fragmentation is inefficient and should be avoided (TS 129.281 section 4.2.2)
+			// It is recommended to set the default inner MTU size instead.
+			Flags: layers.IPv4DontFragment,
+			// Destination IP from buffer
+			SrcIP: dest_addr.AsSlice(),
+			// Source IP from buffer
+			DstIP: gnb_ip.AsSlice(),
+			// TTL from tun config
+			TTL: h.TTL(),
+			// other fields are initialized at zero
+			// cheksum, and length are computed at serialization
+		}
+		udpresp := layers.UDP{
+			// Source Port
+			SrcPort: constants.GTPU_PORT_INT,
+			DstPort: pqt.Layer(layers.LayerTypeUDP).(*layers.UDP).SrcPort,
+			// cheksum, and length are computed at serialization
+		}
+		// required for checksum
+		udpresp.SetNetworkLayerForChecksum(&ipv4resp)
+		gtpresp := gopacket_gtp.GTPv1U{
+			Version:            1,
+			ProtocolType:       1,
+			SequenceNumberFlag: true,
+			SequenceNumber:     gtpu.SequenceNumber,
+			// message type: G-PDU
+			MessageType:   constants.GTPU_MESSAGE_TYPE_ECHO_RESPONSE,
+			TEID:          0,
+			MessageLength: uint16(6), // recovery IE + seqNum + N-PDU Number (ignored) + next ext header type
+		}
+		payloadresp := []byte{14, 0} // empty recovery IE
+		buf := gopacket.NewSerializeBuffer()
+		if err := gopacket.SerializeLayers(buf,
+			gopacket.SerializeOptions{
+				FixLengths:       true,
+				ComputeChecksums: true,
+			},
+			&ipv4resp,
+			&udpresp,
+			&gtpresp,
+			gopacket.Payload(payloadresp),
+		); err != nil {
+			return nil, err
+		} else {
+			return buf.Bytes(), nil
+		}
+
+	}
+
+	if gtpu.MessageType != constants.GTPU_MESSAGE_TYPE_GPDU {
+		return nil, fmt.Errorf("GTP packet is not a G-PDU")
+	}
 
 	// TODO: create a dedicated parser for GTPU extension Headers
 	// TODO: create a dedicated parser for PDU Session Container

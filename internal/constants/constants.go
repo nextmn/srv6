@@ -8,6 +8,8 @@ package constants
 const GTPU_PORT = "2152"
 const GTPU_PORT_INT = 2152
 
+const GTPU_MESSAGE_TYPE_ECHO_REQUEST = 1
+const GTPU_MESSAGE_TYPE_ECHO_RESPONSE = 2
 const GTPU_MESSAGE_TYPE_GPDU = 255
 
 // iproute2 rt protos
