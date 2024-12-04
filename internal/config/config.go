@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/nextmn/json-api/jsonapi"
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
 	"gopkg.in/yaml.v3"
 )
 
@@ -34,12 +35,11 @@ type SRv6Config struct {
 	Hooks *Hooks `yaml:"hooks"`
 
 	// interface with controller
-	Control Control `yaml:"control"`
-	// TODO: use a better type for this information
-	ControllerURI jsonapi.ControlURI `yaml:"controller-uri"` // example: http://192.0.2.2/8080
+	Control       Control            `yaml:"control"`
+	ControllerURI jsonapi.ControlURI `yaml:"controller-uri"` // example: http://192.0.2.2:8080
 
 	// Backbone IPv6 address
-	BackboneIP jsonapi.BackboneIP `yaml:"backbone-ip"`
+	BackboneIP n4tosrv6.BackboneIP `yaml:"backbone-ip"`
 
 	// headends
 	LinuxHeadendSetSourceAddress *netip.Addr   `yaml:"linux-headend-set-source-address,omitempty"`
@@ -48,7 +48,7 @@ type SRv6Config struct {
 	Headends                     Headends      `yaml:"headends"`
 
 	// endpoints
-	Locator   *jsonapi.Locator `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64
-	Endpoints Endpoints        `yaml:"endpoints"`
-	Logger    *Logger          `yaml:"logger,omitempty"`
+	Locator   *n4tosrv6.Locator `yaml:"locator,omitempty"` // example of locator: fd00:51D5:0000:1::/64
+	Endpoints Endpoints         `yaml:"endpoints"`
+	Logger    *Logger           `yaml:"logger,omitempty"`
 }

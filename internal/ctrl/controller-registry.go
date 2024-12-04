@@ -6,12 +6,13 @@ package ctrl
 
 import (
 	"github.com/nextmn/json-api/jsonapi"
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
 )
 
 type ControllerRegistry struct {
 	RemoteControlURI jsonapi.ControlURI // URI of the controller
 	LocalControlURI  jsonapi.ControlURI // URI of the router, used to control it
-	Locator          jsonapi.Locator
-	Backbone         jsonapi.BackboneIP
+	Locator          n4tosrv6.Locator
+	Backbone         n4tosrv6.BackboneIP
 	Resource         string
 }

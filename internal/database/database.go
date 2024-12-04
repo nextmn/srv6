@@ -12,9 +12,10 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
+
 	"github.com/gofrs/uuid"
 	"github.com/lib/pq"
-	"github.com/nextmn/json-api/jsonapi"
 )
 
 //go:generate go run gen.go database.sql
@@ -82,7 +83,7 @@ func (db *Database) Exit() {
 	}
 }
 
-func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID, error) {
+func (db *Database) InsertRule(ctx context.Context, r n4tosrv6.Rule) (*uuid.UUID, error) {
 	srh := []string{}
 	for _, ip := range r.Action.SRH {
 		srh = append(srh, ip.String())
@@ -130,7 +131,7 @@ func (db *Database) InsertRule(ctx context.Context, r jsonapi.Rule) (*uuid.UUID,
 	}
 }
 
-func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, error) {
+func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule, error) {
 	var type_uplink bool
 	var enabled bool
 	var action_srh []string
@@ -141,15 +142,15 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, 
 	if stmt, ok := db.stmt["get_rule"]; ok {
 		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
 		if err != nil {
-			return jsonapi.Rule{}, err
+			return n4tosrv6.Rule{}, err
 		}
-		rule := jsonapi.Rule{
+		rule := n4tosrv6.Rule{
 			Enabled: enabled,
-			Match:   jsonapi.Match{},
+			Match:   n4tosrv6.Match{},
 		}
 		if type_uplink {
 			rule.Type = "uplink"
-			rule.Match.Header = &jsonapi.GtpHeader{}
+			rule.Match.Header = &n4tosrv6.GtpHeader{}
 			if match_gnb_ip != nil {
 				p, err := netip.ParsePrefix(*match_gnb_ip)
 				if err == nil && p.Bits() == 32 {
@@ -162,7 +163,7 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, 
 			if match_service_ip != nil {
 				p, err := netip.ParsePrefix(*match_service_ip)
 				if err == nil && p.Bits() == 32 {
-					rule.Match.Payload = &jsonapi.Payload{
+					rule.Match.Payload = &n4tosrv6.Payload{
 						Dst: p.Addr(),
 					}
 				}
@@ -176,27 +177,27 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (jsonapi.Rule, 
 				a := p.Addr()
 				rule.Match.Header.InnerIpSrc = &a
 			} else {
-				rule.Match.Payload = &jsonapi.Payload{
+				rule.Match.Payload = &n4tosrv6.Payload{
 					Dst: p.Addr(),
 				}
 			}
 		}
-		srh, err := jsonapi.NewSRH(action_srh)
+		srh, err := n4tosrv6.NewSRH(action_srh)
 		if err != nil {
-			return jsonapi.Rule{}, err
+			return n4tosrv6.Rule{}, err
 		}
 
-		rule.Action = jsonapi.Action{
+		rule.Action = n4tosrv6.Action{
 			SRH: *srh,
 		}
 
 		return rule, err
 	} else {
-		return jsonapi.Rule{}, fmt.Errorf("Procedure not registered")
+		return n4tosrv6.Rule{}, fmt.Errorf("Procedure not registered")
 	}
 }
 
-func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
+func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 	var uuid uuid.UUID
 	var type_uplink bool
 	var enabled bool
@@ -205,7 +206,7 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 	var match_gnb_ip *string
 	var match_uplink_teid *uint32
 	var match_service_ip *string
-	m := jsonapi.RuleMap{}
+	m := n4tosrv6.RuleMap{}
 	if stmt, ok := db.stmt["get_all_rules"]; ok {
 		rows, err := stmt.QueryContext(ctx)
 		if err != nil {
@@ -215,19 +216,19 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 			select {
 			case <-ctx.Done():
 				// avoid looping if no longer necessary
-				return jsonapi.RuleMap{}, ctx.Err()
+				return n4tosrv6.RuleMap{}, ctx.Err()
 			default:
 				err := rows.Scan(&uuid, &type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
 				if err != nil {
 					return m, err
 				}
-				rule := jsonapi.Rule{
+				rule := n4tosrv6.Rule{
 					Enabled: enabled,
-					Match:   jsonapi.Match{},
+					Match:   n4tosrv6.Match{},
 				}
 				if type_uplink {
 					rule.Type = "uplink"
-					rule.Match.Header = &jsonapi.GtpHeader{}
+					rule.Match.Header = &n4tosrv6.GtpHeader{}
 					if match_gnb_ip != nil {
 						p, err := netip.ParsePrefix(*match_gnb_ip)
 						if err == nil && p.Bits() == 32 {
@@ -240,7 +241,7 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 					if match_service_ip != nil {
 						p, err := netip.ParsePrefix(*match_service_ip)
 						if err == nil && p.Bits() == 32 {
-							rule.Match.Payload = &jsonapi.Payload{
+							rule.Match.Payload = &n4tosrv6.Payload{
 								Dst: p.Addr(),
 							}
 						}
@@ -254,18 +255,18 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 						a := p.Addr()
 						rule.Match.Header.InnerIpSrc = &a
 					} else {
-						rule.Match.Payload = &jsonapi.Payload{
+						rule.Match.Payload = &n4tosrv6.Payload{
 							Dst: p.Addr(),
 						}
 					}
 				}
 
-				srh, err := jsonapi.NewSRH(action_srh)
+				srh, err := n4tosrv6.NewSRH(action_srh)
 				if err != nil {
-					return jsonapi.RuleMap{}, err
+					return n4tosrv6.RuleMap{}, err
 				}
 
-				rule.Action = jsonapi.Action{
+				rule.Action = n4tosrv6.Action{
 					SRH: *srh,
 				}
 				m[uuid] = rule
@@ -274,7 +275,7 @@ func (db *Database) GetRules(ctx context.Context) (jsonapi.RuleMap, error) {
 		return m, nil
 
 	} else {
-		return jsonapi.RuleMap{}, fmt.Errorf("Procedure not registered")
+		return n4tosrv6.RuleMap{}, fmt.Errorf("Procedure not registered")
 	}
 }
 
@@ -314,36 +315,36 @@ func (db *Database) DeleteRule(ctx context.Context, uuid uuid.UUID) error {
 	}
 }
 
-func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, gnbIp netip.Addr, ueIp netip.Addr, serviceIp netip.Addr) (jsonapi.Action, error) {
+func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, gnbIp netip.Addr, ueIp netip.Addr, serviceIp netip.Addr) (n4tosrv6.Action, error) {
 	var action_srh []string
 	if stmt, ok := db.stmt["get_uplink_action"]; ok {
 		err := stmt.QueryRowContext(ctx, uplinkTeid, gnbIp.String(), ueIp.String(), serviceIp.String()).Scan(pq.Array(&action_srh))
 		if err != nil {
-			return jsonapi.Action{}, err
+			return n4tosrv6.Action{}, err
 		}
-		srh, err := jsonapi.NewSRH(action_srh)
+		srh, err := n4tosrv6.NewSRH(action_srh)
 		if err != nil {
-			return jsonapi.Action{}, err
+			return n4tosrv6.Action{}, err
 		}
-		return jsonapi.Action{SRH: *srh}, err
+		return n4tosrv6.Action{SRH: *srh}, err
 	} else {
-		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
+		return n4tosrv6.Action{}, fmt.Errorf("Procedure not registered")
 	}
 }
 
-func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (jsonapi.Action, error) {
+func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (n4tosrv6.Action, error) {
 	var action_srh []string
 	if stmt, ok := db.stmt["get_downlink_action"]; ok {
 		err := stmt.QueryRowContext(ctx, ueIp.String()).Scan(pq.Array(&action_srh))
 		if err != nil {
-			return jsonapi.Action{}, err
+			return n4tosrv6.Action{}, err
 		}
-		srh, err := jsonapi.NewSRH(action_srh)
+		srh, err := n4tosrv6.NewSRH(action_srh)
 		if err != nil {
-			return jsonapi.Action{}, err
+			return n4tosrv6.Action{}, err
 		}
-		return jsonapi.Action{SRH: *srh}, err
+		return n4tosrv6.Action{SRH: *srh}, err
 	} else {
-		return jsonapi.Action{}, fmt.Errorf("Procedure not registered")
+		return n4tosrv6.Action{}, fmt.Errorf("Procedure not registered")
 	}
 }

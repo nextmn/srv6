@@ -11,7 +11,7 @@ import (
 	app_api "github.com/nextmn/srv6/internal/app/api"
 	"github.com/nextmn/srv6/internal/config"
 	"github.com/nextmn/srv6/internal/constants"
-	tasks "github.com/nextmn/srv6/internal/tasks"
+	"github.com/nextmn/srv6/internal/tasks"
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 )
 

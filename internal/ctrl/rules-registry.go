@@ -10,9 +10,11 @@ import (
 
 	"github.com/nextmn/srv6/internal/database"
 
+	"github.com/nextmn/json-api/jsonapi"
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gofrs/uuid"
-	"github.com/nextmn/json-api/jsonapi"
 	"github.com/sirupsen/logrus"
 )
 
@@ -139,7 +141,7 @@ func (rr *RulesRegistry) SwitchRule(c *gin.Context) {
 
 // Post a new rule
 func (rr *RulesRegistry) PostRule(c *gin.Context) {
-	var rule jsonapi.Rule
+	var rule n4tosrv6.Rule
 	if err := c.BindJSON(&rule); err != nil {
 		logrus.WithError(err).Error("could not deserialize")
 		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "could not deserialize", Error: err})

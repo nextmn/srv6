@@ -2,6 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 // SPDX-License-Identifier: MIT
+
 package netfunc
 
 import (
@@ -10,11 +11,13 @@ import (
 	"fmt"
 	"net/netip"
 
-	"github.com/google/gopacket"
-	"github.com/google/gopacket/layers"
-	json_api "github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/srv6/internal/constants"
 	db_api "github.com/nextmn/srv6/internal/database/api"
+
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 type Packet struct {
@@ -86,11 +89,11 @@ func (p *Packet) GetSrcAddr() (netip.Addr, error) {
 }
 
 // Returns the DownlinkAction related to this packet
-func (p *Packet) DownlinkAction(ctx context.Context, db db_api.Downlink) (json_api.Action, error) {
+func (p *Packet) DownlinkAction(ctx context.Context, db db_api.Downlink) (n4tosrv6.Action, error) {
 	dstSlice := p.NetworkLayer().NetworkFlow().Dst().Raw()
 	dst, ok := netip.AddrFromSlice(dstSlice)
 	if !ok {
-		return json_api.Action{}, fmt.Errorf("Malformed packet")
+		return n4tosrv6.Action{}, fmt.Errorf("Malformed packet")
 	}
 	return db.GetDownlinkAction(ctx, dst)
 }

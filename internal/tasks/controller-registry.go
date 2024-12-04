@@ -15,6 +15,7 @@ import (
 	"github.com/nextmn/srv6/internal/ctrl"
 
 	"github.com/nextmn/json-api/jsonapi"
+	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
 )
 
 const UserAgent = "go-github-nextmn-srv6"
@@ -29,7 +30,7 @@ type ControllerRegistryTask struct {
 }
 
 // Create a new ControllerRegistry
-func NewControllerRegistryTask(name string, remoteControlURI jsonapi.ControlURI, backbone jsonapi.BackboneIP, locator jsonapi.Locator, localControlURI jsonapi.ControlURI, setup_registry app_api.Registry) *ControllerRegistryTask {
+func NewControllerRegistryTask(name string, remoteControlURI jsonapi.ControlURI, backbone n4tosrv6.BackboneIP, locator n4tosrv6.Locator, localControlURI jsonapi.ControlURI, setup_registry app_api.Registry) *ControllerRegistryTask {
 	return &ControllerRegistryTask{
 		WithName:  NewName(name),
 		WithState: NewState(),
@@ -52,7 +53,7 @@ func (t *ControllerRegistryTask) RunInit(ctx context.Context) error {
 	} else {
 		return fmt.Errorf("could not register controllerregistry")
 	}
-	data := jsonapi.Router{
+	data := n4tosrv6.Router{
 		Locator:  t.ControllerRegistry.Locator,
 		Backbone: t.ControllerRegistry.Backbone,
 		Control:  t.ControllerRegistry.LocalControlURI,

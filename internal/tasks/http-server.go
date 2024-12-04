@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/netip"
 	"time"
 
 	app_api "github.com/nextmn/srv6/internal/app/api"
@@ -25,13 +26,13 @@ type HttpServerTask struct {
 	WithName
 	WithState
 	srv               *http.Server
-	httpAddr          string
+	httpAddr          netip.AddrPort
 	rulesRegistryHTTP ctrl_api.RulesRegistryHTTP
 	setupRegistry     app_api.Registry
 }
 
 // Create a new HttpServerTask
-func NewHttpServerTask(name string, httpAddr string, setupRegistry app_api.Registry) *HttpServerTask {
+func NewHttpServerTask(name string, httpAddr netip.AddrPort, setupRegistry app_api.Registry) *HttpServerTask {
 	return &HttpServerTask{
 		WithName:          NewName(name),
 		WithState:         NewState(),
@@ -67,7 +68,7 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 	r.PATCH("/rules/switch/:enable_uuid/:disable_uuid", t.rulesRegistryHTTP.SwitchRule)
 	r.DELETE("/rules/:uuid", t.rulesRegistryHTTP.DeleteRule)
 	t.srv = &http.Server{
-		Addr:    t.httpAddr,
+		Addr:    t.httpAddr.String(),
 		Handler: r,
 	}
 
