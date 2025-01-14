@@ -21,6 +21,8 @@ jobs:
         - name: Checkout
           uses: actions/checkout@v4
         - name: Install depends
-          run: sudo apt-get install -qy make docker
+          run: sudo apt-get install -qy make postgresql
+        - name: Enable postgres
+          run: sudo systemctl start postgresql
         - name: Run postgres
           run: make test-postgres
