@@ -13,6 +13,7 @@ import (
 	"net/netip"
 	"strings"
 
+	"github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/json-api/jsonapi/n4tosrv6"
 
 	"github.com/gofrs/uuid"
@@ -93,7 +94,7 @@ func (db *Database) InsertRule(ctx context.Context, r n4tosrv6.Rule) (*uuid.UUID
 	case "uplink":
 		var inneripsrc string
 		var inneripdst string
-		var outeripsrc string
+		var outeripsrc []string
 		if r.Match.Header.InnerIpSrc == nil {
 			inneripsrc = "0.0.0.0/0"
 		} else {
@@ -104,11 +105,13 @@ func (db *Database) InsertRule(ctx context.Context, r n4tosrv6.Rule) (*uuid.UUID
 		} else {
 			inneripdst = r.Match.Payload.Dst.String() + "/32"
 		}
-		outeripsrc = r.Match.Header.OuterIpSrc.String() + "/32"
+		for _, i := range r.Match.Header.OuterIpSrc {
+			outeripsrc = append(outeripsrc, i.String())
+		}
 
 		if stmt, ok := db.stmt["insert_uplink_rule"]; ok {
 			var id uuid.UUID
-			err := stmt.QueryRowContext(ctx, r.Enabled, inneripsrc, outeripsrc, r.Match.Header.Teid, inneripdst, pq.Array(srh)).Scan(&id)
+			err := stmt.QueryRowContext(ctx, r.Enabled, inneripsrc, pq.Array(outeripsrc), r.Match.Header.FTeid.Teid, r.Match.Header.FTeid.Addr.String(), inneripdst, pq.Array(srh)).Scan(&id)
 			return &id, err
 		} else {
 			return nil, fmt.Errorf("Procedure not registered")
@@ -137,11 +140,12 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule,
 	var enabled bool
 	var action_srh []string
 	var match_ue_ip string
-	var match_gnb_ip *string
+	var match_gnb_ip []string
 	var match_service_ip *string
 	var match_uplink_teid *uint32
+	var match_uplink_upf *string
 	if stmt, ok := db.stmt["get_rule"]; ok {
-		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
+		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
 		if err != nil {
 			return n4tosrv6.Rule{}, err
 		}
@@ -152,14 +156,24 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule,
 		if type_uplink {
 			rule.Type = "uplink"
 			rule.Match.Header = &n4tosrv6.GtpHeader{}
-			if match_gnb_ip != nil {
-				p, err := netip.ParsePrefix(*match_gnb_ip)
-				if err == nil && p.Bits() == 32 {
-					rule.Match.Header.OuterIpSrc = p.Addr()
+
+			rule.Match.Header.OuterIpSrc = make([]netip.Prefix, 0)
+			for _, i := range match_gnb_ip {
+				p, err := netip.ParsePrefix(i)
+				if err != nil {
+					return n4tosrv6.Rule{}, err
 				}
+				rule.Match.Header.OuterIpSrc = append(rule.Match.Header.OuterIpSrc, p)
 			}
-			if match_uplink_teid != nil {
-				rule.Match.Header.Teid = *match_uplink_teid
+			if match_uplink_upf != nil && match_uplink_teid != nil {
+				addr, err := netip.ParseAddr(*match_uplink_upf)
+				if err != nil {
+					return n4tosrv6.Rule{}, err
+				}
+				rule.Match.Header.FTeid = jsonapi.Fteid{
+					Teid: *match_uplink_teid,
+					Addr: addr,
+				}
 			}
 			if match_service_ip != nil {
 				p, err := netip.ParsePrefix(*match_service_ip)
@@ -204,8 +218,9 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 	var enabled bool
 	var action_srh []string
 	var match_ue_ip string
-	var match_gnb_ip *string
+	var match_gnb_ip []string
 	var match_uplink_teid *uint32
+	var match_uplink_upf *string
 	var match_service_ip *string
 	m := n4tosrv6.RuleMap{}
 	if stmt, ok := db.stmt["get_all_rules"]; ok {
@@ -219,7 +234,7 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 				// avoid looping if no longer necessary
 				return n4tosrv6.RuleMap{}, ctx.Err()
 			default:
-				err := rows.Scan(&uuid, &type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, &match_gnb_ip, &match_uplink_teid, &match_service_ip)
+				err := rows.Scan(&uuid, &type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
 				if err != nil {
 					return m, err
 				}
@@ -230,14 +245,23 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 				if type_uplink {
 					rule.Type = "uplink"
 					rule.Match.Header = &n4tosrv6.GtpHeader{}
-					if match_gnb_ip != nil {
-						p, err := netip.ParsePrefix(*match_gnb_ip)
-						if err == nil && p.Bits() == 32 {
-							rule.Match.Header.OuterIpSrc = p.Addr()
+					rule.Match.Header.OuterIpSrc = make([]netip.Prefix, 0)
+					for _, i := range match_gnb_ip {
+						p, err := netip.ParsePrefix(i)
+						if err != nil {
+							return n4tosrv6.RuleMap{}, err
 						}
+						rule.Match.Header.OuterIpSrc = append(rule.Match.Header.OuterIpSrc, p)
 					}
-					if match_uplink_teid != nil {
-						rule.Match.Header.Teid = *match_uplink_teid
+					if match_uplink_upf != nil && match_uplink_teid != nil {
+						addr, err := netip.ParseAddr(*match_uplink_upf)
+						if err != nil {
+							return n4tosrv6.RuleMap{}, err
+						}
+						rule.Match.Header.FTeid = jsonapi.Fteid{
+							Teid: *match_uplink_teid,
+							Addr: addr,
+						}
 					}
 					if match_service_ip != nil {
 						p, err := netip.ParsePrefix(*match_service_ip)
@@ -316,10 +340,10 @@ func (db *Database) DeleteRule(ctx context.Context, uuid uuid.UUID) error {
 	}
 }
 
-func (db *Database) GetUplinkAction(ctx context.Context, uplinkTeid uint32, gnbIp netip.Addr, ueIp netip.Addr, serviceIp netip.Addr) (n4tosrv6.Action, error) {
+func (db *Database) GetUplinkAction(ctx context.Context, uplinkFTeid jsonapi.Fteid, gnbIp netip.Addr, ueIp netip.Addr, serviceIp netip.Addr) (n4tosrv6.Action, error) {
 	var action_srh []string
 	if stmt, ok := db.stmt["get_uplink_action"]; ok {
-		err := stmt.QueryRowContext(ctx, uplinkTeid, gnbIp.String(), ueIp.String(), serviceIp.String()).Scan(pq.Array(&action_srh))
+		err := stmt.QueryRowContext(ctx, uplinkFTeid.Teid, uplinkFTeid.Addr.String(), gnbIp.String(), ueIp.String(), serviceIp.String()).Scan(pq.Array(&action_srh))
 		if err != nil {
 			return n4tosrv6.Action{}, err
 		}

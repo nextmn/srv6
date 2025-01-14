@@ -10,7 +10,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/nextmn/gopacket-gtp v0.0.8
 	github.com/nextmn/gopacket-srv6 v0.0.8
-	github.com/nextmn/json-api v0.0.15
+	github.com/nextmn/json-api v0.0.16-0.20250114105630-01e517e8726a
 	github.com/nextmn/logrus-formatter v0.0.1
 	github.com/nextmn/rfc9433 v0.0.2
 	github.com/sirupsen/logrus v1.9.3

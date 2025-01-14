@@ -16,6 +16,7 @@ import (
 
 	gopacket_gtp "github.com/nextmn/gopacket-gtp"
 	gopacket_srv6 "github.com/nextmn/gopacket-srv6"
+	"github.com/nextmn/json-api/jsonapi"
 	"github.com/nextmn/rfc9433/encoding"
 
 	"github.com/google/gopacket"
@@ -141,7 +142,7 @@ func (h HeadendGTP4WithCtrl) Handle(ctx context.Context, packet []byte) ([]byte,
 	innerHeaderSrcIPv4 := netip.AddrFrom4([4]byte{inner.SrcIP[0], inner.SrcIP[1], inner.SrcIP[2], inner.SrcIP[3]})
 	innerHeaderDstIPv4 := netip.AddrFrom4([4]byte{inner.DstIP[0], inner.DstIP[1], inner.DstIP[2], inner.DstIP[3]})
 
-	action, err := h.db.GetUplinkAction(ctx, teid, gnb_ip, innerHeaderSrcIPv4, innerHeaderDstIPv4)
+	action, err := h.db.GetUplinkAction(ctx, jsonapi.Fteid{Teid: teid, Addr: dest_addr}, gnb_ip, innerHeaderSrcIPv4, innerHeaderDstIPv4)
 	if err != nil {
 		return nil, err
 	}
