@@ -158,3 +158,28 @@ func (rr *RulesRegistry) PostRule(c *gin.Context) {
 	c.Header("Location", fmt.Sprintf("/rules/%s", id))
 	c.JSON(http.StatusCreated, rule)
 }
+
+// Update action of a rule
+func (rr *RulesRegistry) UpdateAction(c *gin.Context) {
+	id_rule := c.Param("uuid")
+	iduuid_rule, err := uuid.FromString(id_rule)
+	if err != nil {
+		logrus.WithError(err).Error("Bad UUID")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "bad uuid", Error: err})
+		return
+	}
+	var action n4tosrv6.Action
+	if err := c.BindJSON(&action); err != nil {
+		logrus.WithError(err).Error("could not deserialize")
+		c.JSON(http.StatusBadRequest, jsonapi.MessageWithError{Message: "could not deserialize", Error: err})
+		return
+	}
+	c.Header("Cache-Control", "no-cache")
+	err = rr.db.UpdateAction(c, iduuid_rule, action)
+	if err != nil {
+		logrus.WithError(err).Error("Could not update Action for this rule in the database")
+		c.JSON(http.StatusInternalServerError, jsonapi.MessageWithError{Message: "could not update Action for this rule in the database", Error: err})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}

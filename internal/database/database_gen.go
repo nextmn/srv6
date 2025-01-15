@@ -19,6 +19,7 @@ var procedures = map[string]procedureOrFunction{
 	"disable_rule":         {is_procedure: true, num_in: 1, num_out: 0},
 	"switch_rule":          {is_procedure: true, num_in: 2, num_out: 0},
 	"delete_rule":          {is_procedure: true, num_in: 1, num_out: 0},
+	"update_action":        {is_procedure: true, num_in: 2, num_out: 0},
 	"get_uplink_action":    {is_procedure: false, num_in: 5, num_out: 0},
 	"get_downlink_action":  {is_procedure: false, num_in: 1, num_out: 0},
 	"get_rule":             {is_procedure: false, num_in: 1, num_out: 0},

@@ -68,6 +68,7 @@ func (t *HttpServerTask) RunInit(ctx context.Context) error {
 	r.PATCH("/rules/:uuid/disable", t.rulesRegistryHTTP.DisableRule)
 	r.PATCH("/rules/switch/:enable_uuid/:disable_uuid", t.rulesRegistryHTTP.SwitchRule)
 	r.DELETE("/rules/:uuid", t.rulesRegistryHTTP.DeleteRule)
+	r.PATCH("/rules/:uuid/update-action", t.rulesRegistryHTTP.UpdateAction)
 	t.srv = &http.Server{
 		Addr:    t.httpAddr.String(),
 		Handler: r,

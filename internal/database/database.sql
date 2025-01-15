@@ -76,6 +76,15 @@ BEGIN
 	DELETE FROM rule WHERE uuid = in_uuid;
 END;$$;
 
+CREATE OR REPLACE PROCEDURE update_action(
+	IN in_uuid UUID,
+	IN in_srh INET ARRAY
+)
+LANGUAGE plpgsql AS $$
+BEGIN
+	UPDATE rule SET action_srh = in_srh WHERE rule.uuid = in_uuid;
+END;$$;
+
 CREATE OR REPLACE FUNCTION get_uplink_action(
 	IN in_uplink_teid BIGINT, IN in_uplink_upf INET,
 	IN in_gnb_ip INET,

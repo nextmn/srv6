@@ -17,4 +17,5 @@ type RulesRegistryHTTP interface {
 	DisableRule(c *gin.Context)
 	SwitchRule(c *gin.Context)
 	PostRule(c *gin.Context)
+	UpdateAction(c *gin.Context)
 }

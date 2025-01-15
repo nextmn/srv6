@@ -373,3 +373,16 @@ func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (n4t
 		return n4tosrv6.Action{}, fmt.Errorf("Procedure not registered")
 	}
 }
+
+func (db *Database) UpdateAction(ctx context.Context, uuidRule uuid.UUID, action n4tosrv6.Action) error {
+	srh := []string{}
+	for _, ip := range action.SRH {
+		srh = append(srh, ip.String())
+	}
+	if stmt, ok := db.stmt["update_action"]; ok {
+		_, err := stmt.ExecContext(ctx, uuidRule.String(), pq.Array(srh))
+		return err
+	} else {
+		return fmt.Errorf("Procedure not registered")
+	}
+}
