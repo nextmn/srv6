@@ -125,7 +125,14 @@ func (db *Database) InsertRule(ctx context.Context, r n4tosrv6.Rule) (*uuid.UUID
 			} else {
 				dst = r.Match.Payload.Dst.String() + "/32"
 			}
-			err := stmt.QueryRowContext(ctx, r.Enabled, dst, pq.Array(srh)).Scan(&id)
+			src_ipv6 := "::"
+			if r.Action.SourceGtp4 != nil {
+				src_ipv6 = r.Action.SourceGtp4.String()
+			} else {
+				return nil, fmt.Errorf("Empty SourceGtp4 for downlink Action")
+			}
+
+			err := stmt.QueryRowContext(ctx, r.Enabled, dst, pq.Array(srh), src_ipv6).Scan(&id)
 			return &id, err
 		} else {
 			return nil, fmt.Errorf("Procedure not registered")
@@ -139,13 +146,14 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule,
 	var type_uplink bool
 	var enabled bool
 	var action_srh []string
+	var action_source_gtp4 *string
 	var match_ue_ip string
 	var match_gnb_ip []string
 	var match_service_ip *string
 	var match_uplink_teid *uint32
 	var match_uplink_upf *string
 	if stmt, ok := db.stmt["get_rule"]; ok {
-		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
+		err := stmt.QueryRowContext(ctx, uuid.String()).Scan(&type_uplink, &enabled, pq.Array(&action_srh), &action_source_gtp4, &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
 		if err != nil {
 			return n4tosrv6.Rule{}, err
 		}
@@ -202,8 +210,18 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule,
 			return n4tosrv6.Rule{}, err
 		}
 
+		if action_source_gtp4 == nil {
+			return n4tosrv6.Rule{}, fmt.Errorf("Empty SourceGtp4 for downlink rule")
+		}
+
+		source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
+		if err != nil {
+			return n4tosrv6.Rule{}, err
+		}
+
 		rule.Action = n4tosrv6.Action{
-			SRH: *srh,
+			SRH:        *srh,
+			SourceGtp4: &source_gtp4,
 		}
 
 		return rule, err
@@ -217,6 +235,7 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 	var type_uplink bool
 	var enabled bool
 	var action_srh []string
+	var action_source_gtp4 *string
 	var match_ue_ip string
 	var match_gnb_ip []string
 	var match_uplink_teid *uint32
@@ -234,7 +253,7 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 				// avoid looping if no longer necessary
 				return n4tosrv6.RuleMap{}, ctx.Err()
 			default:
-				err := rows.Scan(&uuid, &type_uplink, &enabled, pq.Array(&action_srh), &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
+				err := rows.Scan(&uuid, &type_uplink, &enabled, pq.Array(&action_srh), &action_source_gtp4, &match_ue_ip, pq.Array(&match_gnb_ip), &match_uplink_teid, &match_uplink_upf, &match_service_ip)
 				if err != nil {
 					return m, err
 				}
@@ -285,6 +304,14 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 						}
 					}
 				}
+				if action_source_gtp4 == nil {
+					return n4tosrv6.RuleMap{}, fmt.Errorf("Empty SourceGtp4 for downlink rule")
+				}
+
+				source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
+				if err != nil {
+					return n4tosrv6.RuleMap{}, err
+				}
 
 				srh, err := n4tosrv6.NewSRH(action_srh)
 				if err != nil {
@@ -292,7 +319,8 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 				}
 
 				rule.Action = n4tosrv6.Action{
-					SRH: *srh,
+					SRH:        *srh,
+					SourceGtp4: &source_gtp4,
 				}
 				m[uuid] = rule
 			}
@@ -351,7 +379,9 @@ func (db *Database) GetUplinkAction(ctx context.Context, uplinkFTeid jsonapi.Fte
 		if err != nil {
 			return n4tosrv6.Action{}, err
 		}
-		return n4tosrv6.Action{SRH: *srh}, err
+		return n4tosrv6.Action{
+			SRH: *srh,
+		}, err
 	} else {
 		return n4tosrv6.Action{}, fmt.Errorf("Procedure not registered")
 	}
@@ -359,8 +389,9 @@ func (db *Database) GetUplinkAction(ctx context.Context, uplinkFTeid jsonapi.Fte
 
 func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (n4tosrv6.Action, error) {
 	var action_srh []string
+	var action_source_gtp4 *string
 	if stmt, ok := db.stmt["get_downlink_action"]; ok {
-		err := stmt.QueryRowContext(ctx, ueIp.String()).Scan(pq.Array(&action_srh))
+		err := stmt.QueryRowContext(ctx, ueIp.String()).Scan(pq.Array(&action_srh), &action_source_gtp4)
 		if err != nil {
 			return n4tosrv6.Action{}, err
 		}
@@ -368,7 +399,17 @@ func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (n4t
 		if err != nil {
 			return n4tosrv6.Action{}, err
 		}
-		return n4tosrv6.Action{SRH: *srh}, err
+		if action_source_gtp4 == nil {
+			return n4tosrv6.Action{}, fmt.Errorf("Empty SourceGtp4 for downlink rule")
+		}
+		source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
+		if err != nil {
+			return n4tosrv6.Action{}, err
+		}
+		return n4tosrv6.Action{
+			SRH:        *srh,
+			SourceGtp4: &source_gtp4,
+		}, err
 	} else {
 		return n4tosrv6.Action{}, fmt.Errorf("Procedure not registered")
 	}
@@ -376,11 +417,17 @@ func (db *Database) GetDownlinkAction(ctx context.Context, ueIp netip.Addr) (n4t
 
 func (db *Database) UpdateAction(ctx context.Context, uuidRule uuid.UUID, action n4tosrv6.Action) error {
 	srh := []string{}
+	source_gtp4 := "::"
+	if action.SourceGtp4 != nil {
+		source_gtp4 = action.SourceGtp4.String()
+	} else {
+		return fmt.Errorf("Empty SourceGtp4 for downlink rule")
+	}
 	for _, ip := range action.SRH {
 		srh = append(srh, ip.String())
 	}
 	if stmt, ok := db.stmt["update_action"]; ok {
-		_, err := stmt.ExecContext(ctx, uuidRule.String(), pq.Array(srh))
+		_, err := stmt.ExecContext(ctx, uuidRule.String(), pq.Array(srh), source_gtp4)
 		return err
 	} else {
 		return fmt.Errorf("Procedure not registered")
