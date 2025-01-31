@@ -211,23 +211,25 @@ func (db *Database) GetRule(ctx context.Context, uuid uuid.UUID) (n4tosrv6.Rule,
 		}
 
 		if action_source_gtp4 == nil {
-			return n4tosrv6.Rule{}, fmt.Errorf("Empty SourceGtp4 for downlink rule")
-		}
+			rule.Action = n4tosrv6.Action{
+				SRH:        *srh,
+				SourceGtp4: nil,
+			}
+		} else {
 
-		source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
-		if err != nil {
-			return n4tosrv6.Rule{}, err
-		}
+			source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
+			if err != nil {
+				return n4tosrv6.Rule{}, err
+			}
 
-		rule.Action = n4tosrv6.Action{
-			SRH:        *srh,
-			SourceGtp4: &source_gtp4,
+			rule.Action = n4tosrv6.Action{
+				SRH:        *srh,
+				SourceGtp4: &source_gtp4,
+			}
 		}
-
 		return rule, err
-	} else {
-		return n4tosrv6.Rule{}, fmt.Errorf("Procedure not registered")
 	}
+	return n4tosrv6.Rule{}, fmt.Errorf("Procedure not registered")
 }
 
 func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
@@ -304,32 +306,35 @@ func (db *Database) GetRules(ctx context.Context) (n4tosrv6.RuleMap, error) {
 						}
 					}
 				}
-				if action_source_gtp4 == nil {
-					return n4tosrv6.RuleMap{}, fmt.Errorf("Empty SourceGtp4 for downlink rule")
-				}
-
-				source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
-				if err != nil {
-					return n4tosrv6.RuleMap{}, err
-				}
 
 				srh, err := n4tosrv6.NewSRH(action_srh)
 				if err != nil {
 					return n4tosrv6.RuleMap{}, err
 				}
 
-				rule.Action = n4tosrv6.Action{
-					SRH:        *srh,
-					SourceGtp4: &source_gtp4,
+				if action_source_gtp4 == nil {
+					rule.Action = n4tosrv6.Action{
+						SRH:        *srh,
+						SourceGtp4: nil,
+					}
+				} else {
+					source_gtp4, err := netip.ParseAddr(*action_source_gtp4)
+					if err != nil {
+						return n4tosrv6.RuleMap{}, err
+					}
+
+					rule.Action = n4tosrv6.Action{
+						SRH:        *srh,
+						SourceGtp4: &source_gtp4,
+					}
 				}
 				m[uuid] = rule
 			}
 		}
 		return m, nil
 
-	} else {
-		return n4tosrv6.RuleMap{}, fmt.Errorf("Procedure not registered")
 	}
+	return n4tosrv6.RuleMap{}, fmt.Errorf("Procedure not registered")
 }
 
 func (db *Database) EnableRule(ctx context.Context, uuid uuid.UUID) error {
