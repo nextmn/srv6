@@ -33,6 +33,7 @@ func main() {
 		Authors: []*cli.Author{
 			{Name: "Louis Royer"},
 		},
+		HideHelpCommand: true,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "config",
