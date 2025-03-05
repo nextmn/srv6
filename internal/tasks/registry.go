@@ -8,6 +8,7 @@ package tasks
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	tasks_api "github.com/nextmn/srv6/internal/tasks/api"
 	"github.com/sirupsen/logrus"
@@ -67,11 +68,10 @@ func (r *Registry) RunInit(ctx context.Context) error {
 
 // Run exit tasks
 func (r *Registry) RunExit() {
-	for i := len(r.cancelFuncs) - 1; i >= 0; i-- {
-		r.cancelFuncs[i]()
+	for _, cancel := range slices.Backward(r.cancelFuncs) {
+		cancel()
 	}
-	for i := r.initializedTasks - 1; i >= 0; i-- {
-		t := r.Tasks[i]
+	for _, t := range slices.Backward(r.Tasks[:r.initializedTasks]) {
 		if !t.State() {
 			continue
 		}
